@@ -38,7 +38,9 @@
 
 ;; ---- settings file (0600, backend-held) -----------------------------------
 
-(define settings-path
+;; Computed lazily: module load stays pure; the file is only touched
+;; when settings are read or saved.
+(define (settings-path)
   (build-path (ensure-app-data-dir!) "ai-settings.json"))
 
 (define default-settings
@@ -49,11 +51,11 @@
           'redact-enabled #t))
 
 (define (load-settings)
-  (if (file-exists? settings-path)
+  (if (file-exists? (settings-path))
       (with-handlers ([exn:fail? (lambda (_) default-settings)])
         (for/fold ([acc default-settings])
                   ([(k v) (in-hash (string->jsexpr
-                                    (file->string settings-path)))])
+                                    (file->string (settings-path))))])
           (hash-set acc k v)))
       default-settings))
 
@@ -63,11 +65,11 @@
   (with-output-to-file tmp
     (lambda () (write-string (jsexpr->string h)))
     #:exists 'replace)
-  (when (file-exists? settings-path)
-    (delete-file settings-path))
-  (rename-file-or-directory tmp settings-path)
+  (when (file-exists? (settings-path))
+    (delete-file (settings-path)))
+  (rename-file-or-directory tmp (settings-path))
   ;; 0600: the key file is backend-held; nothing else may read it.
-  (file-or-directory-permissions settings-path #o600)
+  (file-or-directory-permissions (settings-path) #o600)
   (void))
 
 ;; Public view: the key is replaced by the sentinel so it never crosses

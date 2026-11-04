@@ -44,8 +44,15 @@ jobs:
       - name: Install switchboard
         run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#main
 
+      - name: Diagnose script bridge (util-linux dialect)
+        run: |
+          script --version | head -1
+          echo probe | script -q -F /dev/null cat | head -3
+
       - name: Backend tests (unit + pty smoke)
         run: raco test backend/
+        env:
+          TERMPILOT_DATA_DIR: /tmp/termpilot-test-data
 
       - name: Application schema compatibility
         run: raco glaze schema check --json

@@ -35,8 +35,6 @@
 ;; workflow's validate job fails the tag if they disagree.
 (define app-version "0.1.0")
 
-(store-init!)
-
 ;; One session manager for the whole app; sessions are process-local.
 (define sessions (make-manager))
 
@@ -216,6 +214,8 @@
 (define-runtime-path frontend-dist "../apps/desktop/dist")
 
 (module+ main
+  (store-init!)
+
   ;; TERMPILOT_TRANSPORT=http switches to the explicit dev adapter; the
   ;; production shape is the native GLZ1 carrier (no loopback TCP).
   (define transport

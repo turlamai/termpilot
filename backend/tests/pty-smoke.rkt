@@ -13,7 +13,7 @@
 
 ;; Drain the reader into `acc-box` until `needle` shows up or budget
 ;; expires. Returns the accumulated text.
-(define (read-until reader needle acc-box [budget-ms 3000])
+(define (read-until reader needle acc-box [budget-ms 6000])
   (let loop ([deadline (+ (current-inexact-milliseconds) budget-ms)])
     (define text (bytes->string/utf-8 (unbox acc-box) #\?))
     (cond

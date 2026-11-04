@@ -13,16 +13,23 @@
          racket/string
          "platform.rkt")
 
-(define db-path (build-path (ensure-app-data-dir!) "termpilot.db"))
+;; The database opens lazily on first use: module load must stay pure
+;; (raco test loads this module; tests sandbox via TERMPILOT_DATA_DIR).
+(define db-path
+  (build-path (ensure-app-data-dir!) "termpilot.db"))
+(define db-box (box #f))
 
-(define db
-  (open-sqlite-database db-path))
+(define (db)
+  (or (unbox db-box)
+      (let ([opened (open-sqlite-database db-path)])
+        (set-box! db-box opened)
+        opened)))
 
 (define (exec! stmt [params '()])
-  (sql-execute! db stmt params))
+  (sql-execute! (db) stmt params))
 
 (define (select stmt [params '()])
-  (sql-select db stmt params))
+  (sql-select (db) stmt params))
 
 (define (init!)
   (exec! "CREATE TABLE IF NOT EXISTS hosts (
