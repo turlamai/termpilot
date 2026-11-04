@@ -1,0 +1,20 @@
+# Node
+node_modules/
+*.tsbuildinfo
+
+# Frontend build output
+apps/desktop/dist/
+
+# Generated dist (raco glaze build)
+dist/
+
+# Racket
+compiled/
+**/compiled/
+
+# Data dirs used in local runs
+*.db
+*.db-*
+
+# macOS
+.DS_Store

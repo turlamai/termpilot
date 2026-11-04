@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TermPilot — AI 原生的 SSH 客户端</title>
+<meta name="description" content="TermPilot: 本地优先的跨平台 SSH 客户端——主机管理、真实终端会话、Snippets、端口转发，AI 助手用你自己的模型 key 生成命令、解释输出，发送前先脱敏。Glaze 线——Racket 引擎驱动，xterm.js 终端。">
+<link rel="stylesheet" href="styles.css">
+<script>
+  (function () {
+    var t = localStorage.getItem('termpilot-theme');
+    if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    document.documentElement.dataset.theme = t;
+    var l = localStorage.getItem('termpilot-lang');
+    if (!l) l = (navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+    document.documentElement.lang = l === 'zh' ? 'zh-CN' : 'en';
+  })();
+</script>
+</head>
+<body>
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="#">TermPilot</a>
+    <nav class="nav-links">
+      <a href="#why" data-i18n="nav.why">为什么</a>
+      <a href="#ai" data-i18n="nav.ai">AI 原生</a>
+      <a href="#local" data-i18n="nav.local">本地优先</a>
+      <a href="#start" data-i18n="nav.start">开始</a>
+      <a href="https://github.com/turlamai/termpilot" data-i18n="nav.github">GitHub</a>
+      <div class="lang-dropdown-wrapper">
+        <button class="lang-btn" type="button" aria-label="Switch language">
+          <span id="current-lang-label">English</span>
+        </button>
+        <ul class="lang-menu">
+          <li class="lang-choice"><button type="button" onclick="setLanguage('en')">English</button></li>
+          <li class="lang-choice"><button type="button" onclick="setLanguage('zh')">简体中文</button></li>
+        </ul>
+      </div>
+      <button class="theme-btn" id="theme-btn" aria-label="Toggle theme">◐</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <p class="kicker" data-i18n="kicker">本地优先 · BYOK · 密钥不离机</p>
+    <h1 data-i18n="hero-title">SSH 客户端，长出了 AI 时代的脑子。</h1>
+    <p class="lede" data-i18n="hero-lede">
+      主机管理、真实终端会话、Snippets、端口转发——这些是基本功。
+      TermPilot 多给一样东西：一个用你自己的模型 key 驱动的助手，
+      生成命令、解释报错、排查故障。它只提议，不执行；发送前先脱敏；
+      你的密钥与你的数据，从不离开你的机器。
+    </p>
+    <div class="cta">
+      <a class="btn btn-primary" href="https://github.com/turlamai/termpilot/releases" data-i18n="hero.download">获取 TermPilot</a>
+      <a class="btn btn-secondary" href="https://github.com/turlamai/termpilot" data-i18n="hero.source">查看源码</a>
+    </div>
+    <p class="hero-note reader-zh" lang="zh">早期开发中 · AGPL-3.0 · macOS / Windows / Linux</p>
+    <p class="hero-note reader-en" lang="en">Early development · AGPL-3.0 · macOS / Windows / Linux</p>
+  </section>
+
+  <section id="why" class="section">
+    <h2 data-i18n="why.title">基本功，先做扎实</h2>
+    <div class="grid-3">
+      <div class="card">
+        <h3 data-i18n="why.terminals.title">真实终端</h3>
+        <p data-i18n="why.terminals.body">每个会话一个伪终端。agent 密码提示、TUI 程序、vim、htop，行为与原生终端完全一致——xterm.js 渲染，支持全色与回放。</p>
+      </div>
+      <div class="card">
+        <h3 data-i18n="why.hosts.title">主机与分组</h3>
+        <p data-i18n="why.hosts.body">主机、分组、标签、备注，存本地 SQLite，一键导入 ~/.ssh/config。搜索到达即用。</p>
+      </div>
+      <div class="card">
+        <h3 data-i18n="why.ssh.title">系统 OpenSSH</h3>
+        <p data-i18n="why.ssh.body">ssh-agent、ProxyJump、known_hosts、config 兼容、新算法跟进——系统带来什么，TermPilot 就有什么。引擎层留有接缝，将来可换进程内栈。</p>
+      </div>
+      <div class="card">
+        <h3 data-i18n="why.snippets.title">Snippets</h3>
+        <p data-i18n="why.snippets.body">常用命令入库，打标签，跨主机复用。发送前可预览。</p>
+      </div>
+      <div class="card">
+        <h3 data-i18n="why.forward.title">端口转发</h3>
+        <p data-i18n="why.forward.body">-L / -R / -D 图形化配置，随会话启停。</p>
+      </div>
+      <div class="card">
+        <h3 data-i18n="why.sftp.title">SFTP 文件管理</h3>
+        <p data-i18n="why.sftp.body">浏览、上传、下载、就地编辑——路线图上，走同一条引擎接缝。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="ai" class="section section-alt">
+    <h2 data-i18n="ai.title">AI 原生，不是 AI 贴皮</h2>
+    <div class="grid-3">
+      <div class="card">
+        <h3 data-i18n="ai.generate.title">⌘K 生成命令</h3>
+        <p data-i18n="ai.generate.body">用自然语言说意图，给出可直接运行的命令草稿。你确认，才发送。</p>
+      </div>
+      <div class="card">
+        <h3 data-i18n="ai.explain.title">选区解释</h3>
+        <p data-i18n="ai.explain.body">选中报错输出，得到「发生了什么、为什么、下一步」。中文报错中文答。</p>
+      </div>
+      <div class="card">
+        <h3 data-i18n="ai.redact.title">发送前脱敏</h3>
+        <p data-i18n="ai.redact.body">私钥、token、凭据、连接串——AI 出站前逐条匹配打码，预览展示打了几处、打掉什么。</p>
+      </div>
+      <div class="card">
+        <h3 data-i18n="ai.byok.title">BYOK，你的 key</h3>
+        <p data-i18n="ai.byok.body">GLM、DeepSeek、Qwen、Kimi、豆包、SiliconFlow、OpenAI、Anthropic、本地 Ollama——预设齐备。key 存 0600，引擎持有，永不进 WebView。</p>
+      </div>
+      <div class="card">
+        <h3 data-i18n="ai.agent.title">Agent 接口</h3>
+        <p data-i18n="ai.agent.body">确定性 JSON CLI 与 MCP：让 coding agent 列主机、跑单次命令、管 Snippets——AI 时代的原生接口。</p>
+      </div>
+      <div class="card">
+        <h3 data-i18n="ai.free.title">不收 AI 税</h3>
+        <p data-i18n="ai.free.body">AI 功能属于完整产品，不是订阅。你的 provider 记你的账，TermPilot 不抽成。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="local" class="section">
+    <h2 data-i18n="local.title">本地优先，就这么设计</h2>
+    <p class="section-lede" data-i18n="local.lede">
+      没有账号，没有托管同步，没有遥测。主机、Snippets、会话历史存本地
+      SQLite，随时标准格式导出。AI 只在你调用时出站，且先脱敏。
+      你的密钥，你的数据，你的机器。
+    </p>
+  </section>
+
+  <section id="start" class="section section-alt">
+    <h2 data-i18n="start.title">开始</h2>
+    <div class="grid-3">
+      <div class="card">
+        <h3 data-i18n="start.dev.title">跟开发</h3>
+        <p data-i18n="start.dev.body">仓库即真相：架构决策、里程计划、验证底座全部公开。</p>
+        <p><a href="https://github.com/turlamai/termpilot" data-i18n="start.dev.link">GitHub →</a></p>
+      </div>
+      <div class="card">
+        <h3 data-i18n="start.release.title">等发布</h3>
+        <p data-i18n="start.release.body">Releases 页提供 macOS（arm64/x64 DMG+zip）、Windows、Linux（tar.gz）包。</p>
+        <p><a href="https://github.com/turlamai/termpilot/releases" data-i18n="start.release.link">Releases →</a></p>
+      </div>
+      <div class="card">
+        <h3 data-i18n="start.pricing.title">定价意向</h3>
+        <p data-i18n="start.pricing.body">一次购买完整产品（目标 ¥168 / US$24），可选更新续费；BYOK AI 不另收费。发布目标，非在售报价。</p>
+        <p><a href="https://github.com/turlamai/termpilot/blob/main/PRICING.md" data-i18n="start.pricing.link">PRICING →</a></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <p>TermPilot — <span class="reader-zh" lang="zh">AI 原生的 SSH 客户端 · 本地优先</span><span class="reader-en" lang="en">The AI-native SSH client · local by design</span></p>
+  <p><a href="https://jrtx.site">TurLamAI</a> · <a href="https://github.com/turlamai/termpilot">GitHub</a> · AGPL-3.0</p>
+</footer>
+
+<script>
+  // Language: pure CSS switching on html:lang, persistence + detection here.
+  function setLanguage(lang) {
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    localStorage.setItem('termpilot-lang', lang);
+    document.getElementById('current-lang-label').textContent =
+      lang === 'zh' ? '简体中文' : 'English';
+  }
+  var lang = document.documentElement.lang.startsWith('zh') ? 'zh' : 'en';
+  document.getElementById('current-lang-label').textContent =
+    lang === 'zh' ? '简体中文' : 'English';
+
+  // Theme toggle.
+  document.getElementById('theme-btn').addEventListener('click', function () {
+    var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    localStorage.setItem('termpilot-theme', next);
+  });
+</script>
+</body>
+</html>

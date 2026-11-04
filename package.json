@@ -1,0 +1,11 @@
+{
+  "name": "termpilot",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.3.0",
+  "scripts": {
+    "dev": "pnpm --filter @termpilot/desktop dev",
+    "build": "pnpm --filter @termpilot/desktop build",
+    "check": "pnpm --filter @termpilot/desktop check"
+  }
+}

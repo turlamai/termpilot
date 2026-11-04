@@ -1,0 +1,299 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+# One release pipeline per tag at a time; never cancel a publishing run.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    name: Validate release tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check tag matches package.json, backend app-version, and CHANGELOG
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "manual dispatch: skipping tag validation, building from package.json version"
+            exit 0
+          fi
+          TAG="${GITHUB_REF_NAME#v}"
+          ROOT_VERSION=$(node -p "require('./package.json').version")
+          BACKEND_VERSION=$(sed -n 's/.*(define app-version "\([^"]*\)").*/\1/p' backend/main.rkt)
+          echo "tag=$TAG package.json=$ROOT_VERSION backend=$BACKEND_VERSION"
+          test -n "$BACKEND_VERSION" || { echo "::error::backend/main.rkt has no app-version"; exit 1; }
+          test "$TAG" = "$ROOT_VERSION" || { echo "::error::tag $TAG != package.json $ROOT_VERSION"; exit 1; }
+          test "$TAG" = "$BACKEND_VERSION" || { echo "::error::tag $TAG != backend app-version $BACKEND_VERSION"; exit 1; }
+          grep -q "^## \[$TAG\]" CHANGELOG.md || { echo "::error::CHANGELOG.md has no '## [$TAG]' section"; exit 1; }
+
+  linux:
+    name: Linux package
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            VERSION="$(node -p "require('./package.json').version")"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - uses: Bogdanp/setup-racket@v1.15
+        with:
+          version: stable
+          distribution: full
+
+      - name: Install glaze
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#1fd99a53d0efde9473d960b73214b2513b0a60f8
+
+      - name: Install switchboard
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#main
+
+      - name: Package
+        run: |
+          raco glaze build \
+            --entry backend/main.rkt \
+            --name TermPilot \
+            --version "$VERSION" \
+            --out dist
+
+      - name: Tarball
+        run: |
+          (cd dist && tar czf "../termpilot-$VERSION-linux-x64.tar.gz" $(ls | grep -v '\.sha256$'))
+
+      - name: Per-asset .sha256 sidecars
+        run: |
+          for f in termpilot-$VERSION-linux-x64.tar.gz; do
+            sha256sum "$f" > "$f.sha256"
+          done
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64
+          path: |
+            termpilot-*-linux-x64.tar.gz
+            termpilot-*-linux-x64.tar.gz.sha256
+          if-no-files-found: error
+
+  macos:
+    name: macOS package (${{ matrix.arch }})
+    needs: validate
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-latest
+          - arch: x64
+            runner: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            VERSION="$(node -p "require('./package.json').version")"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - uses: Bogdanp/setup-racket@v1.15
+        with:
+          architecture: ${{ matrix.arch == 'arm64' && 'arm64' || 'x64' }}
+          version: stable
+          distribution: full
+
+      - name: Install glaze
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#1fd99a53d0efde9473d960b73214b2513b0a60f8
+
+      - name: Install switchboard
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#main
+
+      - name: App icon (icns from icon-1024.png)
+        run: |
+          ICONSET=dist/icon.iconset
+          mkdir -p "$ICONSET"
+          for spec in 16 32 128 256 512; do
+            sips -z $spec $spec icon-1024.png --out "$ICONSET/icon_${spec}x${spec}.png" >/dev/null
+            dbl=$((spec * 2))
+            sips -z $dbl $dbl icon-1024.png --out "$ICONSET/icon_${spec}x${spec}@2x.png" >/dev/null
+          done
+          iconutil -c icns "$ICONSET" -o dist/TermPilot.icns
+          rm -rf "$ICONSET"
+
+      - name: Package app bundle
+        run: |
+          raco glaze build \
+            --entry backend/main.rkt \
+            --name TermPilot \
+            --version "$VERSION" \
+            --icon dist/TermPilot.icns \
+            --sign - \
+            --out dist
+
+      - name: Portable zip (.app at the archive root)
+        run: |
+          (cd dist && zip -qry "../termpilot-$VERSION-macos-${{ matrix.arch }}.zip" TermPilot.app)
+
+      - name: DMG (drag to Applications)
+        run: |
+          set -euo pipefail
+          dmg="termpilot-$VERSION-macos-${{ matrix.arch }}.dmg"
+          staging="$(mktemp -d)/dmg-stage"
+          mkdir -p "$staging"
+          cp -R dist/TermPilot.app "$staging/"
+          ln -s /Applications "$staging/Applications"
+          created=""
+          for attempt in 1 2 3; do
+            if hdiutil create -volname TermPilot -srcfolder "$staging" -ov -format UDZO "$dmg"; then
+              created="yes"; break
+            fi
+            echo "hdiutil create attempt $attempt failed; retrying in 5s"
+            sleep 5
+          done
+          [ -n "$created" ] || { echo "::error::hdiutil create failed after 3 attempts"; exit 1; }
+
+      - name: Per-asset .sha256 sidecars
+        run: |
+          for f in termpilot-$VERSION-macos-${{ matrix.arch }}.zip termpilot-$VERSION-macos-${{ matrix.arch }}.dmg; do
+            shasum -a 256 "$f" > "$f.sha256"
+          done
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.arch }}
+          path: |
+            termpilot-*-macos-*.zip
+            termpilot-*-macos-*.dmg
+            termpilot-*-macos-*.sha256
+          if-no-files-found: error
+
+  windows:
+    name: Windows package
+    needs: validate
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        shell: bash
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            VERSION="$(node -p "require('./package.json').version")"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - uses: Bogdanp/setup-racket@v1.15
+        with:
+          version: stable
+          distribution: full
+
+      - name: Install glaze
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#1fd99a53d0efde9473d960b73214b2513b0a60f8
+
+      - name: Install switchboard
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#main
+
+      - name: Package
+        shell: bash
+        run: |
+          raco glaze build \
+            --entry backend/main.rkt \
+            --name TermPilot \
+            --version "$VERSION" \
+            --out dist
+
+      - name: Portable zip
+        shell: bash
+        run: |
+          (cd dist && zip -qry "../termpilot-$VERSION-windows-x64.zip" .)
+
+      - name: Per-asset .sha256 sidecars
+        shell: bash
+        run: |
+          sha256sum termpilot-$VERSION-windows-x64.zip > termpilot-$VERSION-windows-x64.zip.sha256
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: |
+            termpilot-*-windows-x64.zip
+            termpilot-*-windows-x64.zip.sha256
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub release
+    needs: [linux, macos, windows]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Extract changelog section
+        run: |
+          awk -v ver="## [$VERSION]" '
+            $0 ~ ver, /^## \[/{ if (!seen && $0 ~ ver) { seen=1; next } else if (seen && /^## \[/) exit; if (seen) print }' \
+            CHANGELOG.md > RELEASE-NOTES.md
+          test -s RELEASE-NOTES.md || { echo "::error::empty release notes"; exit 1; }
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v$VERSION" \
+            --title "TermPilot v$VERSION" \
+            --notes-file RELEASE-NOTES.md \
+            --clobber \
+            artifacts/*

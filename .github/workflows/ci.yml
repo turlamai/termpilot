@@ -1,0 +1,138 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Type-check
+        run: pnpm check
+
+      - name: Build frontend
+        run: pnpm build
+
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: Bogdanp/setup-racket@v1.15
+        with:
+          version: stable
+          distribution: full
+
+      # Pinned to the glaze head this slice was built against; flip to
+      # the next tagged release once it exists.
+      - name: Install glaze
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#1fd99a53d0efde9473d960b73214b2513b0a60f8
+
+      - name: Install switchboard
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#main
+
+      - name: Backend tests (unit + pty smoke)
+        run: raco test backend/
+
+      - name: Application schema compatibility
+        run: raco glaze schema check --json
+
+  windows-compile:
+    # The ConPTY backend only compiles everywhere; runtime validation
+    # belongs to the Windows leg. Catch compile breaks early here.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: Bogdanp/setup-racket@v1.15
+        with:
+          version: stable
+          distribution: full
+
+      - name: Install glaze
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#1fd99a53d0efde9473d960b73214b2513b0a60f8
+
+      - name: Install switchboard
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#main
+
+      - name: Compile backend (including ConPTY path)
+        run: raco make backend/main.rkt
+
+  package-smoke:
+    # Build the distributable on Linux to catch packaging breaks before
+    # a release tag; full three-platform packaging lives in release.yml.
+    needs: [frontend, backend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - uses: Bogdanp/setup-racket@v1.15
+        with:
+          version: stable
+          distribution: full
+
+      - name: Install glaze
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#1fd99a53d0efde9473d960b73214b2513b0a60f8
+
+      - name: Install switchboard
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#main
+
+      - name: Package (Linux)
+        run: |
+          raco glaze build \
+            --entry backend/main.rkt \
+            --name TermPilot \
+            --version 0.1.0 \
+            --out dist
+        env:
+          TERMPILOT_SELFTEST: "0"
+
+      - name: HTTP adapter smoke (packaged binary serves API and frontend)
+        run: |
+          set -euo pipefail
+          data_dir="$(mktemp -d)"
+          TERMPILOT_TRANSPORT=http TERMPILOT_DATA_DIR="$data_dir" GLAZE_API_TOKEN=smoke-token \
+            find dist -type f -name TermPilot -o -name "TermPilot*" | head -1 > /tmp/binpath
+          BIN="$(cat /tmp/binpath)"
+          test -n "$BIN" || { echo "::error::packaged binary not found"; exit 1; }
+          chmod +x "$BIN" || true
+          "$BIN" &
+          app_pid=$!
+          trap 'kill -9 $app_pid 2>/dev/null || true' exit
+          port=""
+          for _ in $(seq 1 15); do
+            sleep 2
+            kill -0 "$app_pid" 2>/dev/null || { echo "::error::packaged app exited early"; exit 1; }
+            for p in $(lsof -a -p "$app_pid" -iTCP -sTCP:LISTEN -P -n 2>/dev/null | grep -oE ':[0-9]+' | tr -d ':' | sort -u); do
+              if curl -fsS -m 10 -H "X-Glaze-Token: smoke-token" "http://127.0.0.1:$p/api/health" 2>/dev/null | grep -q '"ok":true'; then
+                port="$p"; break
+              fi
+            done
+            [ -n "$port" ] && break
+          done
+          [ -n "$port" ] || { echo "::error::packaged app never listened"; exit 1; }
+          code="$(curl -s -o /dev/null -w '%{http_code}' -m 5 "http://127.0.0.1:$p/")"
+          [ "$code" = "200" ] || { echo "::error::frontend returned $code"; exit 1; }

@@ -1,0 +1,326 @@
+{
+  "format": "glaze-schema",
+  "format-version": 1,
+  "glz": 1,
+  "routes": [
+    {
+      "method": "POST",
+      "path": "/api/health"
+    },
+    {
+      "method": "POST",
+      "path": "/api/hosts/list"
+    },
+    {
+      "method": "POST",
+      "path": "/api/hosts/create"
+    },
+    {
+      "method": "POST",
+      "path": "/api/hosts/update"
+    },
+    {
+      "method": "POST",
+      "path": "/api/hosts/delete"
+    },
+    {
+      "method": "POST",
+      "path": "/api/snippets/list"
+    },
+    {
+      "method": "POST",
+      "path": "/api/snippets/create"
+    },
+    {
+      "method": "POST",
+      "path": "/api/snippets/delete"
+    },
+    {
+      "method": "POST",
+      "path": "/api/terminal/open"
+    },
+    {
+      "method": "POST",
+      "path": "/api/terminal/input"
+    },
+    {
+      "method": "POST",
+      "path": "/api/terminal/resize"
+    },
+    {
+      "method": "POST",
+      "path": "/api/terminal/close"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sessions/list"
+    },
+    {
+      "method": "POST",
+      "path": "/api/terminal/stream"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/settings"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/settings/save"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/settings/test"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/redact-preview"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/generate"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/explain"
+    }
+  ],
+  "schema": {
+    "commands": [
+      {
+        "errors": [],
+        "name": "aiExplain",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "aiGenerate",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "aiRedactPreview",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "aiSettings",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "aiSettingsSave",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "aiSettingsTest",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "health",
+        "parameters": [],
+        "result": {
+          "kind": "reference",
+          "name": "Health"
+        }
+      },
+      {
+        "errors": [],
+        "name": "hostsCreate",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "hostsDelete",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "hostsList",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "hostsUpdate",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "sessionsList",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "snippetsCreate",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "snippetsDelete",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "snippetsList",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [
+          "invalid-args",
+          "capability-denied",
+          "token-required",
+          "timed-out",
+          "cancelled",
+          "internal"
+        ],
+        "name": "terminalClose",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [
+          "invalid-args",
+          "capability-denied",
+          "token-required",
+          "timed-out",
+          "cancelled",
+          "internal"
+        ],
+        "name": "terminalInput",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "terminalOpen",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [
+          "invalid-args",
+          "capability-denied",
+          "token-required",
+          "timed-out",
+          "cancelled",
+          "internal"
+        ],
+        "name": "terminalResize",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [
+          "invalid-args",
+          "capability-denied",
+          "token-required",
+          "timed-out",
+          "cancelled",
+          "internal"
+        ],
+        "name": "terminalStream",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      }
+    ],
+    "contract": 1,
+    "enums": [],
+    "events": [],
+    "id": "glaze-routes",
+    "records": [
+      {
+        "fields": [
+          {
+            "name": "ok",
+            "type": {
+              "kind": "scalar",
+              "name": "String"
+            }
+          },
+          {
+            "name": "version",
+            "type": {
+              "kind": "scalar",
+              "name": "String"
+            }
+          }
+        ],
+        "name": "Health"
+      }
+    ],
+    "revision": 1,
+    "states": []
+  }
+}
