@@ -32,19 +32,20 @@ export default function UpdateBanner() {
     };
   }, []);
 
-  if (!info || !info.version || dismissed === info.version) return null;
+  const { version, url } = info ?? {};
+  if (!info || !version || !url || dismissed === version) return null;
 
   return (
     <div className="update-banner">
       <Icon name="rotate-cw" size={13} />
       <span>
-        TermPilot {info.version} available
+        TermPilot {version} available
         <span className="update-banner-current"> — current {info.current}</span>
       </span>
-      <a className="btn btn-primary" href={info.url} target="_blank" rel="noreferrer">
+      <a className="btn btn-primary" href={url} target="_blank" rel="noreferrer">
         Get it
       </a>
-      <button className="btn-icon" aria-label="Dismiss" onClick={() => setDismissed(info.version)}>
+      <button className="btn-icon" aria-label="Dismiss" onClick={() => setDismissed(version)}>
         <Icon name="x" size={13} />
       </button>
     </div>
