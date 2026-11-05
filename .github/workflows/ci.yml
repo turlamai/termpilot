@@ -47,7 +47,11 @@ jobs:
       - name: Diagnose script bridge (util-linux dialect)
         run: |
           script --version | head -1
-          echo probe | script -q -F /dev/null cat | head -3
+          script --help 2>&1 | head -24 || true
+          echo "A: positional -f:"; echo probe-a | script -q -f /dev/null cat | head -3
+          echo "B: -c form:"; script -q -f /dev/null -c "echo probe-b" /dev/null | head -3
+          echo "C: no-flush positional:"; echo probe-c | script -q /dev/null cat | head -3
+          true
 
       - name: Backend tests (unit + pty smoke)
         run: raco test backend/
