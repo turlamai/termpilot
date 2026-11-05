@@ -283,8 +283,11 @@ jobs:
 
       - name: Extract changelog section
         run: |
+          # index() = fixed-string match; ver contains regex metachars ([)
           awk -v ver="## [$VERSION]" '
-            $0 ~ ver, /^## \[/{ if (!seen && $0 ~ ver) { seen=1; next } else if (seen && /^## \[/) exit; if (seen) print }' \
+            index($0, ver) { seen=1; next }
+            seen && /^## \[/ { exit }
+            seen { print }' \
             CHANGELOG.md > RELEASE-NOTES.md
           test -s RELEASE-NOTES.md || { echo "::error::empty release notes"; exit 1; }
 
