@@ -164,6 +164,8 @@ export interface HostProfile {
   'keep-alive': number;
   'font-size': number;
   'connection-kind': string;
+  parity?: string;
+  stopbits?: number;
 }
 
 export interface KeyEntry {
@@ -287,6 +289,19 @@ export const api = {
     apiPost<{ ok: boolean }>('/api/terminal/input', { id, data }),
   terminalResize: (id: string, cols: number, rows: number) =>
     apiPost<{ ok: boolean }>('/api/terminal/resize', { id, cols, rows }),
+  terminalBroadcast: (ids: string[], data: string) =>
+    apiPost<{ sent: number; results: { id: string; ok: boolean }[] }>(
+      '/api/terminal/broadcast',
+      { ids, data },
+    ),
+  doctorTransports: () =>
+    apiPost<{
+      ssh: boolean;
+      telnet: boolean;
+      mosh: boolean | string;
+      serial: boolean | string;
+      'ssh-keygen': boolean;
+    }>('/api/doctor/transports'),
   terminalClose: (id: string) =>
     apiPost<{ ok: boolean }>('/api/terminal/close', { id }),
   sessionsList: () => apiPost<{ sessions: SessionInfo[] }>('/api/sessions/list'),

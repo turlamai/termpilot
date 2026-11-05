@@ -8,8 +8,11 @@
 (require racket/format
          racket/match
          racket/random
+         racket/runtime-path
          racket/set
          "pty.rkt")
+
+(define-runtime-path serial-mod "pty/serial.rkt")
 
 ;; Scrollback retained for re-attach (bytes).
 (define ring-cap (* 512 1024))
@@ -79,12 +82,21 @@
   (define kind
     (match (hash-ref spec 'kind)
       ["ssh" 'ssh]
+      ["telnet" 'telnet]
+      ["mosh" 'mosh]
+      ["serial" 'serial]
       [_ 'local]))
   (define handle
-    (pty-open* #:command (hash-ref spec 'command)
-               #:args (hash-ref spec 'args)
-               #:cols cols
-               #:rows rows))
+    (if (eq? kind 'serial)
+        ;; Serial is not a sidecar: the device file opens directly with
+        ;; one termios configuration (see pty/serial.rkt). No cols/rows.
+        ((dynamic-require serial-mod 'serial-open)
+         #:device (hash-ref spec 'device)
+         #:baud (hash-ref spec 'baud 115200))
+        (pty-open* #:command (hash-ref spec 'command)
+                   #:args (hash-ref spec 'args)
+                   #:cols cols
+                   #:rows rows)))
   (define s
     (session (new-id!) kind
              (hash-ref spec 'label)

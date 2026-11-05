@@ -61,6 +61,10 @@
     },
     {
       "method": "POST",
+      "path": "/api/doctor/transports"
+    },
+    {
+      "method": "POST",
       "path": "/api/keys/list"
     },
     {
@@ -106,6 +110,10 @@
     {
       "method": "POST",
       "path": "/api/terminal/input"
+    },
+    {
+      "method": "POST",
+      "path": "/api/terminal/broadcast"
     },
     {
       "method": "POST",
@@ -229,6 +237,15 @@
       {
         "errors": [],
         "name": "dataImport",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "doctorTransports",
         "parameters": [],
         "result": {
           "kind": "scalar",
@@ -436,6 +453,22 @@
       {
         "errors": [],
         "name": "snippetsList",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [
+          "invalid-args",
+          "capability-denied",
+          "token-required",
+          "timed-out",
+          "cancelled",
+          "internal"
+        ],
+        "name": "terminalBroadcast",
         "parameters": [],
         "result": {
           "kind": "scalar",

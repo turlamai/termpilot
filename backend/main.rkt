@@ -19,6 +19,7 @@
          glaze/window     ; webview? / title for the selftest
          json
          racket/format
+         racket/list
          racket/match
          racket/port
          racket/runtime-path
@@ -30,6 +31,7 @@
          "knownhosts.rkt"
          "session.rkt"
          "ssh-config.rkt"
+         "transports.rkt"
          "ssh.rkt"
          "store.rkt")
 
@@ -77,9 +79,30 @@
     [(string? host-id)
      (define h (or (get-host host-id)
                    (error 'terminal/open "unknown host ~a" host-id)))
-     (define-values (command args) (ssh-argv (host-profile h)))
-     (hasheq 'kind "ssh" 'label (hash-ref h 'label)
-             'command command 'args args)]
+     (define spec-h (hash-merge h body))
+     (case (hash-ref spec-h 'connection-kind "ssh")
+       [(telnet)
+        (define-values (c a)
+          (telnet-argv (hash-ref spec-h 'host "?")
+                       (hash-ref spec-h 'port 23)))
+        (hasheq 'kind "telnet" 'label (hash-ref h 'label)
+                'command c 'args a)]
+       [(mosh)
+        (define-values (c a) (mosh-argv (host-profile spec-h)))
+        (hasheq 'kind "mosh" 'label (hash-ref h 'label)
+                'command c 'args a)]
+       [(serial)
+        ;; No sidecar: serial sessions open the device directly. The
+        ;; spec uses a serial:// pseudo-command the session manager
+        ;; resolves; see session.rkt.
+        (hasheq 'kind "serial"
+                'label (hash-ref h 'label)
+                'device (hash-ref spec-h 'host)
+                'baud (hash-ref spec-h 'port 115200))]
+       [else
+        (define-values (command args) (ssh-argv (host-profile spec-h)))
+        (hasheq 'kind "ssh" 'label (hash-ref h 'label)
+                'command command 'args args)])]
     [else
      (define-values (command args) (ssh-argv (host-profile body)))
      (hasheq 'kind "ssh"
@@ -203,6 +226,15 @@
    (forward-status)
    (hasheq 'tunnels (tunnel-status))]
 
+  ;; transport availability (UI gates connection-kind options on this)
+  [(POST "api/doctor/transports" #:returns GValue)
+   (doctor-transports)
+   (hasheq 'ssh (and (find-executable-path "ssh") #t)
+           'telnet (and (find-executable-path "telnet") #t)
+           'mosh (and (find-executable-path "mosh") #t)
+           'serial (if (eq? (system-type 'os) 'windows) "windows-leg" #t)
+           'ssh-keygen (and (find-executable-path "ssh-keygen") #t))]
+
   ;; ssh keys
   [(POST "api/keys/list" #:returns GValue)
    (keys-list)
@@ -266,6 +298,15 @@
    (unless (write-session! sessions id (string->bytes/utf-8 data))
      (error 'terminal/input "session not writable"))
    (hasheq 'ok #t)]
+  ;; Broadcast input: same bytes to every listed session (Termius
+  ;; broadcast-input parity). Partial failures report per-session.
+  [(POST "api/terminal/broadcast")
+   (terminal-broadcast [ids (lambda (v) (and (list? v) (andmap string? v)))] [data string?])
+   (define results
+     (for/list ([id (in-list ids)])
+       (hasheq 'id id 'ok (write-session! sessions id (string->bytes/utf-8 data)))))
+   (hasheq 'sent (count (lambda (r) (hash-ref r 'ok)) results)
+           'results results)]
   [(POST "api/terminal/resize")
    (terminal-resize [id string?] [cols integer?] [rows integer?])
    (unless (resize-session! sessions id cols rows)

@@ -24,6 +24,10 @@ export default function HostEditor({ host, onClose }: HostEditorProps) {
   const [startupSnippet, setStartupSnippet] = useState(host?.['startup-snippet'] ?? '');
   const [keepAlive, setKeepAlive] = useState(String(host?.['keep-alive'] ?? 0));
   const [fontSize, setFontSize] = useState(String(host?.['font-size'] ?? 0));
+  const [connKind, setConnKind] = useState(host?.['connection-kind'] ?? 'ssh');
+  const [baud, setBaud] = useState('115200');
+  const [parity, setParity] = useState('none');
+  const [stopBits, setStopBits] = useState('1');
   const [error, setError] = useState('');
 
   const save = async () => {
@@ -34,7 +38,6 @@ export default function HostEditor({ host, onClose }: HostEditorProps) {
     const payload: Partial<HostProfile> = {
       label: label.trim(),
       host: hostName.trim(),
-      port: Number(port) || 22,
       username: username.trim(),
       'auth-type': authType,
       'identity-file': identityFile.trim(),
@@ -49,6 +52,12 @@ export default function HostEditor({ host, onClose }: HostEditorProps) {
       'startup-snippet': startupSnippet,
       'keep-alive': Number(keepAlive) || 0,
       'font-size': Number(fontSize) || 0,
+      'connection-kind': connKind,
+      // serial line params ride the host form; for serial, the port
+      // column holds the line speed (the profile's "port" is the baud)
+      ...(connKind === 'serial'
+        ? { port: Number(baud) || 115200, parity, stopbits: Number(stopBits) || 1 }
+        : { port: Number(port) || 22 }),
     };
     try {
       if (host) {
@@ -80,12 +89,47 @@ export default function HostEditor({ host, onClose }: HostEditorProps) {
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h2>{host ? t('host.edit') : t('host.new')}</h2>
         <div className="form-grid">
+          <label>{t('host.kind')}</label>
+          <select value={connKind} onChange={(e) => setConnKind(e.target.value)}>
+            <option value="ssh">SSH</option>
+            <option value="telnet">Telnet</option>
+            <option value="mosh">Mosh</option>
+            <option value="serial">Serial</option>
+          </select>
           <label>{t('host.label')}</label>
           <input value={label} onChange={(e) => setLabel(e.target.value)} autoFocus />
-          <label>{t('host.host')}</label>
-          <input value={hostName} onChange={(e) => setHostName(e.target.value)} />
-          <label>{t('host.port')}</label>
-          <input type="number" value={port} onChange={(e) => setPort(e.target.value)} />
+          <label>{connKind === 'serial' ? t('host.device') : t('host.host')}</label>
+          <input
+            value={hostName}
+            onChange={(e) => setHostName(e.target.value)}
+            placeholder={connKind === 'serial' ? '/dev/ttyUSB0' : ''}
+          />
+          {connKind === 'serial' ? (
+            <>
+              <label>{t('host.baud')}</label>
+              <select value={baud} onChange={(e) => setBaud(e.target.value)}>
+                {['1200', '2400', '4800', '9600', '19200', '38400', '57600', '115200', '230400'].map((b) => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
+              <label>{t('host.parity')}</label>
+              <select value={parity} onChange={(e) => setParity(e.target.value)}>
+                <option value="none">none</option>
+                <option value="even">even</option>
+                <option value="odd">odd</option>
+              </select>
+              <label>{t('host.stopbits')}</label>
+              <select value={stopBits} onChange={(e) => setStopBits(e.target.value)}>
+                <option value="1">1</option>
+                <option value="2">2</option>
+              </select>
+            </>
+          ) : (
+            <>
+              <label>{t('host.port')}</label>
+              <input type="number" value={port} onChange={(e) => setPort(e.target.value)} />
+            </>
+          )}
           <label>{t('host.username')}</label>
           <input value={username} onChange={(e) => setUsername(e.target.value)} />
           <label>{t('host.auth')}</label>
