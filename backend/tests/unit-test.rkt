@@ -117,3 +117,24 @@
 ;; open-session/e2e covers live sessions; here just the empty manager.
 (let ([m (make-manager)])
   (check-equal? (list-sessions m) '()))
+
+;; ---- ssh config import -----------------------------------------------------
+
+(require racket/file
+         (file "/Users/jiren/Codes/termpilot/backend/ssh-config.rkt"))
+
+(define tmpcfg (make-temporary-file "tpcfg-~a"))
+(with-output-to-file tmpcfg
+  #:exists 'replace
+  (lambda ()
+    (displayln "Host web\n  HostName 10.0.0.5\n  User admin\n  Port 2222\n  ProxyJump bastion")
+    (displayln "Host * !web\n  Compression yes")
+    (displayln "Host bastion\n  HostName 10.0.0.1")))
+(define parsed (parse-ssh-config tmpcfg))
+(check-equal? (length parsed) 2 "wildcard and negation patterns excluded")
+(define web (findf (lambda (h) (string=? (hash-ref h 'label) "web")) parsed))
+(check-equal? (hash-ref web 'host) "10.0.0.5")
+(check-equal? (hash-ref web 'port) 2222)
+(check-equal? (hash-ref web 'username) "admin")
+(check-equal? (hash-ref web 'jump) "bastion")
+(delete-file tmpcfg)

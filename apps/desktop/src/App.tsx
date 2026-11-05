@@ -12,6 +12,7 @@ export default function App() {
   const activeTabId = useApp((s) => s.activeTabId);
   const focusedSessionId = useApp((s) => s.focusedSessionId);
   const closePane = useApp((s) => s.closePane);
+  const reconnectPane = useApp((s) => s.reconnectPane);
   const aiPanelOpen = useApp((s) => s.aiPanelOpen);
   const setAiPanel = useApp((s) => s.setAiPanel);
   const setPalette = useApp((s) => s.setPalette);
@@ -70,10 +71,13 @@ export default function App() {
           <div className="terminals">
             {activeTab.panes.map((pane) => (
               <TerminalPane
-                key={pane.sessionId}
+                key={`${pane.sessionId}:${useApp.getState().termThemeId}:${useApp.getState().termFontSize}`}
                 sessionId={pane.sessionId}
                 focused={pane.sessionId === focusedSessionId}
                 onClose={() => closePane(activeTab.id, pane.sessionId)}
+                onReconnect={() =>
+                  void reconnectPane(activeTab.id, pane.sessionId)
+                }
               />
             ))}
           </div>

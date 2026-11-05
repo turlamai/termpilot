@@ -25,6 +25,18 @@
     },
     {
       "method": "POST",
+      "path": "/api/hosts/import-config"
+    },
+    {
+      "method": "POST",
+      "path": "/api/data/export"
+    },
+    {
+      "method": "POST",
+      "path": "/api/data/import"
+    },
+    {
+      "method": "POST",
       "path": "/api/snippets/list"
     },
     {
@@ -155,6 +167,24 @@
       },
       {
         "errors": [],
+        "name": "dataExport",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "dataImport",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
         "name": "health",
         "parameters": [],
         "result": {
@@ -174,6 +204,15 @@
       {
         "errors": [],
         "name": "hostsDelete",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "hostsImportConfig",
         "parameters": [],
         "result": {
           "kind": "scalar",

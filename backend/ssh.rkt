@@ -24,13 +24,20 @@
   (define auth-type (hash-ref profile 'auth-type "agent"))
   (define identity-file (hash-ref profile 'identity-file #f))
   (define strict (hash-ref profile 'strict-host-key "accept-new"))
+  (define jump (hash-ref profile 'jump #f))
+  (define keep-alive (hash-ref profile 'keep-alive 0))
   (define options
     (append
      ;; TOFU by default: first connect records the fingerprint, changed
      ;; keys still hard-fail. Mirrors what Termius users expect.
      (list "-o" (format "StrictHostKeyChecking=~a" strict))
-     ;; Keep long sessions alive through NAT/firewall idle drops.
-     (list "-o" "ServerAliveInterval=30" "-o" "ServerAliveCountMax=4")
+     ;; Keep long sessions alive through NAT/firewall idle drops;
+     ;; per-host override wins when nonzero.
+     (list "-o" (format "ServerAliveInterval=~a"
+                        (if (and (number? keep-alive) (> keep-alive 0))
+                            keep-alive
+                            30))
+          "-o" "ServerAliveCountMax=4")
      (list "-o" "ConnectTimeout=12")
      ;; Agent auth must fail fast instead of falling into a password
      ;; prompt that would never succeed.
@@ -40,6 +47,9 @@
   (define argv
     (append
      options
+     (if (and jump (string? jump) (not (string=? jump "")))
+         (list "-J" jump)
+         '())
      (if (not (= port 22)) (list "-p" (number->string port)) '())
      (if (and identity-file (not (string=? identity-file "")))
          (list "-i" identity-file)

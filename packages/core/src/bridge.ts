@@ -159,6 +159,11 @@ export interface HostProfile {
   notes: string;
   'strict-host-key': string;
   'sort-order': number;
+  jump: string;
+  'startup-snippet': string;
+  'keep-alive': number;
+  'font-size': number;
+  'connection-kind': string;
 }
 
 export interface SessionInfo {
@@ -177,6 +182,17 @@ export const api = {
     apiPost<HostProfile>('/api/hosts/update', { id, host }),
   hostDelete: (id: string) =>
     apiPost<{ ok: boolean }>('/api/hosts/delete', { id }),
+  hostsImportConfig: () =>
+    apiPost<{ imported: number; skipped: number }>('/api/hosts/import-config'),
+  dataExport: () =>
+    apiPost<{
+      version: string;
+      'exported-at': number;
+      hosts: unknown[];
+      snippets: unknown[];
+    }>('/api/data/export'),
+  dataImport: (data: unknown) =>
+    apiPost<{ hosts: number; snippets: number }>('/api/data/import', { data }),
   snippetsList: () =>
     apiPost<{ snippets: { id: string; name: string; command: string; tags: string[] }[] }>(
       '/api/snippets/list',

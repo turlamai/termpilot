@@ -22,9 +22,11 @@
          racket/match
          racket/port
          racket/runtime-path
+         racket/set
          racket/string
          "ai/ai.rkt"
          "session.rkt"
+         "ssh-config.rkt"
          "ssh.rkt"
          "store.rkt")
 
@@ -34,6 +36,9 @@
 ;; Keep in sync with package.json and CHANGELOG.md; the release
 ;; workflow's validate job fails the tag if they disagree.
 (define app-version "0.1.0")
+
+(define (hash-merge a b)
+  (for/fold ([acc a]) ([(k v) (in-hash b)]) (hash-set acc k v)))
 
 ;; One session manager for the whole app; sessions are process-local.
 (define sessions (make-manager))
@@ -53,7 +58,9 @@
           'username (hash-ref h 'username "")
           'auth-type (hash-ref h 'auth-type "agent")
           'identity-file (hash-ref h 'identity-file "")
-          'strict-host-key (hash-ref h 'strict-host-key "accept-new")))
+          'strict-host-key (hash-ref h 'strict-host-key "accept-new")
+          'jump (hash-ref h 'jump "")
+          'keep-alive (hash-ref h 'keep-alive 0)))
 
 ;; Build the session spec (command + args + label) for a terminal open
 ;; request: hostId, a free-form quick-connect profile, or kind:"local"
@@ -130,6 +137,45 @@
   [(POST "api/hosts/delete" #:returns GValue)
    (hosts-delete [id string?])
    (delete-host! id)]
+
+  ;; config import + data export/import
+  [(POST "api/hosts/import-config" #:returns GValue)
+   (hosts-import-config)
+   (define path
+     (build-path (find-system-path 'home-dir) ".ssh" "config"))
+   (unless (file-exists? path)
+     (error 'hosts/import-config "no ~/.ssh/config found"))
+   (define profiles (parse-ssh-config path))
+   (define existing
+     (list->set (map (lambda (h) (hash-ref h 'label)) (list-hosts))))
+   (define fresh
+     (for/list ([p (in-list profiles)]
+                #:unless (set-member? existing (hash-ref p 'label)))
+       (insert-host!
+        (hash-merge p
+                    (hasheq 'group-name "imported" 'tags '("imported"))))))
+   (hasheq 'imported (length fresh)
+           'skipped (- (length profiles) (length fresh)))]
+  [(POST "api/data/export" #:returns GValue)
+   (data-export)
+   (hasheq 'version app-version
+           'exported-at (current-seconds)
+           'hosts (list-hosts)
+           'snippets (list-snippets))]
+  [(POST "api/data/import" #:returns GValue)
+   (data-import [data hash?])
+   ;; Replace-all: the UI confirms before calling. Snippets first (no
+   ;; foreign keys), then hosts.
+   (for ([s (in-list (list-snippets))])
+     (delete-snippet! (hash-ref s 'id)))
+   (for ([h (in-list (list-hosts))])
+     (delete-host! (hash-ref h 'id)))
+   (for ([h (in-list (hash-ref data 'hosts '()))])
+     (insert-host! h))
+   (for ([sn (in-list (hash-ref data 'snippets '()))])
+     (insert-snippet! sn))
+   (hasheq 'hosts (length (hash-ref data 'hosts '()))
+           'snippets (length (hash-ref data 'snippets '())))]
 
   ;; snippets
   [(POST "api/snippets/list" #:returns GValue)
@@ -217,8 +263,7 @@
 (define-runtime-path frontend-dist "../apps/desktop/dist")
 
 (module+ main
-  (store-init!)
-
+  
   ;; TERMPILOT_TRANSPORT=http switches to the explicit dev adapter; the
   ;; production shape is the native GLZ1 carrier (no loopback TCP).
   (define transport

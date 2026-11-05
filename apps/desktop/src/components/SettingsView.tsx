@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { api } from '@termpilot/core';
+import { useEffect, useRef, useState } from 'react';
+import { api, termThemes } from '@termpilot/core';
 import { useApp } from '../state/store';
 
 export default function SettingsView() {
@@ -20,6 +20,36 @@ export default function SettingsView() {
   const [saved, setSaved] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+
+  const termThemeId = useApp((s) => s.termThemeId);
+  const termFontSize = useApp((s) => s.termFontSize);
+  const setTermPrefs = useApp((s) => s.setTermPrefs);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [dataMsg, setDataMsg] = useState('');
+
+  const exportData = async () => {
+    const data = await api.dataExport();
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `termpilot-export-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importData = async (file: File) => {
+    if (!window.confirm(t('settings.import'))) return;
+    try {
+      const text = await file.text();
+      const r = await api.dataImport(JSON.parse(text));
+      setDataMsg(`+${r.hosts} hosts, +${r.snippets} snippets`);
+    } catch (e) {
+      setDataMsg(String(e).slice(0, 140));
+    }
+  };
 
   useEffect(() => {
     void refreshPresets();
@@ -133,6 +163,51 @@ export default function SettingsView() {
             ? '密钥保存在本地应用数据目录（0600），由 Racket 引擎持有，不进入界面进程。'
             : 'Keys live in the local app data directory (0600), held by the Racket engine — never in the UI process.'}
         </p>
+      </section>
+
+      <section>
+        <h3>{t('settings.terminal')}</h3>
+        <div className="form-grid settings-form">
+          <label>{t('settings.termtheme')}</label>
+          <select
+            value={termThemeId}
+            onChange={(e) => setTermPrefs(e.target.value, termFontSize)}
+          >
+            {termThemes.map((th) => (
+              <option key={th.id} value={th.id}>
+                {th.label}
+              </option>
+            ))}
+          </select>
+          <label>{t('settings.fontsize')}</label>
+          <input
+            type="number"
+            value={termFontSize}
+            onChange={(e) =>
+              setTermPrefs(termThemeId, Number(e.target.value) || 13)
+            }
+          />
+        </div>
+        <div className="row">
+          <button className="btn" onClick={() => void exportData()}>
+            {t('settings.export')}
+          </button>
+          <button className="btn" onClick={() => fileRef.current?.click()}>
+            {t('settings.import')}
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void importData(f);
+              e.target.value = '';
+            }}
+          />
+          {dataMsg && <span className="hint">{dataMsg}</span>}
+        </div>
       </section>
 
       <section>

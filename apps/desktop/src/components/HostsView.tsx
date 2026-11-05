@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../state/store';
-import type { HostProfile } from '@termpilot/core';
+import { api, type HostProfile } from '@termpilot/core';
 import HostEditor from './HostEditor';
 
 function hostAddr(h: HostProfile): string {
@@ -38,6 +38,17 @@ export default function HostsView() {
   const t = useApp((s) => s.t);
   const [query, setQuery] = useState('');
   const [creating, setCreating] = useState(false);
+  const [importMsg, setImportMsg] = useState('');
+
+  const importConfig = async () => {
+    try {
+      const r = await api.hostsImportConfig();
+      setImportMsg(`${r.imported} imported / ${r.skipped} skipped`);
+      await refreshHosts();
+    } catch (e) {
+      setImportMsg(String(e).slice(0, 120));
+    }
+  };
 
   useEffect(() => {
     if (!hostsLoaded) void refreshHosts();
@@ -82,9 +93,13 @@ export default function HostsView() {
           <p className="hint">{t('hosts.empty')}</p>
         )}
       </div>
+      {importMsg && <p className="hint">{importMsg}</p>}
       <div className="sidebar-actions">
         <button className="btn btn-primary btn-block" onClick={() => setCreating(true)}>
           ＋ {t('hosts.new')}
+        </button>
+        <button className="btn btn-block" onClick={() => void importConfig()}>
+          {t('hosts.import')}
         </button>
         <button
           className="btn btn-block"

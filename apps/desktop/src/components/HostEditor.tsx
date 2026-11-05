@@ -20,6 +20,10 @@ export default function HostEditor({ host, onClose }: HostEditorProps) {
   const [tags, setTags] = useState((host?.tags ?? []).join(', '));
   const [notes, setNotes] = useState(host?.notes ?? '');
   const [strict, setStrict] = useState(host?.['strict-host-key'] ?? 'accept-new');
+  const [jump, setJump] = useState(host?.jump ?? '');
+  const [startupSnippet, setStartupSnippet] = useState(host?.['startup-snippet'] ?? '');
+  const [keepAlive, setKeepAlive] = useState(String(host?.['keep-alive'] ?? 0));
+  const [fontSize, setFontSize] = useState(String(host?.['font-size'] ?? 0));
   const [error, setError] = useState('');
 
   const save = async () => {
@@ -41,6 +45,10 @@ export default function HostEditor({ host, onClose }: HostEditorProps) {
         .filter(Boolean),
       notes,
       'strict-host-key': strict,
+      jump: jump.trim(),
+      'startup-snippet': startupSnippet,
+      'keep-alive': Number(keepAlive) || 0,
+      'font-size': Number(fontSize) || 0,
     };
     try {
       if (host) {
@@ -110,6 +118,31 @@ export default function HostEditor({ host, onClose }: HostEditorProps) {
             <option value="yes">{t('host.strict.yes')}</option>
             <option value="no">{t('host.strict.no')}</option>
           </select>
+          <label>{t('host.jump')}</label>
+          <input
+            value={jump}
+            onChange={(e) => setJump(e.target.value)}
+            placeholder="bastion"
+          />
+          <label>{t('host.startup')}</label>
+          <input
+            value={startupSnippet}
+            onChange={(e) => setStartupSnippet(e.target.value)}
+          />
+          <label>{t('host.keepalive')}</label>
+          <input
+            type="number"
+            value={keepAlive}
+            onChange={(e) => setKeepAlive(e.target.value)}
+            placeholder="30"
+          />
+          <label>{t('host.fontsize')}</label>
+          <input
+            type="number"
+            value={fontSize}
+            onChange={(e) => setFontSize(e.target.value)}
+            placeholder="13"
+          />
           <label>{t('host.notes')}</label>
           <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
         </div>

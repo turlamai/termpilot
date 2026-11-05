@@ -21,6 +21,7 @@ export interface Pane {
   sessionId: string;
   label: string;
   kind: string; // ssh | local | telnet | mosh | serial
+  hostId?: string; // set when opened from a host (reconnect, overrides)
 }
 
 export interface Tab {
@@ -70,6 +71,8 @@ export interface AppState {
   paletteOpen: boolean;
   outputRings: Record<string, OutputRing>;
   selections: Record<string, string>; // sessionId -> selected text
+  termThemeId: string;
+  termFontSize: number;
 
   setView: (v: ViewId) => void;
   setLang: (l: Lang) => void;
@@ -92,6 +95,8 @@ export interface AppState {
 
   setAiPanel: (open: boolean) => void;
   setPalette: (open: boolean) => void;
+  setTermPrefs: (themeId: string, fontSize: number) => void;
+  reconnectPane: (tabId: string, sessionId: string) => Promise<void>;
   appendOutput: (sessionId: string, text: string) => void;
   setSelection: (sessionId: string, text: string) => void;
   recentOutput: (sessionId: string, maxChars?: number) => string;
@@ -115,6 +120,8 @@ export const useApp = create<AppState>((set, get) => ({
   paletteOpen: false,
   outputRings: {},
   selections: {},
+  termThemeId: localStorage.getItem('termpilot-termtheme') ?? 'warm-dark',
+  termFontSize: Number(localStorage.getItem('termpilot-fontsize') ?? 13) || 13,
 
   setView: (v) => set({ view: v }),
 
@@ -166,11 +173,25 @@ export const useApp = create<AppState>((set, get) => ({
           ? { 'host-id': spec['host-id'], cols: 120, rows: 30 }
           : { kind: 'local', cols: 120, rows: 30 };
       const session = await api.terminalOpen(body);
+      const hostId = 'host-id' in spec ? spec['host-id'] : undefined;
       const pane: Pane = {
         sessionId: session.id,
         label: session.label,
         kind: session.kind,
+        hostId,
       };
+      // Startup command: sent into the session right after it opens.
+      if (hostId) {
+        const host = get().hosts.find((h) => h.id === hostId);
+        const snippet = host?.['startup-snippet']?.trim();
+        if (snippet) {
+          setTimeout(() => {
+            void api
+              .terminalInput(session.id, snippet.endsWith('\n') ? snippet : `${snippet}\n`)
+              .catch(() => undefined);
+          }, 600);
+        }
+      }
       if (splitInto) {
         set({
           tabs: get().tabs.map((t) =>
@@ -226,6 +247,27 @@ export const useApp = create<AppState>((set, get) => ({
 
   setAiPanel: (open) => set({ aiPanelOpen: open }),
   setPalette: (open) => set({ paletteOpen: open }),
+
+  setTermPrefs: (themeId, fontSize) => {
+    localStorage.setItem('termpilot-termtheme', themeId);
+    localStorage.setItem('termpilot-fontsize', String(fontSize));
+    set({ termThemeId: themeId, termFontSize: fontSize });
+  },
+
+  reconnectPane: async (tabId, sessionId) => {
+    const tab = get().tabs.find((t) => t.id === tabId);
+    const old = tab?.panes.find((p) => p.sessionId === sessionId);
+    if (!tab || !old) return;
+    // Close the dead pane, then open a fresh one into the same tab.
+    const hadPanes = tab.panes.length > 1;
+    get().closePane(tabId, sessionId);
+    await get().openSession(
+      old.hostId
+        ? { 'host-id': old.hostId, label: old.label }
+        : { kind: 'local', label: old.label },
+      { split: hadPanes && get().tabs.some((t) => t.id === tabId) },
+    );
+  },
 
   appendOutput: (sessionId, text) => {
     if (!text) return;

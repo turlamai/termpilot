@@ -33,8 +33,17 @@
 (define (select stmt [params '()])
   (sql-select (db) stmt params))
 
+;; Column migrations: v0.1 had a narrow hosts table; add columns as
+;; needed. SQLite has no ADD COLUMN IF NOT EXISTS, so failures for
+;; duplicate columns are swallowed. No users exist before 0.1, so no
+;; data migrations beyond shape.
+(define (try-add-column! table col decl)
+  (with-handlers ([exn:fail? void])
+    (exec! (format "ALTER TABLE ~a ADD COLUMN ~a ~a" table col decl))))
+
 (define (init!)
-  (void
+  (define (ddl! stmt)
+    (with-handlers ([exn:fail? void]) (exec! stmt)))
   (exec! "CREATE TABLE IF NOT EXISTS hosts (
             id TEXT PRIMARY KEY,
             label TEXT NOT NULL,
@@ -50,12 +59,21 @@
             sort_order INTEGER NOT NULL DEFAULT 0,
             created_at INTEGER NOT NULL,
             updated_at INTEGER NOT NULL)")
-  (exec! "CREATE TABLE IF NOT EXISTS snippets (
+  (try-add-column! "hosts" "jump" "TEXT NOT NULL DEFAULT ''")
+  (try-add-column! "hosts" "startup_snippet" "TEXT NOT NULL DEFAULT ''")
+  (try-add-column! "hosts" "keep_alive" "INTEGER NOT NULL DEFAULT 0")
+  (try-add-column! "hosts" "font_size" "INTEGER NOT NULL DEFAULT 0")
+  (try-add-column! "hosts" "connection_kind" "TEXT NOT NULL DEFAULT 'ssh'")
+  (ddl! "CREATE TABLE IF NOT EXISTS forwarding_rules (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
-            command TEXT NOT NULL,
-            tags TEXT NOT NULL DEFAULT '[]',
-            created_at INTEGER NOT NULL)")))
+            kind TEXT NOT NULL,
+            host_id TEXT NOT NULL DEFAULT '',
+            bind_host TEXT NOT NULL DEFAULT '',
+            local_port INTEGER NOT NULL,
+            remote_host TEXT NOT NULL DEFAULT '',
+            remote_port INTEGER NOT NULL DEFAULT 0,
+            created_at INTEGER NOT NULL)"))
 
 ;; ---- ids -------------------------------------------------------------------
 
@@ -88,6 +106,11 @@
           'notes (hash-ref row 'notes)
           'strict-host-key (hash-ref row 'strict_host_key)
           'sort-order (hash-ref row 'sort_order)
+          'jump (hash-ref row 'jump "")
+          'startup-snippet (hash-ref row 'startup_snippet "")
+          'keep-alive (hash-ref row 'keep_alive 0)
+          'font-size (hash-ref row 'font_size 0)
+          'connection-kind (hash-ref row 'connection_kind "ssh")
           'created-at (hash-ref row 'created_at)
           'updated-at (hash-ref row 'updated_at)))
 
@@ -106,8 +129,9 @@
   (define id (or (hash-ref h 'id #f) (new-id!)))
   (exec! "INSERT INTO hosts (id, label, host, port, username, auth_type,
              identity_file, group_name, tags, notes, strict_host_key,
-             sort_order, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+             sort_order, jump, startup_snippet, keep_alive, font_size,
+             connection_kind, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
          (list id
                (hash-ref h 'label)
                (hash-ref h 'host)
@@ -120,6 +144,11 @@
                (hash-ref h 'notes "")
                (hash-ref h 'strict-host-key "accept-new")
                (hash-ref h 'sort-order 0)
+               (hash-ref h 'jump "")
+               (hash-ref h 'startup-snippet "")
+               (hash-ref h 'keep-alive 0)
+               (hash-ref h 'font-size 0)
+               (hash-ref h 'connection-kind "ssh")
                now now))
   (get-host id))
 
@@ -128,7 +157,8 @@
   (exec! "UPDATE hosts SET label = ?, host = ?, port = ?, username = ?,
             auth_type = ?, identity_file = ?, group_name = ?, tags = ?,
             notes = ?, strict_host_key = ?, sort_order = ?,
-            updated_at = ?
+            jump = ?, startup_snippet = ?, keep_alive = ?, font_size = ?,
+            connection_kind = ?, updated_at = ?
           WHERE id = ?"
          (list (hash-ref h 'label)
                (hash-ref h 'host)
@@ -141,6 +171,11 @@
                (hash-ref h 'notes "")
                (hash-ref h 'strict-host-key "accept-new")
                (hash-ref h 'sort-order 0)
+               (hash-ref h 'jump "")
+               (hash-ref h 'startup-snippet "")
+               (hash-ref h 'keep-alive 0)
+               (hash-ref h 'font-size 0)
+               (hash-ref h 'connection-kind "ssh")
                (current-seconds)
                id))
   (get-host id))
