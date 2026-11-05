@@ -301,5 +301,5 @@ jobs:
           gh release create "v$VERSION" \
             --title "TermPilot v$VERSION" \
             --notes-file RELEASE-NOTES.md \
-            --clobber $EXTRA \
+            $EXTRA \
             artifacts/*
