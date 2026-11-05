@@ -14,14 +14,16 @@
          "platform.rkt")
 
 ;; The database opens lazily on first use: module load must stay pure
-;; (raco test loads this module; tests sandbox via TERMPILOT_DATA_DIR).
-(define db-path
-  (build-path (ensure-app-data-dir!) "termpilot.db"))
+;; (schema check and raco test load this module; CI has no writable
+;; config dir and tests sandbox via TERMPILOT_DATA_DIR).
 (define db-box (box #f))
+
+(define (db-path)
+  (build-path (ensure-app-data-dir!) "termpilot.db"))
 
 (define (db)
   (or (unbox db-box)
-      (let ([opened (open-sqlite-database db-path)])
+      (let ([opened (open-sqlite-database (db-path))])
         (set-box! db-box opened)
         opened)))
 
