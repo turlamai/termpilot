@@ -26,6 +26,8 @@
          racket/string
          "ai/ai.rkt"
          "forwarding.rkt"
+         "keys.rkt"
+         "knownhosts.rkt"
          "session.rkt"
          "ssh-config.rkt"
          "ssh.rkt"
@@ -200,6 +202,32 @@
   [(POST "api/forward/status" #:returns GValue)
    (forward-status)
    (hasheq 'tunnels (tunnel-status))]
+
+  ;; ssh keys
+  [(POST "api/keys/list" #:returns GValue)
+   (keys-list)
+   (hasheq 'keys (list-keys))]
+  [(POST "api/keys/meta" #:returns GValue)
+   (keys-meta [name string?])
+   (key-meta name)]
+  [(POST "api/keys/generate" #:returns GValue)
+   (keys-generate [name string?] [type string? "ed25519"]
+                  [passphrase string? ""] [bits integer? 0])
+   (generate-key! name type passphrase bits)]
+  [(POST "api/keys/public" #:returns GValue)
+   (keys-public [name string?])
+   (hasheq 'name name 'public (public-key-of name))]
+  [(POST "api/keys/delete" #:returns GValue)
+   (keys-delete [name string?])
+   (delete-key! name)]
+
+  ;; known hosts
+  [(POST "api/known/list" #:returns GValue)
+   (known-list)
+   (hasheq 'entries (list-known-hosts))]
+  [(POST "api/known/remove" #:returns GValue)
+   (known-remove [index integer?])
+   (remove-known-host! index)]
 
   ;; snippets
   [(POST "api/snippets/list" #:returns GValue)

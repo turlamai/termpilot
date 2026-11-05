@@ -61,6 +61,34 @@
     },
     {
       "method": "POST",
+      "path": "/api/keys/list"
+    },
+    {
+      "method": "POST",
+      "path": "/api/keys/meta"
+    },
+    {
+      "method": "POST",
+      "path": "/api/keys/generate"
+    },
+    {
+      "method": "POST",
+      "path": "/api/keys/public"
+    },
+    {
+      "method": "POST",
+      "path": "/api/keys/delete"
+    },
+    {
+      "method": "POST",
+      "path": "/api/known/list"
+    },
+    {
+      "method": "POST",
+      "path": "/api/known/remove"
+    },
+    {
+      "method": "POST",
       "path": "/api/snippets/list"
     },
     {
@@ -309,6 +337,69 @@
       {
         "errors": [],
         "name": "hostsUpdate",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "keysDelete",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "keysGenerate",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "keysList",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "keysMeta",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "keysPublic",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "knownList",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "knownRemove",
         "parameters": [],
         "result": {
           "kind": "scalar",

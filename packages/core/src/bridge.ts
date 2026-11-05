@@ -166,6 +166,27 @@ export interface HostProfile {
   'connection-kind': string;
 }
 
+export interface KeyEntry {
+  name: string;
+  'has-public': boolean;
+  permissions: string;
+  bytes: number;
+}
+
+export interface KeyMeta {
+  bits: string;
+  fingerprint: string;
+  comment: string;
+  type: string;
+}
+
+export interface KnownEntry {
+  index: number;
+  host: string;
+  keytype: string;
+  comment: string;
+}
+
 export interface ForwardRule {
   id: string;
   name: string;
@@ -224,6 +245,23 @@ export const api = {
     apiPost<{ tunnels: { id: string; running: boolean }[] }>(
       '/api/forward/status',
     ),
+  keysList: () =>
+    apiPost<{ keys: KeyEntry[] }>('/api/keys/list'),
+  keyMeta: (name: string) =>
+    apiPost<KeyMeta>('/api/keys/meta', { name }),
+  keyGenerate: (name: string, type: string, passphrase?: string) =>
+    apiPost<{ name: string; generated: boolean }>(
+      '/api/keys/generate',
+      { name, type, passphrase: passphrase ?? '' },
+    ),
+  keyPublic: (name: string) =>
+    apiPost<{ name: string; public: string }>('/api/keys/public', { name }),
+  keyDelete: (name: string) =>
+    apiPost<{ name: string; deleted: boolean }>('/api/keys/delete', { name }),
+  knownList: () =>
+    apiPost<{ entries: KnownEntry[] }>('/api/known/list'),
+  knownRemove: (index: number) =>
+    apiPost<{ removed: number; remaining: number }>('/api/known/remove', { index }),
   snippetsList: () =>
     apiPost<{ snippets: { id: string; name: string; command: string; tags: string[] }[] }>(
       '/api/snippets/list',

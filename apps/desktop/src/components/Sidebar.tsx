@@ -3,6 +3,8 @@ import HostsView from './HostsView';
 import SnippetsView from './SnippetsView';
 import SettingsView from './SettingsView';
 import ForwardView from './ForwardView';
+import KeysView from './KeysView';
+import KnownHostsView from './KnownHostsView';
 
 // Placeholder views for milestones later in M1/M2 (see PRODUCT-SPEC.md).
 function Placeholder({ text }: { text: string }) {
@@ -29,8 +31,8 @@ export default function Sidebar() {
     case 'sftp':
       return <Placeholder text={t('sftp.placeholder')} />;
     case 'keys':
-      return <Placeholder text={t('keys.placeholder')} />;
+      return <KeysView />;
     case 'known':
-      return <Placeholder text={t('known.placeholder')} />;
+      return <KnownHostsView />;
   }
 }
