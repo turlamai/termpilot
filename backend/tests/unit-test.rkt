@@ -121,7 +121,8 @@
 ;; ---- ssh config import -----------------------------------------------------
 
 (require racket/file
-         (file "/Users/jiren/Codes/termpilot/backend/ssh-config.rkt"))
+         racket/runtime-path)
+(define-runtime-path ssh-config-mod "../ssh-config.rkt")
 
 (define tmpcfg (make-temporary-file "tpcfg-~a"))
 (with-output-to-file tmpcfg
@@ -130,6 +131,7 @@
     (displayln "Host web\n  HostName 10.0.0.5\n  User admin\n  Port 2222\n  ProxyJump bastion")
     (displayln "Host * !web\n  Compression yes")
     (displayln "Host bastion\n  HostName 10.0.0.1")))
+(define parse-ssh-config (dynamic-require ssh-config-mod 'parse-ssh-config))
 (define parsed (parse-ssh-config tmpcfg))
 (check-equal? (length parsed) 2 "wildcard and negation patterns excluded")
 (define web (findf (lambda (h) (string=? (hash-ref h 'label) "web")) parsed))
