@@ -61,6 +61,10 @@
     },
     {
       "method": "POST",
+      "path": "/api/update/check"
+    },
+    {
+      "method": "POST",
       "path": "/api/doctor/transports"
     },
     {
@@ -706,6 +710,15 @@
           "internal"
         ],
         "name": "terminalStream",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "updateCheck",
         "parameters": [],
         "result": {
           "kind": "scalar",

@@ -65,6 +65,11 @@ export default function TerminalPane({
       s.tabs.flatMap((tab) => tab.panes).find((p) => p.sessionId === sessionId),
   );
   const label = pane?.label ?? sessionId;
+  const tabsInTab = useApp(
+    (s: AppState) =>
+      s.tabs.find((t) => t.panes.some((p) => p.sessionId === sessionId))
+        ?.panes.length ?? 1,
+  );
   const fontSize = useApp((s: AppState) => s.termFontSize);
   const themeId = useApp((s: AppState) => s.termThemeId);
   const hostFontSize = useApp((s: AppState) => {
@@ -188,7 +193,7 @@ export default function TerminalPane({
       onMouseDown={() => focusSession(sessionId)}
     >
       <div className="terminal-pane-bar">
-        <span className="terminal-pane-title">{label}</span>
+        {tabsInTab > 1 && <span className="terminal-pane-title">{label}</span>}
         <span className="terminal-pane-tools">
           {copied && <span className="hint">{t('terminal.copied')}</span>}
           {searchOpen && (

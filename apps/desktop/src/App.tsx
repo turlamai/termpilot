@@ -8,6 +8,7 @@ import CommandPalette from './components/CommandPalette';
 import TerminalPane from './TerminalPane';
 import { Icon } from './components/Icon';
 import FeedbackLayer from './components/FeedbackLayer';
+import UpdateBanner from './components/UpdateBanner';
 
 export default function App() {
   const tabs = useApp((s) => s.tabs);
@@ -68,6 +69,7 @@ export default function App() {
         <Sidebar />
       </div>
       <main className="main">
+        <UpdateBanner />
         <TabBar />
         {activeTab ? (
           <div className="terminals">

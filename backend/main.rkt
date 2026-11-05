@@ -17,6 +17,7 @@
          glaze/events     ; make-event-bus
          glaze/types      ; GString, GInt64, GValue, GBytes
          file/sha1
+         glaze/update
          net/base64
          glaze/window     ; webview? / title for the selftest
          json
@@ -82,6 +83,30 @@
          (list (arithmetic-shift v -16))]
         [else '()])))
   (list->bytes (append* out)))
+
+;; ---- updates ----------------------------------------------------------------
+
+;; Commercial baseline: notify-and-open (not silent auto-install —
+;; unsigned auto-install is how update systems become attack surface).
+(define update-manifest-url
+  (or (getenv "TERMPILOT_UPDATE_MANIFEST")
+      "https://termpilot.jrtx.site/update-manifest.json"))
+(define update-box (box #f)) ; (cons checked-at info-or-false)
+
+(define (update-check)
+  (define cached (unbox update-box))
+  (define ttl 3600)
+  (cond
+    [(and cached
+          (< (- (current-seconds) (car cached)) ttl))
+     (cdr cached)]
+    [else
+     (define info
+       (with-handlers ([exn:fail? (lambda (_) #f)])
+         (check-update update-manifest-url
+                       #:current-version app-version)))
+     (set-box! update-box (cons (current-seconds) info))
+     info]))
 
 (define (hash-merge a b)
   (for/fold ([acc a]) ([(k v) (in-hash b)]) (hash-set acc k v)))
@@ -266,6 +291,15 @@
   [(POST "api/forward/status" #:returns GValue)
    (forward-status)
    (hasheq 'tunnels (tunnel-status))]
+
+  [(POST "api/update/check" #:returns GValue)
+   (update-status)
+   (define info (update-check))
+   (hasheq 'current app-version
+           'available (and info #t)
+           'version (if info (hash-ref info 'version #f) #f)
+           'url (if info (hash-ref info 'url #f) #f)
+           'notes (if info (hash-ref info 'notes #f) #f))]
 
   ;; transport availability (UI gates connection-kind options on this)
   [(POST "api/doctor/transports" #:returns GValue)

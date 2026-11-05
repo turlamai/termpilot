@@ -431,3 +431,17 @@ body {
 .confirm-box { width: min(380px, 90vw); }
 .confirm-box p { margin: 0 0 var(--space-4); color: var(--text-dim); font: var(--font-body); }
 .confirm-box .modal-actions { margin-top: 0; }
+
+
+/* ---- update banner: calm, dismissible, above the tab bar ---- */
+.update-banner {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  background: var(--bg-raised);
+  border-bottom: 1px solid var(--border);
+  font: var(--font-caption);
+  color: var(--text-dim);
+}
+.update-banner span { color: var(--text); }
+.update-banner-current { color: var(--text-dim) !important; }
+.update-banner .btn { min-height: 22px; padding: 0 var(--space-2); font-size: 11px; }

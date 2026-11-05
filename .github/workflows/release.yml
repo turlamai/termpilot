@@ -303,3 +303,25 @@ jobs:
             --notes-file RELEASE-NOTES.md \
             $EXTRA \
             artifacts/*
+
+      - name: Publish update manifest (site/update-manifest.json)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # The app's updater reads this JSON from termpilot.jrtx.site
+          # (Pages) and compares `version` against its own. `url` opens
+          # the release page — notify-and-open until the 1.0 signed
+          # auto-install chain exists.
+          NOTES=$(head -c 400 RELEASE-NOTES.md | tr '\n' ' ')
+          cat > site/update-manifest.json <<EOF
+          {
+            "version": "$VERSION",
+            "url": "https://github.com/turlamai/termpilot/releases/tag/v$VERSION",
+            "notes": "$NOTES"
+          }
+          EOF
+          git config user.name "release-bot"
+          git config user.email "release-bot@users.noreply.github.com"
+          git add site/update-manifest.json
+          git commit -m "update manifest: v$VERSION" || { echo "no manifest change"; exit 0; }
+          git push origin HEAD:main

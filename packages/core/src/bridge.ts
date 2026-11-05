@@ -326,6 +326,14 @@ export const api = {
       '/api/terminal/broadcast',
       { ids, data },
     ),
+  updateCheck: () =>
+    apiPost<{
+      current: string;
+      available: boolean;
+      version: string | null;
+      url: string | null;
+      notes: string | null;
+    }>('/api/update/check'),
   doctorTransports: () =>
     apiPost<{
       ssh: boolean;
