@@ -6,6 +6,27 @@ All notable changes to TermPilot are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-11-06
+
+The commercial-polish release: a designed system under the tool, and
+the update chain.
+
+### Added
+
+- Design tokens: 4pt spacing grid, type scale (caption/body/title),
+  semantic surface layers, consistent radii.
+- Control system: primary/quiet/danger button hierarchy with designed
+  hover/pressed/disabled states; global keyboard focus ring.
+- Materials: modal dim+blur and entrance motion; toast notifications;
+  promise-based in-app confirm dialogs replace window.confirm/alert.
+- Updater: notify-and-open — the release pipeline publishes an update
+  manifest to termpilot.jrtx.site, the app checks it (1 h cache,
+  semver compare) and offers a dismissible banner. Silent auto-install
+  waits for the 1.0 signed chain.
+- M2 additions: snippet groups + broadcast run, key import and
+  public-key distribution, session summary, failure-evidence export,
+  session logging to file.
+
 ## [0.2.0] — 2026-11-05
 
 M1 complete: the commercial core. First packaged release — macOS
@@ -73,6 +94,7 @@ product surface (bilingual README, pricing plan, homepage, CI).
   decision record, agent contract, product homepage, CI and release
   workflows.
 
-[Unreleased]: https://github.com/turlamai/termpilot/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/turlamai/termpilot/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/turlamai/termpilot/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/turlamai/termpilot/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/turlamai/termpilot/releases/tag/v0.1.0

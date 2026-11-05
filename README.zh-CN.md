@@ -14,7 +14,7 @@ TermPilot 是本地优先的桌面 SSH 客户端，功能对齐 Termius 并超�
 
 ## 从这里开始
 
-TermPilot 处于早期开发阶段（v0.2.0 开发预览）。架构已经验证——Racket 引擎经 GLZ1 把真实 PTY 会话流式推送给 xterm.js 前端——首个版本在路上。仓库当前交付的是可工作的垂直切片：主机存储、终端会话、BYOK AI 设置与脱敏。
+TermPilot 处于早期开发阶段（v0.3.0 开发预览）。架构已经验证——Racket 引擎经 GLZ1 把真实 PTY 会话流式推送给 xterm.js 前端——首个版本在路上。仓库当前交付的是可工作的垂直切片：主机存储、终端会话、BYOK AI 设置与脱敏。
 
 - 产品规格（功能矩阵 + 界面布局）：[docs/PRODUCT-SPEC.md](docs/PRODUCT-SPEC.md)
 - 架构：[ARCHITECTURE.md](ARCHITECTURE.md)
