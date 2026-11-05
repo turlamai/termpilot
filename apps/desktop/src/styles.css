@@ -7,15 +7,18 @@
    the light theme is a clean neutral grey-white with the same rule. */
 
 :root {
-  --bg: #1e2022;
-  --bg-raised: #26282b;
-  --bg-sidebar: #1a1c1e;
-  --bg-activity: #131415;
-  --text: #d7d9db;
-  --text-dim: #85888c;
-  --accent: #4c7d9e;
-  --accent-hover: #5c8fae;
-  --border: #303236;
+  /* Dark chrome is charcoal (never near-black): surfaces lift toward
+     the content, icons keep explicit high contrast — opacity dimming
+     on dark is how icons become invisible. */
+  --bg: #242629;
+  --bg-raised: #2c2e32;
+  --bg-sidebar: #1f2124;
+  --bg-activity: #191b1d;
+  --text: #e3e5e7;
+  --text-dim: #9da1a6;
+  --accent: #5c8fae;
+  --accent-hover: #6da0bd;
+  --border: #3a3d41;
   --error: #d46a6a;
   --terminal-bg: #141728;
 }
@@ -61,10 +64,13 @@ body {
   width: 40px; height: 40px;
   background: transparent; border: none; border-radius: 8px;
   font-size: 18px; cursor: pointer;
-  opacity: 0.55;
+  color: #b6b9bd; /* ≥7:1 on the activity strip */
 }
-.activity-item:hover { opacity: 0.85; }
-.activity-item.active { opacity: 1; background: rgba(212, 118, 74, 0.18); }
+.activity-item:hover { color: #ffffff; background: rgba(255, 255, 255, 0.07); }
+.activity-item.active {
+  color: #ffffff;
+  background: rgba(92, 143, 174, 0.28);
+}
 
 /* ---- sidebar ---- */
 .sidebar {
@@ -343,7 +349,7 @@ body {
   color: var(--text-dim); cursor: pointer;
   padding: 4px 7px; font-size: 12px;
 }
-.btn-icon:hover:not(:disabled) { color: var(--text); background: var(--bg-raised); }
+.btn-icon:hover:not(:disabled) { color: var(--text); background: rgba(255, 255, 255, 0.07); }
 .btn-icon:disabled { opacity: 0.4; cursor: default; }
 .hint { font-size: 12px; color: var(--text-dim); }
 .error { font-size: 12px; color: var(--error); word-break: break-all; }
