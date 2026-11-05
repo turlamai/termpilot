@@ -36,6 +36,7 @@ export default function TerminalPane({
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [copied, setCopied] = useState(false);
+  const [logging, setLogging] = useState(false);
 
   const pane = useApp(
     (s: AppState) =>
@@ -192,6 +193,21 @@ export default function TerminalPane({
             onClick={() => setSearchOpen((v) => !v)}
           >
             🔍
+          </button>
+          <button
+            className="btn-icon"
+            title={logging ? 'Stop logging' : 'Log session to file'}
+            onClick={() => {
+              if (logging) {
+                void api.terminalLogStop(sessionId);
+                setLogging(false);
+              } else {
+                void api.terminalLogStart(sessionId);
+                setLogging(true);
+              }
+            }}
+          >
+            {logging ? '⏺' : '⭘'}
           </button>
           {streamEnded && onReconnect && (
             <button

@@ -384,6 +384,15 @@
    (terminal-close [id string?])
    (close-session! sessions id)
    (hasheq 'ok #t)]
+  [(POST "api/terminal/log/start" #:returns GValue)
+   (terminal-log-start [id string?])
+   (define s (or (get-session sessions id)
+                 (error 'terminal/log "unknown session")))
+   (hasheq 'path (path->string (start-logging! sessions id (session-label s))))]
+  [(POST "api/terminal/log/stop" #:returns GValue)
+   (terminal-log-stop [id string?])
+   (stop-logging! sessions id)
+   (hasheq 'ok #t)]
   [(POST "api/sessions/list" #:returns GValue)
    (sessions-list)
    (hasheq 'sessions (list-sessions sessions))]

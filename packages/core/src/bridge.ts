@@ -324,6 +324,10 @@ export const api = {
       serial: boolean | string;
       'ssh-keygen': boolean;
     }>('/api/doctor/transports'),
+  terminalLogStart: (id: string) =>
+    apiPost<{ path: string }>('/api/terminal/log/start', { id }),
+  terminalLogStop: (id: string) =>
+    apiPost<{ ok: boolean }>('/api/terminal/log/stop', { id }),
   terminalClose: (id: string) =>
     apiPost<{ ok: boolean }>('/api/terminal/close', { id }),
   sessionsList: () => apiPost<{ sessions: SessionInfo[] }>('/api/sessions/list'),

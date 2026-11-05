@@ -5,11 +5,15 @@
 ;; feeds every streaming subscriber. Session state lives in this process
 ;; only — nothing about a live session persists.
 
-(require racket/format
+(require racket/file
+         racket/format
          racket/match
+         racket/path
          racket/random
          racket/runtime-path
          racket/set
+         racket/string
+         "platform.rkt"
          "pty.rkt")
 
 (define-runtime-path serial-mod "pty/serial.rkt")
@@ -29,7 +33,8 @@
    ring-size
    subscribers     ; set of output ports (one per stream consumer)
    closed?         ; sealed after child exit
-   exit-status)
+   exit-status
+   log-file)       ; output port when logging is on, #f otherwise
   #:transparent
   #:mutable)
 
@@ -103,7 +108,7 @@
              handle
              (list* (hash-ref spec 'command) (hash-ref spec 'args))
              (current-seconds)
-             '() 0 (set) #f #f))
+             '() 0 (set) #f #f #f))
   ;; The pump thread reads child output until EOF (child exit or close),
   ;; appends to the scrollback ring and fans out to every subscriber.
   ;; read-bytes-avail! (not read-bytes): it returns as soon as ANY byte
@@ -135,6 +140,12 @@
           (lock! mgr)
           (ring-append! s bs)
           (broadcast! s bs)
+          (define lf (session-log-file s))
+          (when lf
+            (with-handlers ([exn:fail? (lambda (_)
+                                         (set-session-log-file! s #f))])
+              (write-bytes bs lf)
+              (flush-output lf)))
           (unlock! mgr)
           (loop)]))))
   (lock! mgr)
@@ -144,6 +155,34 @@
 
 (define (pty-poll pty)
   ((pty-handle-poller pty)))
+
+;; ---- session logging (opt-in per session) ----------------------------------
+
+(define (log-dir)
+  (build-path (ensure-app-data-dir!) "session-logs"))
+
+;; Start logging an already-open session: the pump's next chunks append
+;; to a fresh file named <label>-<timestamp>.log.
+(define (start-logging! mgr id label)
+  (define s (get-session mgr id))
+  (and s
+       (let ([dir (log-dir)])
+         (unless (directory-exists? dir)
+           (make-directory* dir))
+         (define stamp
+           (~r (current-seconds) #:base 10 #:min-width 10 #:pad-string "0"))
+         (define safe
+           (string-replace (string-replace label "/" "_") ".." "_"))
+         (define path (build-path dir (format "~a-~a.log" safe stamp)))
+         (set-session-log-file! s (open-output-file path #:exists 'truncate))
+         path)))
+
+(define (stop-logging! mgr id)
+  (define s (get-session mgr id))
+  (when (and s (session-log-file s))
+    (close-output-port (session-log-file s))
+    (set-session-log-file! s #f))
+  (and s #t))
 
 (define (get-session mgr id)
   (hash-ref (manager-sessions mgr) id #f))
@@ -196,6 +235,8 @@
 (provide (struct-out session)
          (struct-out manager)
          make-manager
+         start-logging!
+         stop-logging!
          open-session!
          get-session
          write-session!

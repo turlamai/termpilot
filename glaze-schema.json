@@ -149,6 +149,14 @@
     },
     {
       "method": "POST",
+      "path": "/api/terminal/log/start"
+    },
+    {
+      "method": "POST",
+      "path": "/api/terminal/log/stop"
+    },
+    {
+      "method": "POST",
       "path": "/api/sessions/list"
     },
     {
@@ -587,6 +595,24 @@
           "internal"
         ],
         "name": "terminalInput",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "terminalLogStart",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "terminalLogStop",
         "parameters": [],
         "result": {
           "kind": "scalar",
