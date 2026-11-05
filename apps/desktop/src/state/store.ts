@@ -44,7 +44,9 @@ function detectTheme(): Theme {
   if (stored === 'light' || stored === 'dark' || stored === 'system') {
     return stored;
   }
-  return 'system';
+  // A terminal tool defaults to its dark skin; system-follow stays
+  // opt-in for people who want it.
+  return 'dark';
 }
 
 export interface AppState {
@@ -120,7 +122,7 @@ export const useApp = create<AppState>((set, get) => ({
   paletteOpen: false,
   outputRings: {},
   selections: {},
-  termThemeId: localStorage.getItem('termpilot-termtheme') ?? 'warm-dark',
+  termThemeId: localStorage.getItem('termpilot-termtheme') ?? 'pilot-dark',
   termFontSize: Number(localStorage.getItem('termpilot-fontsize') ?? 13) || 13,
 
   setView: (v) => set({ view: v }),

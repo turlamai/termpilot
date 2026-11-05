@@ -1,32 +1,37 @@
 /* TermPilot — family warm palette, light & dark, zero dependencies.
    Layout: activity bar | sidebar | main (tabs + terminals [+ AI panel]). */
 
+/* Neutral grayscale — the UI recedes behind terminal content
+   (Termius-style): near-black chrome, no hue, one restrained accent
+   reserved for primary actions only. Dark is the default tool skin;
+   the light theme is a clean neutral grey-white with the same rule. */
+
 :root {
-  --bg: #f5f2ed;
-  --bg-raised: #ffffff;
-  --bg-sidebar: #ede8e0;
-  --bg-activity: #1a1917;
-  --text: #2c2a26;
-  --text-dim: #6b675f;
-  --accent: #b0572c;
-  --accent-hover: #9c4c26;
-  --border: #d8d2c8;
-  --error: #a33;
-  --terminal-bg: #1a1917;
+  --bg: #1e2022;
+  --bg-raised: #26282b;
+  --bg-sidebar: #1a1c1e;
+  --bg-activity: #131415;
+  --text: #d7d9db;
+  --text-dim: #85888c;
+  --accent: #4c7d9e;
+  --accent-hover: #5c8fae;
+  --border: #303236;
+  --error: #d46a6a;
+  --terminal-bg: #141728;
 }
 
-[data-theme='dark'] {
-  --bg: #1c1b19;
-  --bg-raised: #242320;
-  --bg-sidebar: #1a1917;
-  --bg-activity: #141312;
-  --text: #e8e5e0;
-  --text-dim: #9a958c;
-  --accent: #d4764a;
-  --accent-hover: #e08559;
-  --border: #35332e;
-  --error: #e07b7b;
-  --terminal-bg: #141312;
+[data-theme='light'] {
+  --bg: #f2f3f4;
+  --bg-raised: #ffffff;
+  --bg-sidebar: #e9eaea;
+  --bg-activity: #212325;
+  --text: #242628;
+  --text-dim: #6e7175;
+  --accent: #38678a;
+  --accent-hover: #2f5a7b;
+  --border: #d4d6d8;
+  --error: #b04a4a;
+  --terminal-bg: #f7f8f9;
 }
 
 * { box-sizing: border-box; }

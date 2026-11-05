@@ -1,6 +1,8 @@
-// Terminal theme packs (xterm.js ITheme). The family warm palette plus
-// classics; light themes are named so the UI can pick a sane default per
-// app theme.
+// Terminal theme packs (xterm.js ITheme). Neutral, tool-grade sets —
+// the app chrome must recede behind terminal content, so themes carry
+// no decorative hue of their own. "pilot-dark" is the Termius-style
+// default (deep desaturated navy-black, soft green foreground, grey
+// cursor); light pairs with the neutral light UI.
 
 export interface TermTheme {
   id: string;
@@ -11,41 +13,59 @@ export interface TermTheme {
 
 export const termThemes: TermTheme[] = [
   {
-    id: 'warm-dark',
-    label: 'Warm Dark',
+    id: 'pilot-dark',
+    label: 'Pilot Dark (default)',
     dark: true,
     theme: {
-      background: '#1a1917',
-      foreground: '#e8e5e0',
-      cursor: '#e8e5e0',
-      selectionBackground: '#4a4a4a',
-      black: '#1a1917',
-      red: '#c9583a',
-      green: '#8aa46a',
-      yellow: '#c9a25a',
-      blue: '#7a8fb5',
-      magenta: '#a97fa0',
-      cyan: '#6fa0a0',
-      white: '#e8e5e0',
+      background: '#141728',
+      foreground: '#c8ccd2',
+      cursor: '#92a0a7',
+      cursorAccent: '#141728',
+      selectionBackground: '#3a4250',
+      black: '#141728',
+      red: '#e05b57',
+      green: '#5cc97c',
+      yellow: '#d9c96a',
+      blue: '#5d9fef',
+      magenta: '#ee7b79',
+      cyan: '#478fef',
+      white: '#d6dde0',
+      brightBlack: '#4a5060',
+      brightRed: '#e16866',
+      brightGreen: '#7ddc9b',
+      brightYellow: '#e7ebed',
+      brightBlue: '#346baf',
+      brightMagenta: '#ee7b79',
+      brightCyan: '#5d9fef',
+      brightWhite: '#ffffff',
     },
   },
   {
-    id: 'warm-light',
-    label: 'Warm Light',
+    id: 'pilot-light',
+    label: 'Pilot Light',
     dark: false,
     theme: {
-      background: '#f5f2ed',
-      foreground: '#2c2a26',
-      cursor: '#2c2a26',
-      selectionBackground: '#d8d2c8',
-      black: '#2c2a26',
-      red: '#b0572c',
-      green: '#5f7a3d',
-      yellow: '#a07d2c',
-      blue: '#3d5a8a',
-      magenta: '#8a4a7a',
-      cyan: '#2c7a7a',
-      white: '#f5f2ed',
+      background: '#f7f8f9',
+      foreground: '#2b2e31',
+      cursor: '#5a6a72',
+      cursorAccent: '#f7f8f9',
+      selectionBackground: '#d3dade',
+      black: '#2b2e31',
+      red: '#c23f3b',
+      green: '#2e8b4f',
+      yellow: '#9c7d18',
+      blue: '#2f62a8',
+      magenta: '#b44e4b',
+      cyan: '#1f7aa8',
+      white: '#c5c9cc',
+      brightBlack: '#6e7175',
+      brightRed: '#d0524e',
+      brightGreen: '#3aa55e',
+      brightYellow: '#b09420',
+      brightBlue: '#3d76c2',
+      brightMagenta: '#c65e5a',
+      brightCyan: '#2a92c4',
+      brightWhite: '#ffffff',
     },
   },
   {

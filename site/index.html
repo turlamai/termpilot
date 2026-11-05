@@ -9,7 +9,7 @@
 <script>
   (function () {
     var t = localStorage.getItem('termpilot-theme');
-    if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    if (!t) t = 'dark'; // a tool site defaults to its dark skin
     document.documentElement.dataset.theme = t;
     var l = localStorage.getItem('termpilot-lang');
     if (!l) l = (navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';

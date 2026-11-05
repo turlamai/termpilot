@@ -2,25 +2,27 @@
    light & dark, zero dependencies, self-hosted system fonts only. */
 
 :root {
-  --bg: #f5f2ed;
-  --bg-alt: #ede8e0;
-  --bg-raised: #ffffff;
-  --text: #2c2a26;
-  --text-dim: #6b675f;
-  --accent: #b0572c;
-  --accent-hover: #9c4c26;
-  --border: #d8d2c8;
+  /* Neutral, tool-grade palette: greyscale chrome, one restrained
+     accent, dark default — the site mirrors the app skin. */
+  --bg: #1e2022;
+  --bg-alt: #1a1c1e;
+  --bg-raised: #26282b;
+  --text: #d7d9db;
+  --text-dim: #85888c;
+  --accent: #4c7d9e;
+  --accent-hover: #5c8fae;
+  --border: #303236;
 }
 
-[data-theme="dark"] {
-  --bg: #1c1b19;
-  --bg-alt: #232220;
-  --bg-raised: #2a2825;
-  --text: #e8e5e0;
-  --text-dim: #9a958c;
-  --accent: #d4764a;
-  --accent-hover: #e08559;
-  --border: #3a3833;
+[data-theme="light"] {
+  --bg: #f2f3f4;
+  --bg-alt: #e9eaea;
+  --bg-raised: #ffffff;
+  --text: #242628;
+  --text-dim: #6e7175;
+  --accent: #38678a;
+  --accent-hover: #2f5a7b;
+  --border: #d4d6d8;
 }
 
 * { box-sizing: border-box; }
