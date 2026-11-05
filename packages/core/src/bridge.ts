@@ -166,6 +166,18 @@ export interface HostProfile {
   'connection-kind': string;
 }
 
+export interface ForwardRule {
+  id: string;
+  name: string;
+  kind: 'local' | 'remote' | 'dynamic';
+  'host-id': string;
+  'bind-host': string;
+  'local-port': number;
+  'remote-host': string;
+  'remote-port': number;
+  'created-at': number;
+}
+
 export interface SessionInfo {
   id: string;
   kind: string;
@@ -193,6 +205,25 @@ export const api = {
     }>('/api/data/export'),
   dataImport: (data: unknown) =>
     apiPost<{ hosts: number; snippets: number }>('/api/data/import', { data }),
+  forwardRules: () =>
+    apiPost<{
+      rules: ForwardRule[];
+    }>('/api/forward/rules'),
+  forwardCreate: (rule: Omit<ForwardRule, 'id' | 'created-at'>) =>
+    apiPost<ForwardRule>('/api/forward/create', { rule }),
+  forwardDelete: (id: string) =>
+    apiPost<{ ok: boolean }>('/api/forward/delete', { id }),
+  forwardStart: (id: string) =>
+    apiPost<{ started?: boolean; 'already-running'?: boolean }>(
+      '/api/forward/start',
+      { id },
+    ),
+  forwardStop: (id: string) =>
+    apiPost<{ stopped?: boolean; running?: boolean }>('/api/forward/stop', { id }),
+  forwardStatus: () =>
+    apiPost<{ tunnels: { id: string; running: boolean }[] }>(
+      '/api/forward/status',
+    ),
   snippetsList: () =>
     apiPost<{ snippets: { id: string; name: string; command: string; tags: string[] }[] }>(
       '/api/snippets/list',

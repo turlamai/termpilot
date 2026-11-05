@@ -216,8 +216,53 @@
   (exec! "DELETE FROM snippets WHERE id = ?" (list id))
   #t)
 
+;; ---- forwarding rules -------------------------------------------------------
+
+(define (row->rule row)
+  (hasheq 'id (hash-ref row 'id)
+          'name (hash-ref row 'name)
+          'kind (hash-ref row 'kind)
+          'host-id (hash-ref row 'host_id)
+          'bind-host (hash-ref row 'bind_host)
+          'local-port (hash-ref row 'local_port)
+          'remote-host (hash-ref row 'remote_host)
+          'remote-port (hash-ref row 'remote_port)
+          'created-at (hash-ref row 'created_at)))
+
+(define (list-rules)
+  (for/list ([row (in-list
+                   (select "SELECT * FROM forwarding_rules
+                            ORDER BY created_at"))])
+    (row->rule row)))
+
+(define (get-rule id)
+  (match (select "SELECT * FROM forwarding_rules WHERE id = ?" (list id))
+    [(list row) (row->rule row)]
+    [_ #f]))
+
+(define (insert-rule! r)
+  (define id (new-id!))
+  (exec! "INSERT INTO forwarding_rules (id, name, kind, host_id, bind_host,
+            local_port, remote_host, remote_port, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+         (list id
+               (hash-ref r 'name)
+               (hash-ref r 'kind)
+               (hash-ref r 'host-id "")
+               (hash-ref r 'bind-host "")
+               (hash-ref r 'local-port)
+               (hash-ref r 'remote-host "")
+               (hash-ref r 'remote-port 0)
+               (current-seconds)))
+  (get-rule id))
+
+(define (delete-rule! id)
+  (exec! "DELETE FROM forwarding_rules WHERE id = ?" (list id))
+  #t)
+
 (provide db-path
          (rename-out [init! store-init!])
+         list-rules get-rule insert-rule! delete-rule!
          list-hosts
          get-host
          insert-host!

@@ -37,6 +37,30 @@
     },
     {
       "method": "POST",
+      "path": "/api/forward/rules"
+    },
+    {
+      "method": "POST",
+      "path": "/api/forward/create"
+    },
+    {
+      "method": "POST",
+      "path": "/api/forward/delete"
+    },
+    {
+      "method": "POST",
+      "path": "/api/forward/start"
+    },
+    {
+      "method": "POST",
+      "path": "/api/forward/stop"
+    },
+    {
+      "method": "POST",
+      "path": "/api/forward/status"
+    },
+    {
+      "method": "POST",
       "path": "/api/snippets/list"
     },
     {
@@ -177,6 +201,60 @@
       {
         "errors": [],
         "name": "dataImport",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "forwardCreate",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "forwardDelete",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "forwardRules",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "forwardStart",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "forwardStatus",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "forwardStop",
         "parameters": [],
         "result": {
           "kind": "scalar",

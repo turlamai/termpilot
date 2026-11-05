@@ -25,6 +25,7 @@
          racket/set
          racket/string
          "ai/ai.rkt"
+         "forwarding.rkt"
          "session.rkt"
          "ssh-config.rkt"
          "ssh.rkt"
@@ -176,6 +177,29 @@
      (insert-snippet! sn))
    (hasheq 'hosts (length (hash-ref data 'hosts '()))
            'snippets (length (hash-ref data 'snippets '())))]
+
+  ;; forwarding rules + tunnels
+  [(POST "api/forward/rules" #:returns GValue)
+   (forward-rules)
+   (hasheq 'rules (list-rules))]
+  [(POST "api/forward/create" #:returns GValue)
+   (forward-create [rule hash?])
+   (insert-rule! rule)]
+  [(POST "api/forward/delete" #:returns GValue)
+   (forward-delete [id string?])
+   (stop-tunnel! id) ; stop first if running
+   (delete-rule! id)]
+  [(POST "api/forward/start" #:returns GValue)
+   (forward-start [id string?])
+   (define rule (or (get-rule id) (error 'forward/start "unknown rule")))
+   (parameterize ([current-custodian session-custodian])
+     (start-tunnel! rule))]
+  [(POST "api/forward/stop" #:returns GValue)
+   (forward-stop [id string?])
+   (stop-tunnel! id)]
+  [(POST "api/forward/status" #:returns GValue)
+   (forward-status)
+   (hasheq 'tunnels (tunnel-status))]
 
   ;; snippets
   [(POST "api/snippets/list" #:returns GValue)

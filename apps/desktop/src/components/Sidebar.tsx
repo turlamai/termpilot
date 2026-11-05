@@ -2,6 +2,7 @@ import { useApp } from '../state/store';
 import HostsView from './HostsView';
 import SnippetsView from './SnippetsView';
 import SettingsView from './SettingsView';
+import ForwardView from './ForwardView';
 
 // Placeholder views for milestones later in M1/M2 (see PRODUCT-SPEC.md).
 function Placeholder({ text }: { text: string }) {
@@ -23,10 +24,10 @@ export default function Sidebar() {
       return <SnippetsView />;
     case 'settings':
       return <SettingsView />;
+    case 'forward':
+      return <ForwardView />;
     case 'sftp':
       return <Placeholder text={t('sftp.placeholder')} />;
-    case 'forward':
-      return <Placeholder text={t('forward.placeholder')} />;
     case 'keys':
       return <Placeholder text={t('keys.placeholder')} />;
     case 'known':
