@@ -128,26 +128,31 @@ jobs:
       - name: HTTP adapter smoke (packaged binary serves API and frontend)
         run: |
           set -euo pipefail
+          export WEBKIT_DISABLE_DMABUF_RENDERER=1
           data_dir="$(mktemp -d)"
-          TERMPILOT_TRANSPORT=http TERMPILOT_DATA_DIR="$data_dir" GLAZE_API_TOKEN=smoke-token \
-            find dist -type f -name TermPilot -o -name "TermPilot*" | head -1 > /tmp/binpath
-          BIN="$(cat /tmp/binpath)"
-          test -n "$BIN" || { echo "::error::packaged binary not found"; exit 1; }
-          chmod +x "$BIN" || true
-          setsid xvfb-run -a "$BIN" &
-          app_pid=$!
-          trap 'kill -9 $app_pid 2>/dev/null || true' exit
+          export TERMPILOT_TRANSPORT=http TERMPILOT_DATA_DIR="$data_dir" GLAZE_API_TOKEN=smoke-token
+          BIN="$(find dist -type f \( -name 'TermPilot' -o -name 'TermPilot.*' \) ! -name '*.sha256' | head -1)"
+          test -n "$BIN" || { echo "::error::packaged binary not found"; ls -R dist | head -40; exit 1; }
+          chmod +x "$BIN"
+          cd "$(dirname "$BIN")"
+          setsid xvfb-run -a "./$(basename "$BIN")" &
+          run_pid=$!
+          trap 'kill -9 -- "-$run_pid" 2>/dev/null || true' exit
+          # setsid detaches the app from $!, so probe every listening TCP
+          # port system-wide; the token-protected health endpoint decides
+          # which port is the app (family policy).
           port=""
           for _ in $(seq 1 15); do
             sleep 2
-            kill -0 "$app_pid" 2>/dev/null || { echo "::error::packaged app exited early"; exit 1; }
-            for p in $(lsof -a -p "$app_pid" -iTCP -sTCP:LISTEN -P -n 2>/dev/null | grep -oE ':[0-9]+' | tr -d ':' | sort -u); do
-              if curl -fsS -m 10 -H "X-Glaze-Token: smoke-token" "http://127.0.0.1:$p/api/health" 2>/dev/null | grep -q '"ok":true'; then
+            kill -0 "$run_pid" 2>/dev/null || { echo "::error::packaged app exited early"; exit 1; }
+            ports="$(lsof -iTCP -sTCP:LISTEN -P -n 2>/dev/null | grep -oE ':[0-9]+' | tr -d ':' | sort -u || true)"
+            for p in $ports; do
+              if curl -fsS -m 5 -H "X-Glaze-Token: smoke-token" "http://127.0.0.1:$p/api/health" 2>/dev/null | grep -q '"ok":true'; then
                 port="$p"; break
               fi
             done
             [ -n "$port" ] && break
           done
           [ -n "$port" ] || { echo "::error::packaged app never listened"; exit 1; }
-          code="$(curl -s -o /dev/null -w '%{http_code}' -m 5 "http://127.0.0.1:$p/")"
+          code="$(curl -s -o /dev/null -w '%{http_code}' -m 5 "http://127.0.0.1:$port/")"
           [ "$code" = "200" ] || { echo "::error::frontend returned $code"; exit 1; }
