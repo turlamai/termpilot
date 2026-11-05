@@ -35,8 +35,10 @@
     [(macosx)
      (list* "/usr/bin/script" "-q" "-t" "0" "/dev/null"
             command args)]
+    ;; util-linux: -f flushes after each write (-F is the newer
+    ;; flush-interval option, absent on e.g. util-linux 2.39).
     [else
-     (list* "/usr/bin/script" "-q" "-F" "/dev/null"
+     (list* "/usr/bin/script" "-q" "-f" "/dev/null"
             command args)]))
 
 ;; Spawn `command args` inside a fresh pty owned by script(1); returns a
