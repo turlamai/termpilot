@@ -6,10 +6,18 @@ All notable changes to TermPilot are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-11-05
+
+M1 complete: the commercial core. First packaged release — macOS
+(arm64/x64), Windows and Linux artifacts from the release pipeline.
+
 ### Added — M1 complete (commercial core)
 
 - Product spec (docs/PRODUCT-SPEC.md): Termius-parity feature matrix,
   UI layout, milestone mapping.
+- Neutral tool skin: hueless grayscale chrome, dark default, one
+  restrained accent; SF-style monochrome icon set; Termius-derived
+  pilot-dark terminal theme.
 - Commercial UI shell: activity bar (hosts/SFTP/forwarding/snippets/
   keys/known-hosts/settings), group-tree sidebar with search, session
   tabs with split panes, collapsible AI panel, ⌘K command palette,
@@ -65,5 +73,6 @@ product surface (bilingual README, pricing plan, homepage, CI).
   decision record, agent contract, product homepage, CI and release
   workflows.
 
-[Unreleased]: https://github.com/turlamai/termpilot/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/turlamai/termpilot/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/turlamai/termpilot/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/turlamai/termpilot/releases/tag/v0.1.0

@@ -14,6 +14,7 @@ import { WebLinksAddon } from '@xterm/addon-web-links';
 import { Terminal } from '@xterm/xterm';
 import { api, apiStream, findTermTheme } from '@termpilot/core';
 import { useApp, type AppState } from './state/store';
+import { Icon } from './components/Icon';
 
 export interface TerminalPaneProps {
   sessionId: string;
@@ -190,9 +191,10 @@ export default function TerminalPane({
           <button
             className="btn-icon"
             title={t('terminal.search')}
+            aria-label={t('terminal.search')}
             onClick={() => setSearchOpen((v) => !v)}
           >
-            🔍
+            <Icon name="search" size={13} />
           </button>
           <button
             className="btn-icon"
@@ -207,7 +209,7 @@ export default function TerminalPane({
               }
             }}
           >
-            {logging ? '⏺' : '⭘'}
+            <Icon name={logging ? 'circle-dot' : 'circle'} size={13} />
           </button>
           {streamEnded && onReconnect && (
             <button
@@ -215,11 +217,11 @@ export default function TerminalPane({
               title={t('terminal.reconnect')}
               onClick={onReconnect}
             >
-              ⟳
+              <Icon name="rotate-cw" size={13} />
             </button>
           )}
           <button className="btn-icon" title="Close" onClick={onClose}>
-            ✕
+            <Icon name="x" size={13} />
           </button>
         </span>
       </div>

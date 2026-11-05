@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@termpilot/core';
 import { useApp } from '../state/store';
+import { Icon } from './Icon';
 
 export default function SnippetsView() {
   const snippets = useApp((s) => s.snippets);
@@ -78,14 +79,14 @@ export default function SnippetsView() {
                 disabled={!focusedSessionId}
                 onClick={() => void run(s)}
               >
-                ▶
+                <Icon name="zap" size={13} />
               </button>
               <button
                 className="btn-icon"
                 title={t('common.delete')}
                 onClick={() => void remove(s.id)}
               >
-                ✕
+                <Icon name="x" size={13} />
               </button>
             </div>
           </div>

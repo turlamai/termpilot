@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api } from '@termpilot/core';
 import { useApp } from '../state/store';
+import { Icon } from './Icon';
 
 interface RedactPreview {
   counts: [string, number][];
@@ -57,7 +58,7 @@ export default function AiPanel() {
       <div className="ai-panel-bar">
         <span>{t('ai.panel')}</span>
         <button className="btn-icon" onClick={() => setAiPanel(false)}>
-          ✕
+          <Icon name="x" size={13} />
         </button>
       </div>
       <div className="ai-panel-body">

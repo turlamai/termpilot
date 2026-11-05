@@ -6,6 +6,7 @@ import TabBar from './components/TabBar';
 import AiPanel from './components/AiPanel';
 import CommandPalette from './components/CommandPalette';
 import TerminalPane from './TerminalPane';
+import { Icon } from './components/Icon';
 
 export default function App() {
   const tabs = useApp((s) => s.tabs);
@@ -95,8 +96,8 @@ export default function App() {
       <CommandPalette />
       {/* Floating AI panel opener when collapsed */}
       {!aiPanelOpen && (
-        <button className="ai-fab" title="AI (⌘B)" onClick={() => setAiPanel(true)}>
-          ✦
+        <button className="ai-fab" title="AI (⌘B)" aria-label="AI" onClick={() => setAiPanel(true)}>
+          <Icon name="sparkles" size={18} />
         </button>
       )}
     </div>

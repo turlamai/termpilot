@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../state/store';
 import { api, type HostProfile } from '@termpilot/core';
 import HostEditor from './HostEditor';
+import { Icon } from './Icon';
 
 function hostAddr(h: HostProfile): string {
   return `${h.username ? `${h.username}@` : ''}${h.host}${h.port !== 22 ? `:${h.port}` : ''}`;
@@ -23,7 +24,7 @@ function HostRow({ host }: { host: HostProfile }) {
         <span className="host-addr">{hostAddr(host)}</span>
       </button>
       <button className="btn-icon" title={t('common.edit')} onClick={() => setEditing(true)}>
-        ✎
+        <Icon name="pencil" size={13} />
       </button>
       {editing && <HostEditor host={host} onClose={() => setEditing(false)} />}
     </div>

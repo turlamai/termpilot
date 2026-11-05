@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useApp } from '../state/store';
+import { Icon, type IconName } from './Icon';
 
-const KIND_ICON: Record<string, string> = {
-  ssh: '🖥',
-  local: '⌂',
-  telnet: '☎',
-  mosh: '📶',
-  serial: '🔌',
+const KIND_ICON: Record<string, IconName> = {
+  ssh: 'square-terminal',
+  local: 'home',
+  telnet: 'phone',
+  mosh: 'wifi',
+  serial: 'plug',
 };
 
 export default function TabBar() {
@@ -35,7 +36,9 @@ export default function TabBar() {
               className={`tab ${tab.id === activeTabId ? 'active' : ''}`}
               onClick={() => useApp.setState({ activeTabId: tab.id })}
             >
-              <span className="tab-icon">{KIND_ICON[first.kind] ?? '🖥'}</span>
+              <span className="tab-icon">
+                <Icon name={KIND_ICON[first.kind] ?? 'square-terminal'} size={13} />
+              </span>
               <span className="tab-title">{title}</span>
               <button
                 className="btn-icon"
@@ -45,7 +48,7 @@ export default function TabBar() {
                   closeTab(tab.id);
                 }}
               >
-                ✕
+                <Icon name="x" size={13} />
               </button>
             </div>
           );
@@ -53,7 +56,7 @@ export default function TabBar() {
       </div>
       <div className="tab-actions">
         <button className="btn-icon" title={t('tabs.new-local')} onClick={() => void openSession({ kind: 'local' })}>
-          ＋
+          <Icon name="plus" size={15} />
         </button>
         <button
           className="btn-icon"
@@ -61,7 +64,7 @@ export default function TabBar() {
           disabled={!activeTab}
           onClick={() => setSplitting(true)}
         >
-          ⫿
+          <Icon name="columns-2" size={15} />
         </button>
       </div>
       {splitting && (
@@ -76,7 +79,7 @@ export default function TabBar() {
                   void openSession({ kind: 'local' }, { split: true });
                 }}
               >
-                ⌂ {t('common.local')}
+                <Icon name="home" size={14} /> {t('common.local')}
               </button>
               {hosts.map((h) => (
                 <button
@@ -87,7 +90,7 @@ export default function TabBar() {
                     void openSession({ 'host-id': h.id }, { split: true });
                   }}
                 >
-                  🖥 {h.label}
+                  <Icon name="square-terminal" size={14} /> {h.label}
                 </button>
               ))}
             </div>
