@@ -15,7 +15,8 @@
          glaze/api        ; GET, POST, streaming-response
          glaze/api-macros ; define-api-routes
          glaze/events     ; make-event-bus
-         glaze/types      ; GString, GInt64, GValue
+         glaze/types      ; GString, GInt64, GValue, GBytes
+         net/base64
          glaze/window     ; webview? / title for the selftest
          json
          racket/format
@@ -29,6 +30,7 @@
          "forwarding.rkt"
          "keys.rkt"
          "knownhosts.rkt"
+         "sftp.rkt"
          "session.rkt"
          "ssh-config.rkt"
          "transports.rkt"
@@ -41,6 +43,44 @@
 ;; Keep in sync with package.json and CHANGELOG.md; the release
 ;; workflow's validate job fails the tag if they disagree.
 (define app-version "0.1.0")
+
+;; net/base64 in Racket 9.3 ships only the stream encoder; a compact
+;; standard-table decoder for the GBytes payloads (base64 strings).
+(define b64-alphabet
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")
+
+(define (b64-value c)
+  (define idx (index-of (string->list b64-alphabet) c))
+  (or (and idx (- (length (string->list b64-alphabet)) (length (member c (string->list b64-alphabet)))))
+      0))
+
+(define (base64-decode s)
+  (define clean (string-trim s))
+  (define chars (string->list (string-trim clean #:left? #f #:right? #t "=")))
+  (define vals
+    (for/list ([c (in-list chars)]) (b64-value c)))
+  (define (slice4 lst)
+    (if (null? lst)
+        '()
+        (let-values ([(head tail) (split-at lst (min 4 (length lst)))])
+          (cons head (slice4 tail)))))
+  (define out
+    (for/list ([chunk (in-list (slice4 vals))])
+      (case (length chunk)
+        [(4)
+         (define v (+ (* (list-ref chunk 0) 262144)
+                      (* (list-ref chunk 1) 4096)
+                      (* (list-ref chunk 2) 64)
+                      (list-ref chunk 3)))
+         (list (arithmetic-shift v -16) (bitwise-and (arithmetic-shift v -8) 255) (bitwise-and v 255))]
+        [(3)
+         (define v (+ (* (list-ref chunk 0) 262144) (* (list-ref chunk 1) 4096) (* (list-ref chunk 2) 64)))
+         (list (arithmetic-shift v -16) (bitwise-and (arithmetic-shift v -8) 255))]
+        [(2)
+         (define v (+ (* (list-ref chunk 0) 262144) (* (list-ref chunk 1) 4096)))
+         (list (arithmetic-shift v -16))]
+        [else '()])))
+  (list->bytes (append* out)))
 
 (define (hash-merge a b)
   (for/fold ([acc a]) ([(k v) (in-hash b)]) (hash-set acc k v)))
@@ -234,6 +274,34 @@
            'mosh (and (find-executable-path "mosh") #t)
            'serial (if (eq? (system-type 'os) 'windows) "windows-leg" #t)
            'ssh-keygen (and (find-executable-path "ssh-keygen") #t))]
+
+  ;; sftp
+  [(POST "api/sftp/list" #:returns GValue)
+   (sftp-list [host-id string?] [path string?])
+   (hasheq 'path path 'entries (list-dir host-id path))]
+  [(POST "api/sftp/mkdir" #:returns GValue)
+   (sftp-mkdir [host-id string?] [path string?])
+   (mkdir! host-id path)
+   (hasheq 'ok #t)]
+  [(POST "api/sftp/delete" #:returns GValue)
+   (sftp-delete [host-id string?] [path string?])
+   (remove! host-id path)
+   (hasheq 'ok #t)]
+  [(POST "api/sftp/rmdir" #:returns GValue)
+   (sftp-rmdir [host-id string?] [path string?])
+   (remove-dir! host-id path)
+   (hasheq 'ok #t)]
+  [(POST "api/sftp/download" #:returns GBytes)
+   (sftp-download [host-id string?] [path string?])
+   (download! host-id path)]
+  [(POST "api/sftp/upload" #:returns GValue)
+   (sftp-upload [host-id string?] [path string?] [data GBytes])
+   (define payload
+     (if (string? data)
+         (base64-decode data)
+         data))
+   (upload! host-id path payload)
+   (hasheq 'ok #t)]
 
   ;; ssh keys
   [(POST "api/keys/list" #:returns GValue)

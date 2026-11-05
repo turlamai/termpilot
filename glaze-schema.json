@@ -65,6 +65,30 @@
     },
     {
       "method": "POST",
+      "path": "/api/sftp/list"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sftp/mkdir"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sftp/delete"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sftp/rmdir"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sftp/download"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sftp/upload"
+    },
+    {
+      "method": "POST",
       "path": "/api/keys/list"
     },
     {
@@ -427,6 +451,68 @@
         "errors": [],
         "name": "sessionsList",
         "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "sftpDelete",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "sftpDownload",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Bytes"
+        }
+      },
+      {
+        "errors": [],
+        "name": "sftpList",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "sftpMkdir",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "sftpRmdir",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "sftpUpload",
+        "parameters": [
+          {
+            "name": "data",
+            "type": {
+              "kind": "scalar",
+              "name": "Bytes"
+            }
+          }
+        ],
         "result": {
           "kind": "scalar",
           "name": "Value"

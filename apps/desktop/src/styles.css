@@ -298,6 +298,19 @@ body {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .snippet-actions { display: flex; }
+.sftp-cwd {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 11px; color: var(--text-dim);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex: 1;
+}
+.pub-key {
+  display: block; word-break: break-all;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px; background: var(--bg-sidebar); border-radius: 6px;
+  padding: 10px;
+}
+.btn.disabled { opacity: 0.5; }
 .inline-form { display: flex; flex-direction: column; gap: 6px; }
 .inline-form input {
   border: 1px solid var(--border); border-radius: 6px;

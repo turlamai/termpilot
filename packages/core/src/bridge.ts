@@ -247,6 +247,28 @@ export const api = {
     apiPost<{ tunnels: { id: string; running: boolean }[] }>(
       '/api/forward/status',
     ),
+  sftpList: (hostId: string, path: string) =>
+    apiPost<{
+      path: string;
+      entries: { name: string; dir: boolean; size: number | null; perms: string }[];
+    }>('/api/sftp/list', { 'host-id': hostId, path }),
+  sftpMkdir: (hostId: string, path: string) =>
+    apiPost<{ ok: boolean }>('/api/sftp/mkdir', { 'host-id': hostId, path }),
+  sftpDelete: (hostId: string, path: string) =>
+    apiPost<{ ok: boolean }>('/api/sftp/delete', { 'host-id': hostId, path }),
+  sftpRmdir: (hostId: string, path: string) =>
+    apiPost<{ ok: boolean }>('/api/sftp/rmdir', { 'host-id': hostId, path }),
+  sftpDownload: (hostId: string, path: string) =>
+    apiPost<string>('/api/sftp/download', { 'host-id': hostId, path }),
+  sftpUpload: (hostId: string, path: string, data: Uint8Array) =>
+    apiPost<{ ok: boolean }>(
+      '/api/sftp/upload',
+      {
+        'host-id': hostId,
+        path,
+        data: btoa(String.fromCharCode(...data)),
+      },
+    ),
   keysList: () =>
     apiPost<{ keys: KeyEntry[] }>('/api/keys/list'),
   keyMeta: (name: string) =>
