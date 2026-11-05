@@ -147,7 +147,7 @@ jobs:
             kill -0 "$run_pid" 2>/dev/null || { echo "::error::packaged app exited early"; exit 1; }
             ports="$(lsof -iTCP -sTCP:LISTEN -P -n 2>/dev/null | grep -oE ':[0-9]+' | tr -d ':' | sort -u || true)"
             for p in $ports; do
-              if curl -fsS -m 5 -H "X-Glaze-Token: smoke-token" "http://127.0.0.1:$p/api/health" 2>/dev/null | grep -q '"ok":true'; then
+              if curl -fsS -m 5 -X POST -H "X-Glaze-Token: smoke-token" "http://127.0.0.1:$p/api/health" 2>/dev/null | grep -q '"ok":true'; then
                 port="$p"; break
               fi
             done
