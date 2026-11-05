@@ -8,7 +8,7 @@ AI 原生的 SSH 客户端，覆盖 macOS、Windows 与 Linux。
 
 > 📖 **产品主页**：[termpilot.jrtx.site](https://termpilot.jrtx.site)
 
-TermPilot 是本地优先的桌面 SSH 客户端：主机管理（分组/标签）、基于系统 OpenSSH 的真实终端会话（agent 认证、ProxyJump、known_hosts 开箱即用）、Snippets、端口转发，以及 AI 助手——生成命令、解释输出，用你自己的模型 API key，发送前先脱敏。
+TermPilot 是本地优先的桌面 SSH 客户端，功能对齐 Termius 并超出：六种连接类型（SSH、本地终端、telnet、mosh、串口、SFTP）、主机管理（分组/标签）、基于系统 OpenSSH 的真实终端会话（agent 认证、ProxyJump、known_hosts 开箱即用）、Snippets、端口转发，以及 AI 助手——生成命令、解释输出，用你自己的模型 API key，发送前先脱敏。
 
 **Human-first. Agent-native. Local by design.**
 
@@ -16,6 +16,7 @@ TermPilot 是本地优先的桌面 SSH 客户端：主机管理（分组/标签�
 
 TermPilot 处于早期开发阶段（v0.1.0）。架构已经验证——Racket 引擎经 GLZ1 把真实 PTY 会话流式推送给 xterm.js 前端——首个版本在路上。仓库当前交付的是可工作的垂直切片：主机存储、终端会话、BYOK AI 设置与脱敏。
 
+- 产品规格（功能矩阵 + 界面布局）：[docs/PRODUCT-SPEC.md](docs/PRODUCT-SPEC.md)
 - 架构：[ARCHITECTURE.md](ARCHITECTURE.md)
 - 开发约定：[AGENTS.md](AGENTS.md)
 - 定价意向：[PRICING.zh-CN.md](PRICING.zh-CN.md) · [English](PRICING.md)

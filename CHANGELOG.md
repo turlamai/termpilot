@@ -6,6 +6,14 @@ All notable changes to TermPilot are documented here. Format follows
 
 ## [Unreleased]
 
+### Added
+
+- Product spec: Termius-parity feature matrix (six connection types —
+  SSH, local, telnet, mosh, serial, SFTP), terminal floor (split view,
+  themes, broadcast input), AI-native additions (⌘K palette, selection
+  explain, redaction preview, CLI + MCP), and the UI layout design
+  (activity bar / sidebar / tabs + split / AI panel).
+
 ## [0.1.0] — 2026-11-04
 
 Project inception. The vertical slice is proven end to end: the Racket

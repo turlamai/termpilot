@@ -8,11 +8,13 @@ The AI-native SSH client for macOS, Windows and Linux.
 
 > 📖 **Product homepage**: [termpilot.jrtx.site](https://termpilot.jrtx.site)
 
-TermPilot is a local-first desktop SSH client: host management with groups
-and tags, real terminal sessions over the system OpenSSH (agent auth,
-ProxyJump and known_hosts work out of the box), snippets, port forwarding,
-and an AI assistant that drafts commands and explains output — with your
-own model API key, redacted before anything leaves the machine.
+TermPilot is a local-first desktop SSH client at Termius feature
+parity or better: six connection types (SSH, local terminal, telnet,
+mosh, serial, SFTP), host management with groups and tags, real
+terminal sessions over the system OpenSSH (agent auth, ProxyJump and
+known_hosts work out of the box), snippets, port forwarding, and an AI
+assistant that drafts commands and explains output — with your own
+model API key, redacted before anything leaves the machine.
 
 **Human-first. Agent-native. Local by design.**
 
@@ -24,6 +26,7 @@ GLZ1 — and the first release is on the way. What ships today in the
 repository is the working vertical slice: host store, terminal sessions,
 BYOK AI settings with redaction.
 
+- Product spec (feature matrix + UI layout): [docs/PRODUCT-SPEC.md](docs/PRODUCT-SPEC.md)
 - Architecture: [ARCHITECTURE.md](ARCHITECTURE.md)
 - Development: [AGENTS.md](AGENTS.md)
 - Pricing intent: [PRICING.md](PRICING.md) · [中文](PRICING.zh-CN.md)

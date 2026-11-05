@@ -90,12 +90,16 @@ account, no telemetry.
 
 ## Milestones
 
+The authoritative feature matrix, UI layout and milestone mapping live
+in [docs/PRODUCT-SPEC.md](docs/PRODUCT-SPEC.md) (Termius-parity floor
+plus AI-native additions). Summary:
+
 - M0 (this repository): vertical slice — host store, terminal sessions
   over the bridge, BYOK AI settings, site, CI.
-- M1: host manager UX (groups/tags/`~/.ssh/config` import), snippets
-  UI, port forwarding, AI panel (⌘K generate, selection explain),
+- M1: commercial core — host manager, tabs + split view, themes,
+  forwarding UI, snippets, ⌘K/explain/redaction UI, export/import,
   in-app updater.
-- M2: SFTP, SSH key manager, local shell tabs, CLI + MCP agent
-  interface, signing and notarization.
-- M3: commercial chain (Permit/Commerce), Flatpak bundle,
-  COMMERCIAL-CHECKLIST.
+- M2: reach + agent surface — SFTP, serial, telnet, mosh, key and
+  known-hosts managers, broadcast input, CLI + MCP, signing.
+- M3: commercial chain (Permit/Commerce), encrypted export, Flatpak,
+  FIDO2 keygen, COMMERCIAL-CHECKLIST.
