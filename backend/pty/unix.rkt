@@ -30,16 +30,27 @@
 
 (struct script-proc (proc stdin stdout) #:transparent)
 
+;; POSIX-shell single-quote: util-linux script runs its -c argument
+;; through sh -c, so the argv must be re-quoted into one string.
+(define (shell-quote str)
+  (string-append "'" (string-replace str "'" "'\\''") "'"))
+
 (define (script-argv command args)
   (case (system-type 'os)
+    ;; BSD script (macOS) takes the command as positional argv and
+    ;; flushes continuously with -t 0.
     [(macosx)
      (list* "/usr/bin/script" "-q" "-t" "0" "/dev/null"
             command args)]
-    ;; util-linux: -f flushes after each write (-F is the newer
-    ;; flush-interval option, absent on e.g. util-linux 2.39).
+    ;; util-linux 2.39 usage is `script [options] [file]` — no
+    ;; positional command; the child goes through -c as ONE shell
+    ;; string. -f flushes after each write (-F, the newer
+    ;; flush-interval option, does not exist on 2.39).
     [else
-     (list* "/usr/bin/script" "-q" "-f" "/dev/null"
-            command args)]))
+     (list* "/usr/bin/script" "-q" "-f" "-c"
+            (string-join
+             (map shell-quote (cons command args)))
+            "/dev/null")]))
 
 ;; Spawn `command args` inside a fresh pty owned by script(1); returns a
 ;; pty-handle whose ports are Racket-integrated pipes.
