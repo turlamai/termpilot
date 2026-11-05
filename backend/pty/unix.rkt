@@ -47,10 +47,9 @@
     ;; string. -f flushes after each write (-F, the newer
     ;; flush-interval option, does not exist on 2.39).
     [else
-     (list* "/usr/bin/script" "-q" "-f" "-c"
-            (string-join
-             (map shell-quote (cons command args)))
-            "/dev/null")]))
+     (list "/usr/bin/script" "-q" "-f" "-c"
+           (string-join (map shell-quote (cons command args)) " ")
+           "/dev/null")]))
 
 ;; Spawn `command args` inside a fresh pty owned by script(1); returns a
 ;; pty-handle whose ports are Racket-integrated pipes.

@@ -51,7 +51,10 @@ jobs:
           true
 
       - name: Backend tests (unit + pty smoke)
-        run: raco test backend/
+        run: |
+          set -o pipefail
+          racket backend/tests/unit-test.rkt
+          racket backend/tests/pty-smoke.rkt
         env:
           TERMPILOT_DATA_DIR: /tmp/termpilot-test-data
 
