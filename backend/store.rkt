@@ -44,7 +44,7 @@
 (define (init!)
   (define (ddl! stmt)
     (with-handlers ([exn:fail? void]) (exec! stmt)))
-  (exec! "CREATE TABLE IF NOT EXISTS hosts (
+  (void (exec! "CREATE TABLE IF NOT EXISTS hosts (
             id TEXT PRIMARY KEY,
             label TEXT NOT NULL,
             host TEXT NOT NULL,
@@ -58,12 +58,18 @@
             strict_host_key TEXT NOT NULL DEFAULT 'accept-new',
             sort_order INTEGER NOT NULL DEFAULT 0,
             created_at INTEGER NOT NULL,
-            updated_at INTEGER NOT NULL)")
+            updated_at INTEGER NOT NULL)"))
   (try-add-column! "hosts" "jump" "TEXT NOT NULL DEFAULT ''")
   (try-add-column! "hosts" "startup_snippet" "TEXT NOT NULL DEFAULT ''")
   (try-add-column! "hosts" "keep_alive" "INTEGER NOT NULL DEFAULT 0")
   (try-add-column! "hosts" "font_size" "INTEGER NOT NULL DEFAULT 0")
   (try-add-column! "hosts" "connection_kind" "TEXT NOT NULL DEFAULT 'ssh'")
+  (void (exec! "CREATE TABLE IF NOT EXISTS snippets (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            command TEXT NOT NULL,
+            tags TEXT NOT NULL DEFAULT '[]',
+            created_at INTEGER NOT NULL)"))
   (ddl! "CREATE TABLE IF NOT EXISTS forwarding_rules (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
