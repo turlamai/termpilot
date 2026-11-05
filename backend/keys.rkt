@@ -34,6 +34,7 @@
   (define dir (ssh-dir))
   (unless (directory-exists? dir) '())
   (for/list ([f (in-list (directory-list dir))]
+             #:when (file-exists? (build-path dir f))
              #:unless (string-suffix? (path->string f) ".pub")
              #:unless (string-prefix? (path->string f) "known_hosts")
              #:unless (string=? (path->string f) "config")

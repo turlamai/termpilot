@@ -6,13 +6,38 @@ All notable changes to TermPilot are documented here. Format follows
 
 ## [Unreleased]
 
-### Added
+### Added — M1 complete (commercial core)
 
-- Product spec: Termius-parity feature matrix (six connection types —
-  SSH, local, telnet, mosh, serial, SFTP), terminal floor (split view,
-  themes, broadcast input), AI-native additions (⌘K palette, selection
-  explain, redaction preview, CLI + MCP), and the UI layout design
-  (activity bar / sidebar / tabs + split / AI panel).
+- Product spec (docs/PRODUCT-SPEC.md): Termius-parity feature matrix,
+  UI layout, milestone mapping.
+- Commercial UI shell: activity bar (hosts/SFTP/forwarding/snippets/
+  keys/known-hosts/settings), group-tree sidebar with search, session
+  tabs with split panes, collapsible AI panel, ⌘K command palette,
+  bilingual UI (zh/en), light/dark/system theme.
+- Hosts: full CRUD (auth, jump chain, startup command, keepalive,
+  per-host terminal font size), `~/.ssh/config` import (concrete
+  entries only, dedup), JSON export/import.
+- Terminal floor: xterm.js with search, clickable links, copy on
+  select, reconnect affordance, six theme packs, global + per-host
+  font sizes; sessions stream over GLZ1 with scrollback replay.
+- Port forwarding: saved rules drive `ssh -N -L/-R/-D` sidecars under
+  the app custodian; start/stop/status live in the Forwarding view.
+- Key manager: inventory (permissions/size), ssh-keygen generation,
+  fingerprint disclosure, public-key-only content, guarded deletion.
+- Known-hosts manager: search + index-based atomic removal.
+- Transports beyond SSH: telnet and mosh sidecars (availability-
+  gated), serial through a one-shot termios configuration with plain
+  file ports (baud/parity/stop/data bits; smoke-tested against a pty
+  stand-in; read leg validates on hardware), broadcast input with
+  per-session results.
+- SFTP: batch-mode sidecar operations (list/mkdir/rm/rmdir, inline
+  download/upload with a 10 MiB cap) in the file manager view.
+- AI governance in the UI: redaction preview before every send, ⌘K
+  drafts insert-only (never auto-run), BYOK presets from the backend
+  route, connectivity test, 0600 key custody with __SAVED__ sentinel.
+- Agent surface: `cli.rkt` (hosts/snippets/transports [--json], one-
+  shot run with honest exit codes) and `mcp.rkt` (stdio JSON-RPC MCP
+  server: list_hosts, list_snippets, run_command).
 
 ## [0.1.0] — 2026-11-04
 

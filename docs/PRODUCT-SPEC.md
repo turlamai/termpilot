@@ -15,12 +15,12 @@ session, one scrollback ring, one streaming channel):
 
 | Type | Termius | TermPilot | Engine note |
 |---|---|---|---|
-| SSH | ✓ | ✓ (v0.1) | sidecar OpenSSH; agent/ProxyJump/known_hosts free |
-| Local terminal | ✓ | ✓ (v0.1) | `$SHELL` on a pty |
-| Telnet | ✓ | M1 | `telnet` sidecar when present; doctor checks |
-| Mosh | ✓ | M1 | `mosh` sidecar; doctor checks; UDP note in UI |
-| Serial | ✓ | M2 | device + termios (baud/parity/stop/flow); no forkpty needed — configure the fd once, then plain file ports |
-| SFTP | ✓ | M2 | file browser over the transport seam |
+| SSH | ✓ | ✓ shipped | sidecar OpenSSH; agent/ProxyJump/known_hosts free |
+| Local terminal | ✓ | ✓ shipped | `$SHELL` on a pty |
+| Telnet | ✓ | ✓ shipped | `telnet` sidecar, availability-gated (doctor/transports) |
+| Mosh | ✓ | ✓ shipped | `mosh` sidecar, availability-gated |
+| Serial | ✓ | ✓ shipped | one-shot termios config + plain file ports (read leg validates on hardware) |
+| SFTP | ✓ | ✓ shipped | batch-mode sidecar; inline transfers ≤10 MiB |
 
 Rule: the transport seam (`backend/ssh.rkt`, to become
 `backend/transports/`) maps a connection profile to `command + args`
@@ -29,30 +29,27 @@ never knows which binary serves a session.
 
 ## 2. Terminal (parity floor)
 
-- Tabs + split view (2×2, drag to rearrange) — M1
-- Themes (family warm palette set, import xterm.js themes) + per-host
-  font/size override — M1
-- Search in terminal, clickable links, copy-on-select — M1
-- Scrollback ring (done: 512 KiB, replay on re-attach)
+- Tabs + split view — ✓ shipped (drag-rearrange pending)
+- Themes (six packs) + global and per-host font size — ✓ shipped
+- Search in terminal, clickable links, copy-on-select — ✓ shipped
+- Scrollback ring — ✓ shipped (512 KiB, replay on re-attach)
 - Session logging to file (per-host opt-in) — M2
-- Broadcast input (type once, fans out to the selected sessions) — M2
-- Reconnect on drop + keepalive (done: ServerAliveInterval) — M1 polish
+- Broadcast input — ✓ shipped (per-session results)
+- Reconnect on drop + keepalive override — ✓ shipped
 
 ## 3. Hosts, keys, forwarding, snippets (parity floor)
 
 - Hosts: groups, tags, search, `~/.ssh/config` import, jump chains,
-  per-host overrides (auth, strict host key, startup snippet, encoding,
-  keepalive, terminal profile) — M1
-- Known-hosts manager: view/search, remove stale entries — M2
-- Keys: generate Ed25519/ECDSA/RSA; import OpenSSH/PEM; public-key
-  distribution to hosts; agent status view — M2
-  (FIDO2 `ed25519-sk` keys work through the sidecar when the hardware
-  key is present; keygen for `-sk` types follows the sidecar, M3)
+  per-host overrides (auth, strict host key, startup snippet, keepalive,
+  terminal font) — ✓ shipped
+- Known-hosts manager: view/search, remove stale entries — ✓ shipped
+- Keys: generate Ed25519/ECDSA/RSA, fingerprint disclosure, public-key
+  inspection, guarded deletion — ✓ shipped (public-key distribution to
+  hosts: M2; import OpenSSH/PEM: M2)
 - Port forwarding: local/remote/dynamic rules, per-host binding,
-  start/stop with session, rules list view — M1
-- Snippets: groups, parameter placeholders (`{{var}}` filled on run),
-  run in current session or broadcast; AI may draft a snippet, the user
-  saves it — M1
+  start/stop with session, rules list view — ✓ shipped
+- Snippets: parameter placeholders (`{{var}}` filled on run), run in
+  current session — ✓ shipped (groups + broadcast run: M2)
 
 ## 4. AI-native additions (beyond Termius)
 
@@ -62,13 +59,13 @@ before send; BYOK only):
 
 | Capability | Surface | Milestone |
 |---|---|---|
-| ⌘K command bar: NL → command draft → preview → insert into the focused terminal (never auto-run) | overlay palette | M1 |
-| Selection explain / error diagnose: selected output → what happened, why, next step | side panel | M1 |
-| Redaction preview: before any send, show counts and masked shapes | side panel + toast | M1 (engine done) |
-| AI-drafted snippets: save an assistant answer as a snippet | snippet editor | M1 |
+| ⌘K command bar: NL → command draft → preview → insert into the focused terminal (never auto-run) | overlay palette | ✓ shipped |
+| Selection explain / error diagnose | side panel | ✓ shipped |
+| Redaction preview before every send | side panel + palette | ✓ shipped |
+| AI-drafted snippets | snippet editor | M1 polish |
 | Session summary: long session → digest for handover/issue text | side panel | M2 |
-| Failure evidence export: bounded, fingerprinted diagnostics for coding agents (family idiom) | CLI | M2 |
-| Deterministic JSON CLI + MCP server: list hosts, run one-shot commands, manage snippets — for coding agents | CLI/MCP | M2 |
+| Failure evidence export (bounded, fingerprinted) | CLI | M2 |
+| Deterministic CLI + MCP server | cli.rkt / mcp.rkt | ✓ shipped |
 
 ## 5. Sync, vault, teams
 
