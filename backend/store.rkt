@@ -34,6 +34,7 @@
   (sql-select (db) stmt params))
 
 (define (init!)
+  (void
   (exec! "CREATE TABLE IF NOT EXISTS hosts (
             id TEXT PRIMARY KEY,
             label TEXT NOT NULL,
@@ -54,7 +55,7 @@
             name TEXT NOT NULL,
             command TEXT NOT NULL,
             tags TEXT NOT NULL DEFAULT '[]',
-            created_at INTEGER NOT NULL)"))
+            created_at INTEGER NOT NULL)")))
 
 ;; ---- ids -------------------------------------------------------------------
 
