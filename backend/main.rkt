@@ -16,6 +16,7 @@
          glaze/api-macros ; define-api-routes
          glaze/events     ; make-event-bus
          glaze/types      ; GString, GInt64, GValue, GBytes
+         file/sha1
          net/base64
          glaze/window     ; webview? / title for the selftest
          json
@@ -320,6 +321,16 @@
   [(POST "api/keys/delete" #:returns GValue)
    (keys-delete [name string?])
    (delete-key! name)]
+  [(POST "api/keys/import" #:returns GValue)
+   (keys-import [name string?] [content string?])
+   (import-key! name content)]
+  [(POST "api/keys/distribute" #:returns GValue)
+   (keys-distribute [name string?] [host-id string?])
+   (define h (or (get-host host-id)
+                 (error 'keys/distribute "unknown host")))
+   (define-values (ok? output)
+     (distribute-pubkey! name (host-profile h)))
+   (hasheq 'ok ok? 'output output 'host (hash-ref h 'label))]
 
   ;; known hosts
   [(POST "api/known/list" #:returns GValue)
@@ -426,14 +437,40 @@
    (generate-command intent host-context terminal)]
   [(POST "api/ai/explain" #:returns GValue)
    (ai-explain [output string?])
-   (explain-output output)])
+   (explain-output output)]
+  [(POST "api/ai/summarize" #:returns GValue)
+   (ai-summarize [output string?])
+   (summarize-session output)]
+  ;; Failure evidence: a bounded, fingerprinted diagnostic dump of one
+  ;; session's recent output (family idiom — sized to stay out of LLM
+  ;; context, with a sha256 so agents can cite and dedupe it).
+  [(POST "api/terminal/evidence" #:returns GValue)
+   (terminal-evidence [id string?])
+   (define s (or (get-session sessions id)
+                 (error 'terminal/evidence "unknown session")))
+   (define ring-text
+     (bytes->string/utf-8 (apply bytes-append (session-ring s)) #\?))
+   (define tail
+     (if (> (string-length ring-text) 16000)
+         (substring ring-text (- (string-length ring-text) 16000))
+         ring-text))
+   (define fingerprint (sha1 (open-input-bytes (string->bytes/utf-8 tail))))
+   (hasheq 'session id
+           'label (session-label s)
+           'kind (symbol->string (session-kind s))
+           'captured-at (current-seconds)
+           'sha1 fingerprint
+           'bytes (string-length tail)
+           'output tail)])
 
 ;; ---- app -------------------------------------------------------------------
 
 (define-runtime-path frontend-dist "../apps/desktop/dist")
 
 (module+ main
-  
+  ;; Create the schema before the server accepts anything.
+  (void (store-init!))
+
   ;; TERMPILOT_TRANSPORT=http switches to the explicit dev adapter; the
   ;; production shape is the native GLZ1 carrier (no loopback TCP).
   (define transport

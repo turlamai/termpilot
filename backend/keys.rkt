@@ -21,8 +21,90 @@
          list-keys
          key-meta
          generate-key!
+         import-key!
          public-key-of
+         distribute-pubkey!
          delete-key!)
+
+;; Import an OpenSSH private key (PEM or new format) by content: write
+;; to ~/.ssh/<name> with 0600, derive the public half via
+;; `ssh-keygen -y`, and refuse anything that does not parse. The
+;; content crosses the bridge once (the UI prompts for it explicitly);
+;; it is never echoed back.
+(define (import-key! name content)
+  (unless (regexp-match? #px"^[A-Za-z0-9._-]+$" name)
+    (error 'keys/import "key name must be plain [A-Za-z0-9._-]"))
+  (unless (or (string-contains? content "PRIVATE KEY")
+              (string-prefix? content "-----BEGIN"))
+    (error 'keys/import "content does not look like a private key"))
+  (define full (build-path (ssh-dir) name))
+  (when (file-exists? full)
+    (error 'keys/import "key already exists: ~a" name))
+  (unless (directory-exists? (ssh-dir))
+    (make-directory* (ssh-dir)))
+  (with-output-to-file full
+    (lambda () (display (string-ensure-newline content)))
+    #:exists 'truncate)
+  (file-or-directory-permissions full #o600)
+  ;; Derive the public half; a bogus key fails here and is removed.
+  (define keygen (or (find-executable-path "ssh-keygen")
+                     (error 'keys/import "ssh-keygen not found")))
+  (define pub-out
+    (with-output-to-string
+      (lambda ()
+        (with-handlers ([exn:fail? void])
+          (system* keygen "-y" "-f" full)))))
+  (when (or (string=? (string-trim pub-out) "")
+            (not (string-prefix? (string-trim pub-out) "ssh-")))
+    (delete-file full)
+    (error 'keys/import "key did not parse (ssh-keygen -y failed)"))
+  (with-output-to-file (build-path (ssh-dir) (string-append name ".pub"))
+    (lambda () (displayln (string-trim pub-out)))
+    #:exists 'truncate)
+  (hasheq 'name name 'imported #t))
+
+(define (string-ensure-newline s)
+  (if (string-suffix? s "
+") s (string-append s "
+")))
+
+;; Distribute a key's public half to a host (ssh-copy-id semantics,
+;; BatchMode so it only works when some other auth already works):
+;; install the .ssh dir at the right mode and append the pubkey to
+;; authorized_keys atomically, then report what happened.
+(define (distribute-pubkey! name profile)
+  (define pub (public-key-of name))
+  (define ssh (or (find-executable-path "ssh")
+                  (error 'keys/distribute "ssh not found")))
+  (define host (hash-ref profile 'host))
+  (define port (hash-ref profile 'port 22))
+  (define user (hash-ref profile 'username ""))
+  (define identity-file (hash-ref profile 'identity-file ""))
+  (define destination
+    (if (string=? user "") host (format "~a@~a" user host)))
+  (define remote-script
+    "install -d -m 700 ~/.ssh && touch ~/.ssh/authorized_keys && grep -qxF '$PUB' ~/.ssh/authorized_keys || echo '$PUB' >> ~/.ssh/authorized_keys; chmod 600 ~/.ssh/authorized_keys")
+  ;; Pass the pubkey via stdin to keep it out of process listings.
+  (define-values (proc stdout stdin stderr)
+    (apply subprocess #f #f #f ssh
+           (append
+            (list "-o" "BatchMode=yes"
+                  "-o" (format "StrictHostKeyChecking=~a"
+                               (hash-ref profile 'strict-host-key "accept-new"))
+                  "-o" "ConnectTimeout=12")
+            (if (not (= port 22)) (list "-p" (number->string port)) '())
+            (if (not (string=? identity-file ""))
+                (list "-i" identity-file)
+                '())
+            (list destination remote-script))))
+  (display pub stdin)
+  (close-output-port stdin)
+  (define out (port->string stdout))
+  (define err (port->string stderr))
+  (subprocess-wait proc)
+  (define st (subprocess-status proc))
+  (values (and st (eq? st 'done))
+          (string-append out err)))
 
 (define (ssh-dir)
   (build-path (find-system-path 'home-dir) ".ssh"))

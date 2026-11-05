@@ -282,6 +282,16 @@ export const api = {
     apiPost<{ name: string; public: string }>('/api/keys/public', { name }),
   keyDelete: (name: string) =>
     apiPost<{ name: string; deleted: boolean }>('/api/keys/delete', { name }),
+  keyImport: (name: string, content: string) =>
+    apiPost<{ name: string; imported: boolean }>('/api/keys/import', {
+      name,
+      content,
+    }),
+  keyDistribute: (name: string, hostId: string) =>
+    apiPost<{ ok: boolean; output: string; host: string }>(
+      '/api/keys/distribute',
+      { name, 'host-id': hostId },
+    ),
   knownList: () =>
     apiPost<{ entries: KnownEntry[] }>('/api/known/list'),
   knownRemove: (index: number) =>
@@ -328,6 +338,16 @@ export const api = {
     apiPost<{ path: string }>('/api/terminal/log/start', { id }),
   terminalLogStop: (id: string) =>
     apiPost<{ ok: boolean }>('/api/terminal/log/stop', { id }),
+  terminalEvidence: (id: string) =>
+    apiPost<{
+      session: string;
+      label: string;
+      kind: string;
+      'captured-at': number;
+      sha1: string;
+      bytes: number;
+      output: string;
+    }>('/api/terminal/evidence', { id }),
   terminalClose: (id: string) =>
     apiPost<{ ok: boolean }>('/api/terminal/close', { id }),
   sessionsList: () => apiPost<{ sessions: SessionInfo[] }>('/api/sessions/list'),
@@ -372,4 +392,6 @@ export const api = {
     }),
   aiExplain: (output: string) =>
     apiPost<{ text: string }>('/api/ai/explain', { output }),
+  aiSummarize: (output: string) =>
+    apiPost<{ text: string }>('/api/ai/summarize', { output }),
 };

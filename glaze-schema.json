@@ -109,6 +109,14 @@
     },
     {
       "method": "POST",
+      "path": "/api/keys/import"
+    },
+    {
+      "method": "POST",
+      "path": "/api/keys/distribute"
+    },
+    {
+      "method": "POST",
       "path": "/api/known/list"
     },
     {
@@ -190,6 +198,14 @@
     {
       "method": "POST",
       "path": "/api/ai/explain"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/summarize"
+    },
+    {
+      "method": "POST",
+      "path": "/api/terminal/evidence"
     }
   ],
   "schema": {
@@ -251,6 +267,15 @@
       {
         "errors": [],
         "name": "aiSettingsTest",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "aiSummarize",
         "parameters": [],
         "result": {
           "kind": "scalar",
@@ -403,7 +428,25 @@
       },
       {
         "errors": [],
+        "name": "keysDistribute",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
         "name": "keysGenerate",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "keysImport",
         "parameters": [],
         "result": {
           "kind": "scalar",
@@ -579,6 +622,15 @@
           "internal"
         ],
         "name": "terminalClose",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "terminalEvidence",
         "parameters": [],
         "result": {
           "kind": "scalar",

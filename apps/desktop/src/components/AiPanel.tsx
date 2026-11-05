@@ -19,6 +19,7 @@ export default function AiPanel() {
   const [error, setError] = useState('');
   const [preview, setPreview] = useState<RedactPreview | null>(null);
   const [pendingText, setPendingText] = useState('');
+  const recentOutput = useApp((s) => s.recentOutput);
 
   const selection = focusedSessionId
     ? (selections[focusedSessionId] ?? '')
@@ -33,6 +34,23 @@ export default function AiPanel() {
       const p = await api.aiRedactPreview(text);
       setPreview({ counts: p.counts, clean: p.clean });
       setPendingText(text);
+    } catch (e) {
+      setError(String(e));
+    }
+    setBusy(false);
+  };
+
+  // Session summary: digest the recent output tail for handover.
+  const summarize = async () => {
+    if (!focusedSessionId) return;
+    const output = recentOutput(focusedSessionId, 12000);
+    if (!output.trim()) return;
+    setBusy(true);
+    setError('');
+    setExplanation('');
+    try {
+      const r = await api.aiSummarize(output);
+      setExplanation(r.text);
     } catch (e) {
       setError(String(e));
     }
@@ -68,6 +86,13 @@ export default function AiPanel() {
           onClick={() => void explain(selection)}
         >
           {t('ai.explain.selection')}
+        </button>
+        <button
+          className="btn btn-block"
+          disabled={busy || !(focusedSessionId && recentOutput(focusedSessionId).trim())}
+          onClick={() => void summarize()}
+        >
+          {t('ai.summarize')}
         </button>
 
         {preview && (

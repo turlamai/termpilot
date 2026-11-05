@@ -132,6 +132,25 @@ user intent plus optional context (host/os, recent terminal output),
 return ONE shell command line ready to run on the remote host. Reply with
 exactly one line: the command. No markdown fences, no explanation.")
 
+(define system-prompt-summary
+  "You are the session assistant inside TermPilot, an SSH client.
+Summarize the given terminal session excerpt for handover: what was
+done, what changed on the system, any errors hit and their resolution
+status, and open follow-ups. Answer in the language of the output, in
+at most 150 words, as short plain-text bullet lines.")
+
+;; POST api/ai/summarize {output} -> {text} — handover digest of a
+;; session excerpt (the UI sends the tail of the scrollback).
+(define (summarize-session output)
+  (define call (resolve-llm-call))
+  (define reply
+    (ask (llm-call-model call)
+         (maybe-redact output (llm-call-settings call))
+         #:system system-prompt-summary
+         #:max-tokens 500
+         #:api-key (llm-call-key call)))
+  (hasheq 'text (string-trim reply)))
+
 (define system-prompt-explain
   "You are the output assistant inside TermPilot, an SSH client. Explain
 the given terminal output: what happened, why it failed if it did, and
@@ -205,6 +224,7 @@ terminal output, in at most 120 words, plain text.")
          save-settings-from-ui!
          generate-command
          explain-output
+         summarize-session
          test-settings!
          redact-preview
          presets-view

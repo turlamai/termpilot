@@ -38,6 +38,27 @@ export default function TerminalPane({
   const [searchText, setSearchText] = useState('');
   const [copied, setCopied] = useState(false);
   const [logging, setLogging] = useState(false);
+  const [evidenceSaved, setEvidenceSaved] = useState(false);
+
+  const saveEvidence = async () => {
+    try {
+      const ev = await api.terminalEvidence(sessionId);
+      const blob = new Blob(
+        [JSON.stringify(ev, null, 2)],
+        { type: 'application/json' },
+      );
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `termpilot-evidence-${ev.sha1.slice(0, 8)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setEvidenceSaved(true);
+      setTimeout(() => setEvidenceSaved(false), 1200);
+    } catch {
+      // evidence export is best-effort
+    }
+  };
 
   const pane = useApp(
     (s: AppState) =>
@@ -211,6 +232,14 @@ export default function TerminalPane({
           >
             <Icon name={logging ? 'circle-dot' : 'circle'} size={13} />
           </button>
+          <button
+            className="btn-icon"
+            title={t('terminal.evidence')}
+            onClick={() => void saveEvidence()}
+          >
+            <Icon name="shield" size={13} />
+          </button>
+          {evidenceSaved && <span className="hint">✓</span>}
           {streamEnded && onReconnect && (
             <button
               className="btn-icon"
