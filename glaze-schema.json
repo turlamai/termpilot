@@ -65,6 +65,10 @@
     },
     {
       "method": "POST",
+      "path": "/api/ai/presets"
+    },
+    {
+      "method": "POST",
       "path": "/api/ai/settings/save"
     },
     {
@@ -98,6 +102,15 @@
       {
         "errors": [],
         "name": "aiGenerate",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "aiPresets",
         "parameters": [],
         "result": {
           "kind": "scalar",

@@ -190,6 +190,9 @@
   [(POST "api/ai/settings" #:returns GValue)
    (ai-settings)
    (settings-view)]
+  [(POST "api/ai/presets" #:returns GValue)
+   (ai-presets)
+   (hasheq 'presets (presets-view))]
   [(POST "api/ai/settings/save" #:returns GValue)
    (ai-settings-save [provider string?] [model string?]
                      [base-url string?] [api-key string?]

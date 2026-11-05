@@ -191,12 +191,23 @@ terminal output, in at most 120 words, plain text.")
            #:api-key (llm-call-key call)))
     (hasheq 'ok #t 'message reply)))
 
+;; GET api/ai/presets — the settings dropdown's data source; the
+;; backend preset table is the single source of truth.
+(define (presets-view)
+  (for/list ([p (in-list provider-presets)])
+    (hasheq 'id (preset-id p)
+            'label (preset-label p)
+            'model (preset-model p)
+            'base-url (preset-base-url p)
+            'kind (preset-kind p))))
+
 (provide settings-view
          save-settings-from-ui!
          generate-command
          explain-output
          test-settings!
          redact-preview
+         presets-view
          (struct-out preset)
          find-preset
          provider-presets)

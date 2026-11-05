@@ -178,9 +178,16 @@ export const api = {
   hostDelete: (id: string) =>
     apiPost<{ ok: boolean }>('/api/hosts/delete', { id }),
   snippetsList: () =>
-    apiPost<{ snippets: { id: string; name: string; command: string }[] }>(
+    apiPost<{ snippets: { id: string; name: string; command: string; tags: string[] }[] }>(
       '/api/snippets/list',
     ),
+  snippetCreate: (snippet: {
+    name: string;
+    command: string;
+    tags?: string[];
+  }) => apiPost<{ id: string }>('/api/snippets/create', { snippet }),
+  snippetDelete: (id: string) =>
+    apiPost<{ ok: boolean }>('/api/snippets/delete', { id }),
   terminalOpen: (body: {
     'host-id'?: string;
     kind?: string;
@@ -206,6 +213,16 @@ export const api = {
       'api-key': string;
       'redact-enabled': boolean;
     }>('/api/ai/settings'),
+  aiPresets: () =>
+    apiPost<{
+      presets: {
+        id: string;
+        label: string;
+        model: string;
+        'base-url': string;
+        kind: string;
+      }[];
+    }>('/api/ai/presets'),
   aiSettingsSave: (body: {
     provider: string;
     model: string;
@@ -215,6 +232,12 @@ export const api = {
   }) => apiPost<Record<string, unknown>>('/api/ai/settings/save', body),
   aiSettingsTest: () =>
     apiPost<{ ok: boolean; message: string }>('/api/ai/settings/test'),
+  aiRedactPreview: (text: string) =>
+    apiPost<{
+      text: string;
+      counts: [string, number][];
+      clean: boolean;
+    }>('/api/ai/redact-preview', { text }),
   aiGenerate: (intent: string, hostContext?: string, terminal?: string) =>
     apiPost<{ command: string }>('/api/ai/generate', {
       intent,

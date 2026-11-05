@@ -1,110 +1,100 @@
-import { useCallback, useEffect, useState } from 'react';
-import { api, type HostProfile } from '@termpilot/core';
-import TerminalView from './TerminalView';
+import { useEffect } from 'react';
+import { useApp } from './state/store';
+import ActivityBar from './components/ActivityBar';
+import Sidebar from './components/Sidebar';
+import TabBar from './components/TabBar';
+import AiPanel from './components/AiPanel';
+import CommandPalette from './components/CommandPalette';
+import TerminalPane from './TerminalPane';
 
-interface AppProps {
-  // injected by the smoke/selftest harness
-  selftest?: boolean;
-}
+export default function App() {
+  const tabs = useApp((s) => s.tabs);
+  const activeTabId = useApp((s) => s.activeTabId);
+  const focusedSessionId = useApp((s) => s.focusedSessionId);
+  const closePane = useApp((s) => s.closePane);
+  const aiPanelOpen = useApp((s) => s.aiPanelOpen);
+  const setAiPanel = useApp((s) => s.setAiPanel);
+  const setPalette = useApp((s) => s.setPalette);
+  const theme = useApp((s) => s.theme);
+  const refreshHosts = useApp((s) => s.refreshHosts);
 
-export default function App(_props: AppProps) {
-  const [hosts, setHosts] = useState<HostProfile[]>([]);
-  const [activeSessions, setActiveSessions] = useState<string[]>([]);
-  const [backendOk, setBackendOk] = useState<boolean | null>(null);
-  const [error, setError] = useState('');
-
-  const refresh = useCallback(async () => {
-    try {
-      const { hosts: list } = await api.hostsList();
-      setHosts(list);
-      setBackendOk(true);
-      setError('');
-    } catch (e) {
-      setBackendOk(false);
-      setError(String(e));
-    }
-  }, []);
-
+  // Global keys: ⌘K palette, ⌘B AI panel toggle.
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  const openTerminal = useCallback(
-    async (host?: HostProfile) => {
-      try {
-        const session = await api.terminalOpen(
-          host
-            ? {
-                'host-id': host.id,
-                cols: 120,
-                rows: 30,
-              }
-            : { kind: 'local', cols: 120, rows: 30 },
-        );
-        setActiveSessions((s) => [...s, session.id]);
-      } catch (e) {
-        setError(String(e));
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPalette(true);
       }
-    },
-    [],
-  );
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        setAiPanel(!useApp.getState().aiPanelOpen);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [setPalette, setAiPanel]);
 
-  const closeTerminal = useCallback((id: string) => {
-    setActiveSessions((s) => s.filter((x) => x !== id));
-  }, []);
+  // Theme on <html>, following the site pattern (system default).
+  useEffect(() => {
+    const apply = () => {
+      const effective =
+        theme === 'system'
+          ? matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'dark'
+            : 'light'
+          : theme;
+      document.documentElement.dataset.theme = effective;
+    };
+    apply();
+    const mq = matchMedia('(prefers-color-scheme: dark)');
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, [theme]);
+
+  // First load: hosts + welcome tab content.
+  useEffect(() => {
+    void refreshHosts();
+  }, [refreshHosts]);
+
+  const activeTab = tabs.find((t) => t.id === activeTabId);
 
   return (
     <div className="app">
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <h1>TermPilot</h1>
-          <span className="version">v0.1.0</span>
-        </div>
-        <button className="btn btn-primary" onClick={() => void openTerminal()}>
-          Local Shell
-        </button>
-        <div className="host-list">
-          {hosts.map((h) => (
-            <div key={h.id} className="host-row">
-              <button
-                className="host-btn"
-                onClick={() => void openTerminal(h)}
-              >
-                <span className="host-label">{h.label}</span>
-                <span className="host-addr">
-                  {h.username ? `${h.username}@` : ''}
-                  {h.host}
-                </span>
-              </button>
-            </div>
-          ))}
-          {hosts.length === 0 && (
-            <p className="hint">No hosts yet. Backend is {String(backendOk)}.</p>
-          )}
-        </div>
-        {error && <p className="error">{error}</p>}
-      </aside>
+      <ActivityBar />
+      <div className="sidebar">
+        <Sidebar />
+      </div>
       <main className="main">
-        {activeSessions.length === 0 ? (
-          <div className="welcome">
-            <h2>TermPilot</h2>
-            <p>
-              The AI-native SSH client. Open a local shell or pick a host on
-              the left.
-            </p>
-          </div>
-        ) : (
+        <TabBar />
+        {activeTab ? (
           <div className="terminals">
-            {activeSessions.map((id) => (
-              <TerminalView
-                key={id}
-                sessionId={id}
-                onClose={() => closeTerminal(id)}
+            {activeTab.panes.map((pane) => (
+              <TerminalPane
+                key={pane.sessionId}
+                sessionId={pane.sessionId}
+                focused={pane.sessionId === focusedSessionId}
+                onClose={() => closePane(activeTab.id, pane.sessionId)}
               />
             ))}
           </div>
+        ) : (
+          <div className="welcome">
+            <h2>TermPilot</h2>
+            <p>
+              The AI-native SSH client. Connect from the Hosts view, or
+              press ⌘K anywhere.
+            </p>
+          </div>
         )}
       </main>
+      {aiPanelOpen && <AiPanel />}
+      <CommandPalette />
+      {/* Floating AI panel opener when collapsed */}
+      {!aiPanelOpen && (
+        <button className="ai-fab" title="AI (⌘B)" onClick={() => setAiPanel(true)}>
+          ✦
+        </button>
+      )}
     </div>
   );
 }

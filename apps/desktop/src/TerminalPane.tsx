@@ -1,26 +1,38 @@
-// Terminal view: one xterm.js instance bound to one backend session.
+// Terminal pane: one xterm.js instance bound to one backend session.
 // Output rides the streaming byte channel (api/terminal/stream); input
-// and resize ride the typed invoke routes.
+// and resize ride the typed invoke routes. The pane reports selection
+// changes and output text into the app store (AI panel + palette).
 
 import '@xterm/xterm/css/xterm.css';
 import { useEffect, useRef } from 'react';
 import { FitAddon } from '@xterm/addon-fit';
 import { Terminal } from '@xterm/xterm';
 import { api, apiStream } from '@termpilot/core';
+import { useApp, type AppState } from './state/store';
 
-interface TerminalViewProps {
+interface TerminalPaneProps {
   sessionId: string;
+  focused: boolean;
   onClose: () => void;
-  onOutput?: (text: string) => void;
 }
 
-export default function TerminalView({
+export default function TerminalPane({
   sessionId,
+  focused,
   onClose,
-  onOutput,
-}: TerminalViewProps) {
+}: TerminalPaneProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const closedRef = useRef(false);
+  const label = useApp((s: AppState) => {
+    for (const tab of s.tabs) {
+      const pane = tab.panes.find((x) => x.sessionId === sessionId);
+      if (pane) return pane.label;
+    }
+    return sessionId;
+  });
+  const appendOutput = useApp((s: AppState) => s.appendOutput);
+  const setSelection = useApp((s: AppState) => s.setSelection);
+  const focusSession = useApp((s: AppState) => s.focusSession);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -55,7 +67,7 @@ export default function TerminalView({
       { id: sessionId },
       (chunk) => {
         term.write(new TextEncoder().encode(chunk));
-        onOutput?.(chunk);
+        appendOutput(sessionId, chunk);
       },
       abort.signal,
     ).catch((err: unknown) => {
@@ -84,10 +96,19 @@ export default function TerminalView({
     });
     observer.observe(container);
 
+    // Selection reporting for the AI panel.
+    const selSub = term.onSelectionChange(() => {
+      setSelection(sessionId, term.getSelection());
+    });
+    const focusIn = () => focusSession(sessionId);
+    container.addEventListener('focusin', focusIn);
+
     return () => {
       closedRef.current = true;
       abort.abort();
       observer.disconnect();
+      container.removeEventListener('focusin', focusIn);
+      selSub.dispose();
       resizeSub.dispose();
       inputSub.dispose();
       term.dispose();
@@ -97,10 +118,10 @@ export default function TerminalView({
   }, [sessionId]);
 
   return (
-    <div className="terminal-pane">
+    <div className={`terminal-pane ${focused ? 'focused' : ''}`} onMouseDown={() => focusSession(sessionId)}>
       <div className="terminal-pane-bar">
-        <span className="terminal-pane-title">{sessionId}</span>
-        <button className="btn btn-ghost" onClick={onClose}>
+        <span className="terminal-pane-title">{label}</span>
+        <button className="btn-icon" title="Close" onClick={onClose}>
           ✕
         </button>
       </div>
