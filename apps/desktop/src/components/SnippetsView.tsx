@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@termpilot/core';
 import { useApp } from '../state/store';
+import { confirmDialog } from '../state/feedback';
 import { Icon } from './Icon';
 
 interface Snippet {
@@ -50,7 +51,7 @@ export default function SnippetsView() {
   };
 
   const remove = async (id: string) => {
-    if (!window.confirm(t('common.confirm-delete'))) return;
+    if (!(await confirmDialog(t('common.confirm-delete'), { danger: true }))) return;
     try {
       await api.snippetDelete(id);
       await refreshSnippets();

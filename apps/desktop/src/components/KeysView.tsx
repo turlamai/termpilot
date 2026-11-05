@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@termpilot/core';
 import { useApp } from '../state/store';
+import { confirmDialog } from '../state/feedback';
 import { Icon } from './Icon';
 
 interface KeyEntry {
@@ -106,7 +107,7 @@ export default function KeysView() {
   };
 
   const remove = async (name: string) => {
-    if (!window.confirm(`${t('common.confirm-delete')} (${name})`)) return;
+    if (!(await confirmDialog(`${t('common.confirm-delete')} (${name})`, { danger: true }))) return;
     try {
       await api.keyDelete(name);
       await refresh();

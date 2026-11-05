@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, type ForwardRule } from '@termpilot/core';
 import { useApp } from '../state/store';
+import { confirmDialog, toast } from '../state/feedback';
 
 export default function ForwardView() {
   const hosts = useApp((s) => s.hosts);
@@ -64,7 +65,7 @@ export default function ForwardView() {
   };
 
   const remove = async (id: string) => {
-    if (!window.confirm(t('common.confirm-delete'))) return;
+    if (!(await confirmDialog(t('common.confirm-delete'), { danger: true }))) return;
     await api.forwardDelete(id);
     await refresh();
   };
@@ -104,7 +105,7 @@ export default function ForwardView() {
                       await api.forwardStart(r.id);
                       await refresh();
                     } catch (e) {
-                      window.alert(String(e));
+                      toast(String(e).slice(0, 140), { error: true });
                     }
                   }}
                 >

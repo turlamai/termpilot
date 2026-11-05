@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@termpilot/core';
 import { useApp } from '../state/store';
+import { confirmDialog } from '../state/feedback';
 
 interface KnownEntry {
   index: number;
@@ -24,7 +25,7 @@ export default function KnownHostsView() {
   }, []);
 
   const remove = async (index: number) => {
-    if (!window.confirm(t('common.confirm-delete'))) return;
+    if (!(await confirmDialog(t('common.confirm-delete'), { danger: true }))) return;
     await api.knownRemove(index);
     await refresh();
   };

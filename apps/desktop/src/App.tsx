@@ -7,6 +7,7 @@ import AiPanel from './components/AiPanel';
 import CommandPalette from './components/CommandPalette';
 import TerminalPane from './TerminalPane';
 import { Icon } from './components/Icon';
+import FeedbackLayer from './components/FeedbackLayer';
 
 export default function App() {
   const tabs = useApp((s) => s.tabs);
@@ -94,6 +95,7 @@ export default function App() {
       </main>
       {aiPanelOpen && <AiPanel />}
       <CommandPalette />
+      <FeedbackLayer />
       {/* Floating AI panel opener when collapsed */}
       {!aiPanelOpen && (
         <button className="ai-fab" title="AI (⌘B)" aria-label="AI" onClick={() => setAiPanel(true)}>

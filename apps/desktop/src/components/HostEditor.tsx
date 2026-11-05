@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api, type HostProfile } from '@termpilot/core';
 import { useApp } from '../state/store';
+import { confirmDialog } from '../state/feedback';
 
 interface HostEditorProps {
   host?: HostProfile; // present = edit mode
@@ -74,7 +75,7 @@ export default function HostEditor({ host, onClose }: HostEditorProps) {
 
   const remove = async () => {
     if (!host) return;
-    if (!window.confirm(t('common.confirm-delete'))) return;
+    if (!(await confirmDialog(t('common.confirm-delete'), { danger: true }))) return;
     try {
       await api.hostDelete(host.id);
       await refreshHosts();

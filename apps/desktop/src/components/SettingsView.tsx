@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { api, termThemes } from '@termpilot/core';
 import { useApp } from '../state/store';
+import { confirmDialog } from '../state/feedback';
 
 export default function SettingsView() {
   const presets = useApp((s) => s.presets);
@@ -41,7 +42,7 @@ export default function SettingsView() {
   };
 
   const importData = async (file: File) => {
-    if (!window.confirm(t('settings.import'))) return;
+    if (!(await confirmDialog(t('settings.import'), { danger: true }))) return;
     try {
       const text = await file.text();
       const r = await api.dataImport(JSON.parse(text));

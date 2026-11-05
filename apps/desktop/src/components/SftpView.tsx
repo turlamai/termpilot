@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@termpilot/core';
 import { useApp } from '../state/store';
+import { confirmDialog } from '../state/feedback';
 
 interface SftpEntry {
   name: string;
@@ -116,7 +117,7 @@ export default function SftpView() {
                 className="btn-icon"
                 title={t('common.delete')}
                 onClick={async () => {
-                  if (!window.confirm(t('common.confirm-delete'))) return;
+                  if (!(await confirmDialog(t('common.confirm-delete'), { danger: true }))) return;
                   const path = cwd === '.' ? e.name : `${cwd}/${e.name}`;
                   try {
                     if (e.dir) await api.sftpRmdir(hostId, path);
