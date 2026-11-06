@@ -428,6 +428,14 @@
    (define s
      (parameterize ([current-custodian session-custodian])
        (open-session! sessions spec #:cols cols #:rows rows)))
+   ;; Auto-start forwarding rules bound to this host (opt-in flag).
+   (when host-id
+     (for ([r (in-list (list-rules))]
+           #:when (and (hash-ref r 'auto-start #f)
+                       (string=? (hash-ref r 'host-id "") host-id)))
+       (with-handlers ([exn:fail? void])
+         (parameterize ([current-custodian session-custodian])
+           (start-tunnel! r)))))
    (hasheq 'id (session-id s)
            'kind (symbol->string (session-kind s))
            'label (session-label s))]
@@ -458,7 +466,20 @@
    (terminal-log-start [id string?])
    (define s (or (get-session sessions id)
                  (error 'terminal/log "unknown session")))
-   (hasheq 'path (path->string (start-logging! sessions id (session-label s))))]
+   (hasheq 'path
+           (path->string
+            (parameterize ([current-custodian session-custodian])
+              (start-logging! sessions id (session-label s)))))]
+  [(POST "api/terminal/record/start" #:returns GValue)
+   (terminal-record-start [id string?])
+   (define s (or (get-session sessions id)
+                 (error 'terminal/record "unknown session")))
+   ;; Same custodian rule as sessions: the recording port must outlive
+   ;; the request that opened it.
+   (hasheq 'path
+           (path->string
+            (parameterize ([current-custodian session-custodian])
+              (start-recording! sessions id (session-label s) #t))))]
   [(POST "api/terminal/log/stop" #:returns GValue)
    (terminal-log-stop [id string?])
    (stop-logging! sessions id)

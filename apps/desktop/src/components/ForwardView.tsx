@@ -17,6 +17,7 @@ export default function ForwardView() {
   const [localPort, setLocalPort] = useState('');
   const [remoteHost, setRemoteHost] = useState('');
   const [remotePort, setRemotePort] = useState('');
+  const [autoStart, setAutoStart] = useState(false);
 
   const refresh = async () => {
     await refreshHosts();
@@ -55,6 +56,7 @@ export default function ForwardView() {
       'local-port': Number(localPort),
       'remote-host': remoteHost.trim(),
       'remote-port': Number(remotePort) || 0,
+      'auto-start': autoStart,
     });
     setCreating(false);
     setName('');
@@ -82,6 +84,7 @@ export default function ForwardView() {
               </span>
               <code className="snippet-cmd">
                 {r.kind} · {hostLabel(r['host-id'])} · {ruleSpec(r)}
+                {r['auto-start'] ? ' · ⏻' : ''}
               </code>
             </div>
             <div className="snippet-actions">
@@ -149,6 +152,14 @@ export default function ForwardView() {
                 <input placeholder={t('forward.remoteport')} type="number" value={remotePort} onChange={(e) => setRemotePort(e.target.value)} />
               </>
             )}
+            <label className="check" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+              <input
+                type="checkbox"
+                checked={autoStart}
+                onChange={(e) => setAutoStart(e.target.checked)}
+              />
+              {t('forward.autostart')}
+            </label>
             <div className="row">
               <button className="btn btn-primary" onClick={() => void create()}>
                 {t('common.save')}

@@ -5,7 +5,8 @@
 ;; feeds every streaming subscriber. Session state lives in this process
 ;; only — nothing about a live session persists.
 
-(require racket/file
+(require json
+         racket/file
          racket/format
          racket/match
          racket/path
@@ -34,7 +35,8 @@
    subscribers     ; set of output ports (one per stream consumer)
    closed?         ; sealed after child exit
    exit-status
-   log-file)       ; output port when logging is on, #f otherwise
+   log-file        ; output port when logging/recording is on
+   record-start)   ; ms epoch when .cast recording began, #f otherwise
   #:transparent
   #:mutable)
 
@@ -108,7 +110,7 @@
              handle
              (list* (hash-ref spec 'command) (hash-ref spec 'args))
              (current-seconds)
-             '() 0 (set) #f #f #f))
+             '() 0 (set) #f #f #f #f))
   ;; The pump thread reads child output until EOF (child exit or close),
   ;; appends to the scrollback ring and fans out to every subscriber.
   ;; read-bytes-avail! (not read-bytes): it returns as soon as ANY byte
@@ -144,8 +146,20 @@
           (when lf
             (with-handlers ([exn:fail? (lambda (_)
                                          (set-session-log-file! s #f))])
-              (write-bytes bs lf)
-              (flush-output lf)))
+              (cond
+                [(session-record-start s)
+                 ;; asciinema v2 event: [elapsed-seconds, "o", data]
+                 (define elapsed
+                   (/ (- (current-inexact-milliseconds)
+                         (session-record-start s))
+                      1000))
+                 (fprintf lf "[~a, \"o\", ~a]\n"
+                          (~r elapsed #:precision '(= 6))
+                          (jsexpr->string (bytes->string/utf-8 bs #\?)))
+                 (flush-output lf)]
+                [else
+                 (write-bytes bs lf)
+                 (flush-output lf)])))
           (unlock! mgr)
           (loop)]))))
   (lock! mgr)
@@ -163,7 +177,7 @@
 
 ;; Start logging an already-open session: the pump's next chunks append
 ;; to a fresh file named <label>-<timestamp>.log.
-(define (start-logging! mgr id label)
+(define (start-logging! mgr id label [recording? #f])
   (define s (get-session mgr id))
   (and s
        (let ([dir (log-dir)])
@@ -173,8 +187,20 @@
            (~r (current-seconds) #:base 10 #:min-width 10 #:pad-string "0"))
          (define safe
            (string-replace (string-replace label "/" "_") ".." "_"))
-         (define path (build-path dir (format "~a-~a.log" safe stamp)))
-         (set-session-log-file! s (open-output-file path #:exists 'truncate))
+         (define path
+           (build-path dir
+                       (format "~a-~a~a"
+                               safe stamp
+                               (if recording? ".cast" ".log"))))
+         (define out (open-output-file path #:exists 'truncate))
+         ;; asciinema v2 header: the standard terminal-recording format
+         ;; (playable with `asciinema play`, embeddable everywhere).
+         (when recording?
+           (fprintf out "{\"version\": 2, \"width\": 120, \"height\": 30, \"timestamp\": ~a, \"env\": {\"SHELL\": \"\", \"TERM\": \"xterm-256color\"}}\n"
+                    (current-seconds))
+           (flush-output out))
+         (set-session-log-file! s out)
+         (set-session-record-start! s (and recording? (current-inexact-milliseconds)))
          path)))
 
 (define (stop-logging! mgr id)
@@ -266,6 +292,7 @@
          list-log-files
          read-log-file
          delete-log-file!
+         (rename-out [start-logging! start-recording!])
          open-session!
          get-session
          write-session!

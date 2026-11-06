@@ -38,6 +38,7 @@ export default function TerminalPane({
   const [searchText, setSearchText] = useState('');
   const [copied, setCopied] = useState(false);
   const [logging, setLogging] = useState(false);
+  const [recording, setRecording] = useState(false);
   const [evidenceSaved, setEvidenceSaved] = useState(false);
 
   const saveEvidence = async () => {
@@ -251,6 +252,21 @@ export default function TerminalPane({
             }}
           >
             <Icon name={logging ? 'circle-dot' : 'circle'} size={13} />
+          </button>
+          <button
+            className={`btn-icon ${recording ? 'recording' : ''}`}
+            title={recording ? 'Stop recording (.cast)' : 'Record session (.cast, asciinema)'}
+            onClick={() => {
+              if (recording) {
+                void api.terminalLogStop(sessionId);
+                setRecording(false);
+              } else {
+                void api.terminalRecordStart(sessionId);
+                setRecording(true);
+              }
+            }}
+          >
+            <Icon name={recording ? 'circle-dot' : 'circle'} size={13} />
           </button>
           <button
             className="btn-icon"

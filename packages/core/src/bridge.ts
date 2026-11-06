@@ -198,6 +198,7 @@ export interface ForwardRule {
   'local-port': number;
   'remote-host': string;
   'remote-port': number;
+  'auto-start': boolean;
   'created-at': number;
 }
 
@@ -356,6 +357,8 @@ export const api = {
       serial: boolean | string;
       'ssh-keygen': boolean;
     }>('/api/doctor/transports'),
+  terminalRecordStart: (id: string) =>
+    apiPost<{ path: string }>('/api/terminal/record/start', { id }),
   terminalLogStart: (id: string) =>
     apiPost<{ path: string }>('/api/terminal/log/start', { id }),
   terminalLogStop: (id: string) =>

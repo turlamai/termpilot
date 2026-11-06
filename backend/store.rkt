@@ -70,6 +70,7 @@
             command TEXT NOT NULL,
             tags TEXT NOT NULL DEFAULT '[]',
             created_at INTEGER NOT NULL)"))
+  (try-add-column! "forwarding_rules" "auto_start" "INTEGER NOT NULL DEFAULT 0")
   (ddl! "CREATE TABLE IF NOT EXISTS forwarding_rules (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
@@ -233,6 +234,7 @@
           'local-port (hash-ref row 'local_port)
           'remote-host (hash-ref row 'remote_host)
           'remote-port (hash-ref row 'remote_port)
+          'auto-start (not (zero? (hash-ref row 'auto_start 0)))
           'created-at (hash-ref row 'created_at)))
 
 (define (list-rules)
@@ -249,8 +251,8 @@
 (define (insert-rule! r)
   (define id (new-id!))
   (exec! "INSERT INTO forwarding_rules (id, name, kind, host_id, bind_host,
-            local_port, remote_host, remote_port, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            local_port, remote_host, remote_port, auto_start, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
          (list id
                (hash-ref r 'name)
                (hash-ref r 'kind)
@@ -259,6 +261,7 @@
                (hash-ref r 'local-port)
                (hash-ref r 'remote-host "")
                (hash-ref r 'remote-port 0)
+               (if (hash-ref r 'auto-start #f) 1 0)
                (current-seconds)))
   (get-rule id))
 

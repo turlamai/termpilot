@@ -181,6 +181,10 @@
     },
     {
       "method": "POST",
+      "path": "/api/terminal/record/start"
+    },
+    {
+      "method": "POST",
       "path": "/api/terminal/log/stop"
     },
     {
@@ -730,6 +734,15 @@
       {
         "errors": [],
         "name": "terminalOpen",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "terminalRecordStart",
         "parameters": [],
         "result": {
           "kind": "scalar",
