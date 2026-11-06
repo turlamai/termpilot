@@ -104,6 +104,7 @@ export interface AppState {
   setTermPrefs: (themeId: string, fontSize: number) => void;
   reconnectPane: (tabId: string, sessionId: string) => Promise<void>;
   appendOutput: (sessionId: string, text: string) => void;
+  setPaneTitle: (sessionId: string, title: string) => void;
   setSelection: (sessionId: string, text: string) => void;
   recentOutput: (sessionId: string, maxChars?: number) => string;
 }
@@ -292,6 +293,18 @@ export const useApp = create<AppState>((set, get) => ({
         : { kind: 'local', label: old.label },
       { split: hadPanes && get().tabs.some((t) => t.id === tabId) },
     );
+  },
+
+  setPaneTitle: (sessionId, title) => {
+    if (!title.trim()) return;
+    set({
+      tabs: get().tabs.map((t) => ({
+        ...t,
+        panes: t.panes.map((p) =>
+          p.sessionId === sessionId ? { ...p, label: title } : p,
+        ),
+      })),
+    });
   },
 
   appendOutput: (sessionId, text) => {

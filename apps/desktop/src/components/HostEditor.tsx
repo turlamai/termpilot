@@ -31,6 +31,21 @@ export default function HostEditor({ host, onClose }: HostEditorProps) {
   const [stopBits, setStopBits] = useState('1');
   const [error, setError] = useState('');
 
+  // Duplicate: create a copy named "<label> (copy)" without closing.
+  const duplicate = async () => {
+    if (!host) return;
+    try {
+      await api.hostCreate({
+        ...host,
+        label: `${host.label} (copy)`,
+      } as Partial<HostProfile>);
+      await refreshHosts();
+      onClose();
+    } catch (e) {
+      setError(String(e));
+    }
+  };
+
   const save = async () => {
     if (!label.trim() || !hostName.trim()) {
       setError(t('common.save') + ': label/host');
@@ -196,6 +211,11 @@ export default function HostEditor({ host, onClose }: HostEditorProps) {
           {host && (
             <button className="btn btn-danger" onClick={() => void remove()}>
               {t('common.delete')}
+            </button>
+          )}
+          {host && (
+            <button className="btn" onClick={() => void duplicate()}>
+              {t('host.duplicate')}
             </button>
           )}
           <span className="spacer" />

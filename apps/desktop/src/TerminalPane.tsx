@@ -79,7 +79,20 @@ export default function TerminalPane({
   const appendOutput = useApp((s: AppState) => s.appendOutput);
   const setSelection = useApp((s: AppState) => s.setSelection);
   const focusSession = useApp((s: AppState) => s.focusSession);
+  const setPaneTitle = useApp((s: AppState) => s.setPaneTitle);
   const t = useApp((s: AppState) => s.t);
+
+  // OSC 0/2 window-title extraction: sequences may split across chunks,
+  // so the extractor keeps a carry between writes and strips partial
+  // tails from what it hands the terminal-independent title watcher.
+  const oscRef = useRef('');
+  const extractTitle = (chunk: string): string | null => {
+    oscRef.current += chunk;
+    const buf = oscRef.current;
+    const m = buf.match(/\u001b\][012];([^\u0007\u001b]*)(?:\u0007|\u001b\\)/);
+    oscRef.current = buf.slice(-32); // keep a tail for split sequences
+    return m ? m[1].trim() : null;
+  };
 
   const effectiveFontSize = hostFontSize > 0 ? hostFontSize : fontSize;
 
@@ -115,6 +128,8 @@ export default function TerminalPane({
       (chunk) => {
         term.write(new TextEncoder().encode(chunk));
         appendOutput(sessionId, chunk);
+        const title = extractTitle(chunk);
+        if (title) setPaneTitle(sessionId, title);
       },
       abort.signal,
     )

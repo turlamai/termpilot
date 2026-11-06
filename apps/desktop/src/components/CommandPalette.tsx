@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '@termpilot/core';
 import { useApp } from '../state/store';
+import { Icon } from './Icon';
 
 // The ⌘K palette: natural language → command draft, with redaction
 // preview of the terminal context that will be sent. The draft is
@@ -15,6 +16,7 @@ export default function CommandPalette() {
   const hosts = useApp((s) => s.hosts);
   const recentOutput = useApp((s) => s.recentOutput);
   const setAiPanel = useApp((s) => s.setAiPanel);
+  const openSession = useApp((s) => s.openSession);
   const t = useApp((s) => s.t);
 
   const [intent, setIntent] = useState('');
@@ -77,6 +79,24 @@ export default function CommandPalette() {
   return (
     <div className="palette-backdrop" onClick={() => setPalette(false)}>
       <div className="palette" onClick={(e) => e.stopPropagation()}>
+        {/* Empty state: the palette doubles as a launcher. */}
+        {!intent && !draft && hosts.length > 0 && (
+          <div className="palette-hosts">
+            {hosts.slice(0, 6).map((h) => (
+              <button
+                key={h.id}
+                className="picker-row"
+                onClick={() => {
+                  setPalette(false);
+                  void openSession({ 'host-id': h.id });
+                }}
+              >
+                <Icon name="square-terminal" size={14} /> {h.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="palette-input-row">
           <span className="palette-prefix">⌘K</span>
           <input

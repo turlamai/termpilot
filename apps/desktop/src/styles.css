@@ -500,3 +500,11 @@ body {
   outline-offset: -4px;
   border-radius: var(--radius-card);
 }
+
+
+/* palette launcher hosts */
+.palette-hosts {
+  display: flex; flex-direction: column; gap: 2px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: var(--space-2);
+}
