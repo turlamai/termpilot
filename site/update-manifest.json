@@ -1,5 +1,5 @@
 {
-  "version": "0.4.0",
-  "url": "https://github.com/turlamai/termpilot/releases/tag/v0.4.0",
-  "notes": " Commercial completeness, minus signing (deferred by owner decision).  ### Added  - Linux distribution matrix complete: AppImage + deb + rpm join the   tar.gz (toolchains installed in the release pipeline). - Split panes resize by dragging the divider; pickers navigate with   arrow keys. - Session log archive UI in settings (list/download/delete). - Passphrase-wrapped encrypted export/import (PBKD"
+  "version": "0.5.0",
+  "url": "https://github.com/turlamai/termpilot/releases/tag/v0.5.0",
+  "notes": " ### Added  - Quick Connect: `user@host:port` one-shot from the Hosts view —   connect without saving a profile. - Tabs drag to reorder; remote window titles rename tabs live (OSC   0/2 extraction across stream chunk boundaries). - ⌘/ opens a keyboard-shortcuts overlay; ⌘N opens a local shell. - The ⌘K palette doubles as a launcher — empty intent lists hosts. - SFTP: drop files onto the "
 }
