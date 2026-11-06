@@ -261,6 +261,14 @@ export const api = {
     }>('/api/sftp/list', { 'host-id': hostId, path }),
   sftpMkdir: (hostId: string, path: string) =>
     apiPost<{ ok: boolean }>('/api/sftp/mkdir', { 'host-id': hostId, path }),
+  sftpRename: (hostId: string, from: string, to: string) =>
+    apiPost<{ ok: boolean }>('/api/sftp/rename', {
+      'host-id': hostId,
+      from,
+      to,
+    }),
+  sftpDownloadDir: (hostId: string, path: string) =>
+    apiPost<string>('/api/sftp/download-dir', { 'host-id': hostId, path }),
   sftpDelete: (hostId: string, path: string) =>
     apiPost<{ ok: boolean }>('/api/sftp/delete', { 'host-id': hostId, path }),
   sftpRmdir: (hostId: string, path: string) =>

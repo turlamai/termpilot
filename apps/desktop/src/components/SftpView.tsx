@@ -139,6 +139,47 @@ export default function SftpView() {
             <div className="snippet-actions">
               <button
                 className="btn-icon"
+                title={t('sftp.rename')}
+                onClick={() => {
+                  const name = window.prompt(t('sftp.rename'), e.name);
+                  if (!name || name === e.name) return;
+                  const from = cwd === '.' ? e.name : `${cwd}/${e.name}`;
+                  const to = cwd === '.' ? name : `${cwd}/${name}`;
+                  void (async () => {
+                    try {
+                      await api.sftpRename(hostId, from, to);
+                      await load(cwd);
+                    } catch (err) {
+                      setError(String(err).slice(0, 160));
+                    }
+                  })();
+                }}
+              >
+                ✎
+              </button>
+              {e.dir && (
+                <button
+                  className="btn-icon"
+                  title={t('sftp.dldir')}
+                  onClick={() =>
+                    void (async () => {
+                      setBusy(true);
+                      try {
+                        const path = cwd === '.' ? e.name : `${cwd}/${e.name}`;
+                        const b64 = await api.sftpDownloadDir(hostId, path);
+                        saveBase64As(`${e.name}.zip`, b64);
+                      } catch (err) {
+                        setError(String(err).slice(0, 160));
+                      }
+                      setBusy(false);
+                    })()
+                  }
+                >
+                  ⤓
+                </button>
+              )}
+              <button
+                className="btn-icon"
                 title={t('common.delete')}
                 onClick={async () => {
                   if (!(await confirmDialog(t('common.confirm-delete'), { danger: true }))) return;

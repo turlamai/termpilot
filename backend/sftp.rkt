@@ -14,6 +14,7 @@
          racket/list
          racket/port
          racket/string
+         racket/system
          "platform.rkt"
          "store.rkt")
 
@@ -113,9 +114,53 @@
   (unless ok? (error 'sftp/rmdir "rmdir failed: ~a" (string-trim out)))
   #t)
 
-;; get/put stream to the app data dir and hand the bytes across the
-;; bridge (bounded — the UI warns past 10 MiB).
+(define (rename! host-id from to)
+  (define-values (ok? out)
+    (run-batch (profile-for host-id)
+               (list (format "rename ~a ~a" (sh-quote from) (sh-quote to)))))
+  (unless ok? (error 'sftp/rename "rename failed: ~a" (string-trim out)))
+  #t)
+
+;; Directory download: `get -r` lands the tree in a temp dir; we zip it
+;; and hand the archive across the bridge (same 50 MiB cap — a source
+;; tree compresses well, and the UI names it .zip).
+(define max-archive-bytes (* 50 1024 1024))
 (define max-transfer-bytes (* 10 1024 1024))
+
+(define (download-dir! host-id remote-path)
+  (define tmp (make-temporary-file "tpdir-~a" 'directory))
+  (define-values (ok? out)
+    (run-batch (profile-for host-id)
+               (list (format "get -r ~a ~a"
+                             (sh-quote remote-path)
+                             (path->string tmp)))))
+  (unless ok?
+    (delete-directory/files tmp)
+    (error 'sftp/get-dir "directory download failed: ~a" (string-trim out)))
+  (define inner
+    (car (directory-list tmp)))
+  (define zip
+    (with-handlers ([exn:fail? (lambda (_) #f)])
+      (define zip-path (path-replace-extension tmp ".zip"))
+      (system* (or (find-executable-path "zip")
+                   (error 'sftp/get-dir "zip not found for packaging"))
+               "-rq"
+               (path->string zip-path)
+               ".")
+      (if (file-exists? zip-path) zip-path #f)))
+  (unless zip
+    (delete-directory/files tmp)
+    (error 'sftp/get-dir "archiving failed"))
+  (define size (file-size zip))
+  (when (> size max-archive-bytes)
+    (delete-directory/files tmp)
+    (delete-file zip)
+    (error 'sftp/get-dir "directory exceeds the ~a MiB archive limit"
+           (/ max-archive-bytes 1024 1024)))
+  (define data (file->bytes zip))
+  (delete-directory/files tmp)
+  (delete-file zip)
+  data)
 
 (define (download! host-id remote-path)
   (define tmp (make-temporary-file "tpdl-~a"))
@@ -149,7 +194,9 @@
 
 (provide list-dir
          mkdir!
+         rename!
          remove!
          remove-dir!
          download!
+         download-dir!
          upload!)

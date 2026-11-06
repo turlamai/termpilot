@@ -101,6 +101,14 @@
     },
     {
       "method": "POST",
+      "path": "/api/sftp/rename"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sftp/download-dir"
+    },
+    {
+      "method": "POST",
       "path": "/api/sftp/download"
     },
     {
@@ -587,6 +595,15 @@
       },
       {
         "errors": [],
+        "name": "sftpDownloadDir",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Bytes"
+        }
+      },
+      {
+        "errors": [],
         "name": "sftpList",
         "parameters": [],
         "result": {
@@ -597,6 +614,15 @@
       {
         "errors": [],
         "name": "sftpMkdir",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "sftpRename",
         "parameters": [],
         "result": {
           "kind": "scalar",

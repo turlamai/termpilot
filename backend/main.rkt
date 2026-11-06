@@ -351,6 +351,13 @@
    (sftp-rmdir [host-id string?] [path string?])
    (remove-dir! host-id path)
    (hasheq 'ok #t)]
+  [(POST "api/sftp/rename" #:returns GValue)
+   (sftp-rename [host-id string?] [from string?] [to string?])
+   (rename! host-id from to)
+   (hasheq 'ok #t)]
+  [(POST "api/sftp/download-dir" #:returns GBytes)
+   (sftp-download-dir [host-id string?] [path string?])
+   (download-dir! host-id path)]
   [(POST "api/sftp/download" #:returns GBytes)
    (sftp-download [host-id string?] [path string?])
    (download! host-id path)]
