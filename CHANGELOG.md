@@ -6,6 +6,22 @@ All notable changes to TermPilot are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-11-06
+
+Commercial completeness, minus signing (deferred by owner decision).
+
+### Added
+
+- Linux distribution matrix complete: AppImage + deb + rpm join the
+  tar.gz (toolchains installed in the release pipeline).
+- Split panes resize by dragging the divider; pickers navigate with
+  arrow keys.
+- Session log archive UI in settings (list/download/delete).
+- Passphrase-wrapped encrypted export/import (PBKDF2 250k -> AES-GCM,
+  self-describing container).
+- FIDO2 hardware key generation options (ed25519-sk / ecdsa-sk).
+- COMMERCIAL-CHECKLIST.md — the launch gates, signing deferred.
+
 ## [0.3.0] — 2026-11-06
 
 The commercial-polish release: a designed system under the tool, and
@@ -94,7 +110,8 @@ product surface (bilingual README, pricing plan, homepage, CI).
   decision record, agent contract, product homepage, CI and release
   workflows.
 
-[Unreleased]: https://github.com/turlamai/termpilot/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/turlamai/termpilot/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/turlamai/termpilot/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/turlamai/termpilot/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/turlamai/termpilot/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/turlamai/termpilot/releases/tag/v0.1.0
