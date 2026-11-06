@@ -61,6 +61,18 @@
     },
     {
       "method": "POST",
+      "path": "/api/logs/list"
+    },
+    {
+      "method": "POST",
+      "path": "/api/logs/read"
+    },
+    {
+      "method": "POST",
+      "path": "/api/logs/delete"
+    },
+    {
+      "method": "POST",
       "path": "/api/update/check"
     },
     {
@@ -500,6 +512,33 @@
         "result": {
           "kind": "scalar",
           "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "logsDelete",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "logsList",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "logsRead",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Bytes"
         }
       },
       {

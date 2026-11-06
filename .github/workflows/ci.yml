@@ -131,7 +131,7 @@ jobs:
           export WEBKIT_DISABLE_DMABUF_RENDERER=1
           data_dir="$(mktemp -d)"
           export TERMPILOT_TRANSPORT=http TERMPILOT_DATA_DIR="$data_dir" GLAZE_API_TOKEN=smoke-token
-          BIN="$(find dist -type f \( -name 'TermPilot' -o -name 'TermPilot.*' \) ! -name '*.sha256' | head -1)"
+          BIN="$(find dist -type f \( -name 'TermPilot' -o -name 'TermPilot.*' \) ! -name '*.sha256' ! -name '*.AppImage' ! -name '*.deb' ! -name '*.rpm' | head -1)"
           test -n "$BIN" || { echo "::error::packaged binary not found"; ls -R dist | head -40; exit 1; }
           chmod +x "$BIN"
           cd "$(dirname "$BIN")"

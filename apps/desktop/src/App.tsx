@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useApp } from './state/store';
 import ActivityBar from './components/ActivityBar';
 import Sidebar from './components/Sidebar';
@@ -61,6 +61,34 @@ export default function App() {
   }, [refreshHosts]);
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
+  // Split-pane sizing: flex-grow per pane, adjusted by the drag handle
+  // between neighbors. Local to the session; resets when it closes.
+  const [paneSizes, setPaneSizes] = useState<Record<string, number>>({});
+  const dragRef = useRef<{ left: string; right: string; startX: number; leftW: number; rightW: number } | null>(null);
+
+  const startResize = (e: React.PointerEvent, leftId: string, rightId: string) => {
+    e.preventDefault();
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    dragRef.current = {
+      left: leftId,
+      right: rightId,
+      startX: e.clientX,
+      leftW: paneSizes[leftId] ?? 1,
+      rightW: paneSizes[rightId] ?? 1,
+    };
+  };
+  const moveResize = (e: React.PointerEvent) => {
+    const d = dragRef.current;
+    if (!d) return;
+    const total = d.leftW + d.rightW;
+    const delta = (e.clientX - d.startX) / (window.innerWidth / total);
+    const leftW = Math.max(0.2, Math.min(total - 0.2, d.leftW + delta));
+    setPaneSizes((prev) => ({
+      ...prev,
+      [d.left]: leftW,
+      [d.right]: total - leftW,
+    }));
+  };
 
   return (
     <div className="app">
@@ -73,16 +101,32 @@ export default function App() {
         <TabBar />
         {activeTab ? (
           <div className="terminals">
-            {activeTab.panes.map((pane) => (
-              <TerminalPane
-                key={`${pane.sessionId}:${useApp.getState().termThemeId}:${useApp.getState().termFontSize}`}
-                sessionId={pane.sessionId}
-                focused={pane.sessionId === focusedSessionId}
-                onClose={() => closePane(activeTab.id, pane.sessionId)}
-                onReconnect={() =>
-                  void reconnectPane(activeTab.id, pane.sessionId)
-                }
-              />
+            {activeTab.panes.map((pane, i) => (
+              <div
+                className="pane-slot"
+                key={pane.sessionId}
+                style={{ flexGrow: paneSizes[pane.sessionId] ?? 1 }}
+              >
+                <TerminalPane
+                  key={`${pane.sessionId}:${useApp.getState().termThemeId}:${useApp.getState().termFontSize}`}
+                  sessionId={pane.sessionId}
+                  focused={pane.sessionId === focusedSessionId}
+                  onClose={() => closePane(activeTab.id, pane.sessionId)}
+                  onReconnect={() =>
+                    void reconnectPane(activeTab.id, pane.sessionId)
+                  }
+                />
+                {i < activeTab.panes.length - 1 && (
+                  <div
+                    className="pane-resize"
+                    onPointerDown={(e) =>
+                      startResize(e, pane.sessionId, activeTab.panes[i + 1].sessionId)
+                    }
+                    onPointerMove={moveResize}
+                    onPointerUp={() => (dragRef.current = null)}
+                  />
+                )}
+              </div>
             ))}
           </div>
         ) : (

@@ -292,6 +292,16 @@
    (forward-status)
    (hasheq 'tunnels (tunnel-status))]
 
+  [(POST "api/logs/list" #:returns GValue)
+   (logs-list)
+   (hasheq 'logs (list-log-files))]
+  [(POST "api/logs/read" #:returns GBytes)
+   (logs-read [name string?])
+   (read-log-file name)]
+  [(POST "api/logs/delete" #:returns GValue)
+   (logs-delete [name string?])
+   (delete-log-file! name)
+   (hasheq 'ok #t)]
   [(POST "api/update/check" #:returns GValue)
    (update-status)
    (define info (update-check))

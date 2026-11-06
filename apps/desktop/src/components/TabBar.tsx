@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../state/store';
 import { Icon, type IconName } from './Icon';
+import { pickerKeyNav } from '../utils';
 
 const KIND_ICON: Record<string, IconName> = {
   ssh: 'square-terminal',
@@ -71,7 +72,7 @@ export default function TabBar() {
         <div className="modal-backdrop" onClick={() => setSplitting(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>{t('common.split')}</h2>
-            <div className="picker-list">
+            <div className="picker-list" onKeyDown={pickerKeyNav}>
               <button
                 className="picker-row"
                 onClick={() => {

@@ -326,6 +326,14 @@ export const api = {
       '/api/terminal/broadcast',
       { ids, data },
     ),
+  logsList: () =>
+    apiPost<{ logs: { name: string; bytes: number; modified: number }[] }>(
+      '/api/logs/list',
+    ),
+  logsRead: (name: string) =>
+    apiPost<string>('/api/logs/read', { name }),
+  logsDelete: (name: string) =>
+    apiPost<{ ok: boolean }>('/api/logs/delete', { name }),
   updateCheck: () =>
     apiPost<{
       current: string;

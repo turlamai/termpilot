@@ -3,6 +3,7 @@ import { api } from '@termpilot/core';
 import { useApp } from '../state/store';
 import { confirmDialog } from '../state/feedback';
 import { Icon } from './Icon';
+import { pickerKeyNav } from '../utils';
 
 interface KeyEntry {
   name: string;
@@ -216,7 +217,7 @@ export default function KeysView() {
         <div className="modal-backdrop" onClick={() => setDistributing(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>{t('keys.distribute')}</h2>
-            <div className="picker-list">
+            <div className="picker-list" onKeyDown={pickerKeyNav}>
               {hosts.map((h) => (
                 <button
                   key={h.id}
@@ -246,6 +247,8 @@ export default function KeysView() {
               <option value="ed25519">Ed25519</option>
               <option value="ecdsa">ECDSA</option>
               <option value="rsa">RSA</option>
+              <option value="ed25519-sk">Ed25519 — FIDO2 hardware</option>
+              <option value="ecdsa-sk">ECDSA — FIDO2 hardware</option>
             </select>
             <input
               type="password"

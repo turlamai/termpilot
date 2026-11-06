@@ -184,6 +184,32 @@
     (set-session-log-file! s #f))
   (and s #t))
 
+;; ---- log archive management (Settings view) ---------------------------------
+
+(define (list-log-files)
+  (define dir (log-dir))
+  (unless (directory-exists? dir) '())
+  (for/list ([f (in-list (directory-list dir))]
+             #:when (file-exists? (build-path dir f)))
+    (hasheq 'name (path->string f)
+            'bytes (file-size (build-path dir f))
+            'modified (file-or-directory-modify-seconds
+                       (build-path dir f)))))
+
+(define (read-log-file name)
+  (unless (regexp-match? #px"^[A-Za-z0-9._-]+$" name)
+    (error 'logs "bad log name"))
+  (define full (build-path (log-dir) name))
+  (unless (file-exists? full) (error 'logs "no such log"))
+  (file->bytes full))
+
+(define (delete-log-file! name)
+  (unless (regexp-match? #px"^[A-Za-z0-9._-]+$" name)
+    (error 'logs "bad log name"))
+  (define full (build-path (log-dir) name))
+  (when (file-exists? full) (delete-file full))
+  #t)
+
 (define (get-session mgr id)
   (hash-ref (manager-sessions mgr) id #f))
 
@@ -237,6 +263,9 @@
          make-manager
          start-logging!
          stop-logging!
+         list-log-files
+         read-log-file
+         delete-log-file!
          open-session!
          get-session
          write-session!

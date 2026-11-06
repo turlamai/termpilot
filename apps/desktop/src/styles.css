@@ -172,12 +172,24 @@ body {
   flex: 1; min-height: 0;
   display: flex;
 }
-.terminal-pane {
-  flex: 1; min-width: 0;
-  display: flex; flex-direction: column;
-  border-right: 1px solid var(--border);
+.pane-slot {
+  display: flex; min-width: 120px;
+  flex-basis: 0;
 }
-.terminal-pane:last-child { border-right: none; }
+.pane-slot .terminal-pane { flex: 1; }
+.pane-slot + .pane-slot { border-left: none; }
+.terminal-pane {
+  min-width: 0;
+  display: flex; flex-direction: column;
+}
+.pane-resize {
+  width: 5px;
+  cursor: col-resize;
+  background: var(--border);
+  flex: none;
+  transition: background 0.12s ease;
+}
+.pane-resize:hover, .pane-resize:active { background: var(--accent); }
 .terminal-pane.focused .terminal-pane-bar { color: var(--text); }
 .terminal-pane-bar {
   display: flex; align-items: center; justify-content: space-between;
@@ -445,3 +457,16 @@ body {
 .update-banner span { color: var(--text); }
 .update-banner-current { color: var(--text-dim) !important; }
 .update-banner .btn { min-height: 22px; padding: 0 var(--space-2); font-size: 11px; }
+
+
+/* encrypted-export passphrase input */
+.pass-input {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  min-height: var(--control-h);
+  padding: 0 var(--space-2);
+  font: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+}
+.logs-list { max-height: 240px; }

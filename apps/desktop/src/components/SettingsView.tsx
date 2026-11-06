@@ -3,6 +3,76 @@ import { api, termThemes } from '@termpilot/core';
 import { useApp } from '../state/store';
 import { confirmDialog } from '../state/feedback';
 
+interface LogFile {
+  name: string;
+  bytes: number;
+  modified: number;
+}
+
+// Encrypted backup: PBKDF2(250k, SHA-256) -> AES-GCM. The container is
+// self-describing so import can tell plain from wrapped.
+async function encryptJson(data: unknown, passphrase: string): Promise<string> {
+  const enc = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const baseKey = await crypto.subtle.importKey(
+    'raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveKey'],
+  );
+  const key = await crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 250000, hash: 'SHA-256' },
+    baseKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt'],
+  );
+  const plaintext = enc.encode(JSON.stringify(data));
+  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plaintext);
+  const b64 = (b: ArrayBuffer | Uint8Array) =>
+    btoa(String.fromCharCode(...new Uint8Array(b)));
+  return JSON.stringify({
+    format: 'termpilot-encrypted-v1',
+    kdf: 'PBKDF2-SHA256-250000',
+    salt: b64(salt),
+    iv: b64(iv),
+    data: b64(ciphertext),
+  });
+}
+
+async function decryptJson(containerJson: string, passphrase: string): Promise<unknown> {
+  const container = JSON.parse(containerJson) as {
+    format: string;
+    salt: string;
+    iv: string;
+    data: string;
+  };
+  if (container.format !== 'termpilot-encrypted-v1') {
+    return JSON.parse(containerJson);
+  }
+  const b64u = (s: string) =>
+    Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  const baseKey = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(passphrase), 'PBKDF2', false, ['deriveKey'],
+  );
+  const key = await crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: b64u(container.salt),
+      iterations: 250000,
+      hash: 'SHA-256',
+    },
+    baseKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['decrypt'],
+  );
+  const plain = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv: b64u(container.iv) },
+    key,
+    b64u(container.data),
+  );
+  return JSON.parse(new TextDecoder().decode(plain));
+}
+
 export default function SettingsView() {
   const presets = useApp((s) => s.presets);
   const refreshPresets = useApp((s) => s.refreshPresets);
@@ -27,12 +97,38 @@ export default function SettingsView() {
   const setTermPrefs = useApp((s) => s.setTermPrefs);
   const fileRef = useRef<HTMLInputElement>(null);
   const [dataMsg, setDataMsg] = useState('');
+  const [passphrase, setPassphrase] = useState('');
+  const [importPass, setImportPass] = useState('');
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [logs, setLogs] = useState<LogFile[]>([]);
+
+  const refreshLogs = async () => {
+    try {
+      const { logs: list } = await api.logsList();
+      setLogs(list);
+    } catch {
+      setLogs([]);
+    }
+  };
+
+  const downloadLog = async (name: string) => {
+    const b64 = await api.logsRead(name);
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const url = URL.createObjectURL(new Blob([bytes]));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const exportData = async () => {
     const data = await api.dataExport();
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: 'application/json',
-    });
+    let content = JSON.stringify(data, null, 2);
+    if (passphrase) content = await encryptJson(data, passphrase);
+    const blob = new Blob([content], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -45,14 +141,29 @@ export default function SettingsView() {
     if (!(await confirmDialog(t('settings.import'), { danger: true }))) return;
     try {
       const text = await file.text();
-      const r = await api.dataImport(JSON.parse(text));
+      const parsed = JSON.parse(text) as { format?: string };
+      let data: unknown;
+      if (parsed.format === 'termpilot-encrypted-v1') {
+        if (!importPass) {
+          setPendingFile(file);
+          setDataMsg(t('settings.passphrase'));
+          return;
+        }
+        data = await decryptJson(text, importPass);
+      } else {
+        data = parsed;
+      }
+      const r = await api.dataImport(data);
       setDataMsg(`+${r.hosts} hosts, +${r.snippets} snippets`);
+      setImportPass('');
+      setPendingFile(null);
     } catch (e) {
       setDataMsg(String(e).slice(0, 140));
     }
   };
 
   useEffect(() => {
+    void refreshLogs();
     void refreshPresets();
     void (async () => {
       try {
@@ -193,6 +304,13 @@ export default function SettingsView() {
           <button className="btn" onClick={() => void exportData()}>
             {t('settings.export')}
           </button>
+          <input
+            type="password"
+            placeholder={t('settings.passphrase')}
+            value={passphrase}
+            onChange={(e) => setPassphrase(e.target.value)}
+            className="pass-input"
+          />
           <button className="btn" onClick={() => fileRef.current?.click()}>
             {t('settings.import')}
           </button>
@@ -207,7 +325,57 @@ export default function SettingsView() {
               e.target.value = '';
             }}
           />
+          {pendingFile && (
+            <input
+              type="password"
+              placeholder={t('settings.passphrase')}
+              value={importPass}
+              onChange={(e) => setImportPass(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && pendingFile) void importData(pendingFile);
+              }}
+              className="pass-input"
+            />
+          )}
           {dataMsg && <span className="hint">{dataMsg}</span>}
+        </div>
+      </section>
+
+      <section>
+        <h3>{t('settings.logs')}</h3>
+        <div className="sidebar-scroll logs-list">
+          {logs.map((l) => (
+            <div key={l.name} className="snippet-row">
+              <div className="snippet-body">
+                <span className="host-label">{l.name}</span>
+                <span className="host-addr">
+                  {(l.bytes / 1024).toFixed(0)}K ·{' '}
+                  {new Date(l.modified * 1000).toLocaleDateString()}
+                </span>
+              </div>
+              <div className="snippet-actions">
+                <button
+                  className="btn-icon"
+                  title="Download"
+                  onClick={() => void downloadLog(l.name)}
+                >
+                  ⬇
+                </button>
+                <button
+                  className="btn-icon"
+                  title={t('common.delete')}
+                  onClick={async () => {
+                    if (!(await confirmDialog(t('common.confirm-delete'), { danger: true }))) return;
+                    await api.logsDelete(l.name);
+                    await refreshLogs();
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          ))}
+          {logs.length === 0 && <p className="hint">{t('settings.nologs')}</p>}
         </div>
       </section>
 

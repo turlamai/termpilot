@@ -152,7 +152,9 @@
   (define full (build-path (ssh-dir) name))
   (when (file-exists? full)
     (error 'keys/generate "key already exists: ~a" name))
-  (unless (member type '("ed25519" "rsa" "ecdsa"))
+  ;; sk types are hardware-resident: ssh-keygen errors when no FIDO2
+  ;; key is present, and that error is the honest outcome to surface.
+  (unless (member type '("ed25519" "rsa" "ecdsa" "ed25519-sk" "ecdsa-sk"))
     (error 'keys/generate "unsupported type ~a" type))
   (define keygen (or (find-executable-path "ssh-keygen")
                      (error 'keys/generate "ssh-keygen not found")))
