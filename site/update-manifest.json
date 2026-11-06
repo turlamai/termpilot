@@ -1,5 +1,5 @@
 {
-  "version": "0.5.0",
-  "url": "https://github.com/turlamai/termpilot/releases/tag/v0.5.0",
-  "notes": " ### Added  - Quick Connect: `user@host:port` one-shot from the Hosts view —   connect without saving a profile. - Tabs drag to reorder; remote window titles rename tabs live (OSC   0/2 extraction across stream chunk boundaries). - ⌘/ opens a keyboard-shortcuts overlay; ⌘N opens a local shell. - The ⌘K palette doubles as a launcher — empty intent lists hosts. - SFTP: drop files onto the "
+  "version": "0.6.0",
+  "url": "https://github.com/turlamai/termpilot/releases/tag/v0.6.0",
+  "notes": " ### Added  - Host latency probe: parallel TCP-handshake timings with per-host   badges (green <100 ms / amber <500 ms / red or × otherwise). - Per-tab broadcast input: toggle on a tab with two+ panes and every   keystroke fans out to all of them. - Session recording: pane ⏺ writes asciinema v2 (.cast) — playable   with `asciinema play`. - Forwarding rules auto-start: bound rules start when t"
 }
