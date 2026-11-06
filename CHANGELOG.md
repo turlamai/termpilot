@@ -6,6 +6,19 @@ All notable changes to TermPilot are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-11-06
+
+### Added
+
+- Host latency probe: parallel TCP-handshake timings with per-host
+  badges (green <100 ms / amber <500 ms / red or × otherwise).
+- Per-tab broadcast input: toggle on a tab with two+ panes and every
+  keystroke fans out to all of them.
+- Session recording: pane ⏺ writes asciinema v2 (.cast) — playable
+  with `asciinema play`.
+- Forwarding rules auto-start: bound rules start when their host
+  connects (per-rule opt-in, ⏻ marker in the list).
+
 ## [0.5.0] — 2026-11-06
 
 ### Added
@@ -123,7 +136,8 @@ product surface (bilingual README, pricing plan, homepage, CI).
   decision record, agent contract, product homepage, CI and release
   workflows.
 
-[Unreleased]: https://github.com/turlamai/termpilot/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/turlamai/termpilot/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/turlamai/termpilot/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/turlamai/termpilot/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/turlamai/termpilot/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/turlamai/termpilot/compare/v0.2.0...v0.3.0
