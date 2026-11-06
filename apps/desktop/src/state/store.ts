@@ -74,6 +74,7 @@ export interface AppState {
   shortcutsOpen: boolean;
   outputRings: Record<string, OutputRing>;
   selections: Record<string, string>; // sessionId -> selected text
+  broadcastTabs: Record<string, boolean>; // tabId -> broadcasting
   termThemeId: string;
   termFontSize: number;
 
@@ -96,6 +97,7 @@ export interface AppState {
   closePane: (tabId: string, sessionId: string) => void;
   closeTab: (tabId: string) => void;
   reorderTabs: (from: number, to: number) => void;
+  toggleBroadcast: (tabId: string) => void;
   focusSession: (sessionId: string) => void;
 
   setAiPanel: (open: boolean) => void;
@@ -128,6 +130,7 @@ export const useApp = create<AppState>((set, get) => ({
   shortcutsOpen: false,
   outputRings: {},
   selections: {},
+  broadcastTabs: {},
   termThemeId: localStorage.getItem('termpilot-termtheme') ?? 'pilot-dark',
   termFontSize: Number(localStorage.getItem('termpilot-fontsize') ?? 13) || 13,
 
@@ -245,6 +248,15 @@ export const useApp = create<AppState>((set, get) => ({
     if (get().focusedSessionId === sessionId) {
       set({ focusedSessionId: activeTabId ? (tabs.find((t) => t.id === activeTabId)?.panes.at(-1)?.sessionId ?? null) : null });
     }
+  },
+
+  toggleBroadcast: (tabId) => {
+    set({
+      broadcastTabs: {
+        ...get().broadcastTabs,
+        [tabId]: !get().broadcastTabs[tabId],
+      },
+    });
   },
 
   reorderTabs: (from, to) => {

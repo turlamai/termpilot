@@ -18,8 +18,11 @@ export default function TabBar() {
   const reorderTabs = useApp((s) => s.reorderTabs);
   const openSession = useApp((s) => s.openSession);
   const hosts = useApp((s) => s.hosts);
+  const broadcastTabs = useApp((s) => s.broadcastTabs);
+  const toggleBroadcast = useApp((s) => s.toggleBroadcast);
   const t = useApp((s) => s.t);
   const [splitting, setSplitting] = useState(false);
+  const broadcasting = activeTabId ? !!broadcastTabs[activeTabId] : false;
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   const activeTab = tabs.find((x) => x.id === activeTabId);
@@ -70,6 +73,14 @@ export default function TabBar() {
       <div className="tab-actions">
         <button className="btn-icon" title={t('tabs.new-local')} onClick={() => void openSession({ kind: 'local' })}>
           <Icon name="plus" size={15} />
+        </button>
+        <button
+          className={`btn-icon ${broadcasting ? 'broadcast-on' : ''}`}
+          title={t('broadcast.toggle')}
+          disabled={!activeTab || (activeTab?.panes.length ?? 0) < 2}
+          onClick={() => activeTabId && toggleBroadcast(activeTabId)}
+        >
+          <Icon name="wifi" size={15} />
         </button>
         <button
           className="btn-icon"

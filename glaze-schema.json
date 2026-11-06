@@ -61,6 +61,10 @@
     },
     {
       "method": "POST",
+      "path": "/api/hosts/probe"
+    },
+    {
+      "method": "POST",
       "path": "/api/logs/list"
     },
     {
@@ -418,6 +422,15 @@
       {
         "errors": [],
         "name": "hostsList",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "hostsProbe",
         "parameters": [],
         "result": {
           "kind": "scalar",

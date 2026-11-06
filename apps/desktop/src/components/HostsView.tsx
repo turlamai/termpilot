@@ -4,11 +4,29 @@ import { api, type HostProfile } from '@termpilot/core';
 import HostEditor from './HostEditor';
 import { Icon } from './Icon';
 
+function latencyClass(ms: number | null | undefined): string {
+  return ms === undefined
+    ? ''
+    : ms === null
+      ? 'lat-bad'
+      : ms < 100
+        ? 'lat-fast'
+        : ms < 500
+          ? 'lat-mid'
+          : 'lat-slow';
+}
+
 function hostAddr(h: HostProfile): string {
   return `${h.username ? `${h.username}@` : ''}${h.host}${h.port !== 22 ? `:${h.port}` : ''}`;
 }
 
-function HostRow({ host }: { host: HostProfile }) {
+function HostRow({
+  host,
+  latency,
+}: {
+  host: HostProfile;
+  latency?: number | null;
+}) {
   const openSession = useApp((s) => s.openSession);
   const t = useApp((s) => s.t);
   const [editing, setEditing] = useState(false);
@@ -20,7 +38,14 @@ function HostRow({ host }: { host: HostProfile }) {
         title={`${hostAddr(host)} — ${t('hosts.connect')}`}
         onClick={() => void openSession({ 'host-id': host.id })}
       >
-        <span className="host-label">{host.label}</span>
+        <span className="host-label">
+          {host.label}
+          {latency !== undefined && (
+            <span className={`lat-badge ${latencyClass(latency)}`}>
+              {latency === null ? '×' : `${latency}ms`}
+            </span>
+          )}
+        </span>
         <span className="host-addr">{hostAddr(host)}</span>
       </button>
       <button className="btn-icon" title={t('common.edit')} onClick={() => setEditing(true)}>
@@ -42,6 +67,29 @@ export default function HostsView() {
   const [importMsg, setImportMsg] = useState('');
   const [quickOpen, setQuickOpen] = useState(false);
   const [quickTarget, setQuickTarget] = useState('');
+  const [latencies, setLatencies] = useState<Record<string, number | null>>({});
+  const [probing, setProbing] = useState(false);
+
+  const probe = async () => {
+    if (hosts.length === 0 || probing) return;
+    setProbing(true);
+    try {
+      const targets = hosts.map((h) => ({
+        id: h.id,
+        host: h.host,
+        port: h['connection-kind'] === 'serial' ? 0 : h.port,
+      }));
+      const r = await api.hostsProbe(targets);
+      const map: Record<string, number | null> = {};
+      for (const item of r.results) map[item.id] = item.ms;
+      setLatencies((prev) => ({ ...prev, ...map }));
+    } catch {
+      // probing is best-effort
+    }
+    setProbing(false);
+  };
+
+
 
   // "user@host:port" — user and port optional.
   const quickConnect = async () => {
@@ -115,7 +163,7 @@ export default function HostsView() {
           <div key={group} className="host-group">
             {group && <div className="group-title">{group}</div>}
             {list.map((h) => (
-              <HostRow key={h.id} host={h} />
+              <HostRow key={h.id} host={h} latency={latencies[h.id]} />
             ))}
           </div>
         ))}
@@ -156,6 +204,9 @@ export default function HostsView() {
         </button>
         <button className="btn btn-block" onClick={() => void importConfig()}>
           {t('hosts.import')}
+        </button>
+        <button className="btn btn-block" disabled={probing} onClick={() => void probe()}>
+          {probing ? t('hosts.probing') : t('hosts.probe')}
         </button>
         <button
           className="btn btn-block"

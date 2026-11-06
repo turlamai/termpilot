@@ -33,6 +33,7 @@
          "keys.rkt"
          "knownhosts.rkt"
          "sftp.rkt"
+         "probes.rkt"
          "session.rkt"
          "ssh-config.rkt"
          "transports.rkt"
@@ -292,6 +293,20 @@
    (forward-status)
    (hasheq 'tunnels (tunnel-status))]
 
+  ;; Latency probe: parallel TCP-handshake timings for the listed
+  ;; hosts (no auth, per-host timeout). Unreachable -> ms: #f.
+  [(POST "api/hosts/probe" #:returns GValue)
+   (hosts-probe [targets (lambda (v) (and (list? v) (andmap hash? v)))])
+   (define results
+     (for/list ([t (in-list targets)])
+       (define id (hash-ref t 'id ""))
+       (define ms
+         (parameterize ([current-custodian (make-custodian)])
+           (probe-host (hash-ref t 'host "?")
+                       (hash-ref t 'port 22)
+                       3000)))
+       (hasheq 'id id 'ms ms)))
+   (hasheq 'results results)]
   [(POST "api/logs/list" #:returns GValue)
    (logs-list)
    (hasheq 'logs (list-log-files))]

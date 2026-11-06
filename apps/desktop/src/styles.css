@@ -508,3 +508,22 @@ body {
   border-bottom: 1px solid var(--border);
   padding-bottom: var(--space-2);
 }
+
+
+/* latency badges */
+.lat-badge {
+  margin-left: var(--space-2);
+  font-size: 10px;
+  font-family: ui-monospace, Menlo, monospace;
+  padding: 0 4px;
+  border-radius: 4px;
+}
+.lat-fast { color: #4caf78; background: rgba(76, 175, 120, 0.14); }
+.lat-mid { color: #d0a83c; background: rgba(208, 168, 60, 0.14); }
+.lat-slow, .lat-bad { color: var(--error); background: rgba(212, 106, 106, 0.12); }
+
+/* broadcast toggle on */
+.btn-icon.broadcast-on {
+  color: var(--accent);
+  background: rgba(92, 143, 174, 0.18);
+}

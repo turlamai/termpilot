@@ -217,6 +217,12 @@ export const api = {
     apiPost<HostProfile>('/api/hosts/update', { id, host }),
   hostDelete: (id: string) =>
     apiPost<{ ok: boolean }>('/api/hosts/delete', { id }),
+  hostsProbe: (
+    targets: { id: string; host: string; port: number }[],
+  ) =>
+    apiPost<{
+      results: { id: string; ms: number | null }[];
+    }>('/api/hosts/probe', { targets }),
   hostsImportConfig: () =>
     apiPost<{ imported: number; skipped: number }>('/api/hosts/import-config'),
   dataExport: () =>
