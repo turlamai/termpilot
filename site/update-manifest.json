@@ -1,5 +1,5 @@
 {
-  "version": "0.3.0",
-  "url": "https://github.com/turlamai/termpilot/releases/tag/v0.3.0",
-  "notes": " The commercial-polish release: a designed system under the tool, and the update chain.  ### Added  - Design tokens: 4pt spacing grid, type scale (caption/body/title),   semantic surface layers, consistent radii. - Control system: primary/quiet/danger button hierarchy with designed   hover/pressed/disabled states; global keyboard focus ring. - Materials: modal dim+blur and entrance motion; toast n"
+  "version": "0.4.0",
+  "url": "https://github.com/turlamai/termpilot/releases/tag/v0.4.0",
+  "notes": " Commercial completeness, minus signing (deferred by owner decision).  ### Added  - Linux distribution matrix complete: AppImage + deb + rpm join the   tar.gz (toolchains installed in the release pipeline). - Split panes resize by dragging the divider; pickers navigate with   arrow keys. - Session log archive UI in settings (list/download/delete). - Passphrase-wrapped encrypted export/import (PBKD"
 }
