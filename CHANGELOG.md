@@ -6,6 +6,19 @@ All notable changes to TermPilot are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-11-06
+
+### Added
+
+- Quick Connect: `user@host:port` one-shot from the Hosts view —
+  connect without saving a profile.
+- Tabs drag to reorder; remote window titles rename tabs live (OSC
+  0/2 extraction across stream chunk boundaries).
+- ⌘/ opens a keyboard-shortcuts overlay; ⌘N opens a local shell.
+- The ⌘K palette doubles as a launcher — empty intent lists hosts.
+- SFTP: drop files onto the manager to upload (per-file toasts).
+- Host editor: Duplicate (save-as-copy).
+
 ## [0.4.0] — 2026-11-06
 
 Commercial completeness, minus signing (deferred by owner decision).
@@ -110,7 +123,8 @@ product surface (bilingual README, pricing plan, homepage, CI).
   decision record, agent contract, product homepage, CI and release
   workflows.
 
-[Unreleased]: https://github.com/turlamai/termpilot/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/turlamai/termpilot/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/turlamai/termpilot/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/turlamai/termpilot/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/turlamai/termpilot/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/turlamai/termpilot/compare/v0.1.0...v0.2.0
