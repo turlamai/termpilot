@@ -40,6 +40,35 @@ export default function HostsView() {
   const [query, setQuery] = useState('');
   const [creating, setCreating] = useState(false);
   const [importMsg, setImportMsg] = useState('');
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [quickTarget, setQuickTarget] = useState('');
+
+  // "user@host:port" — user and port optional.
+  const quickConnect = async () => {
+    const raw = quickTarget.trim();
+    if (!raw) return;
+    let username = '';
+    let hostPort = raw;
+    if (raw.includes('@')) {
+      [username, hostPort] = raw.split('@', 2);
+    }
+    let port = 22;
+    let host = hostPort;
+    if (hostPort.includes(':')) {
+      const parts = hostPort.split(':');
+      host = parts[0];
+      port = Number(parts[1]) || 22;
+    }
+    if (!host) return;
+    await openSession({
+      host,
+      port,
+      username,
+      label: username ? `${username}@${host}` : host,
+    });
+    setQuickOpen(false);
+    setQuickTarget('');
+  };
 
   const importConfig = async () => {
     try {
@@ -95,9 +124,35 @@ export default function HostsView() {
         )}
       </div>
       {importMsg && <p className="hint">{importMsg}</p>}
+      {quickOpen && (
+        <div className="inline-form">
+          <input
+            placeholder={t('hosts.quick.placeholder')}
+            value={quickTarget}
+            onChange={(e) => setQuickTarget(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') void quickConnect();
+              if (e.key === 'Escape') setQuickOpen(false);
+            }}
+            autoFocus
+          />
+          <p className="hint">{t('hosts.quick.hint')}</p>
+          <div className="row">
+            <button className="btn btn-primary" onClick={() => void quickConnect()}>
+              {t('hosts.connect')}
+            </button>
+            <button className="btn" onClick={() => setQuickOpen(false)}>
+              {t('common.cancel')}
+            </button>
+          </div>
+        </div>
+      )}
       <div className="sidebar-actions">
         <button className="btn btn-primary btn-block" onClick={() => setCreating(true)}>
           ＋ {t('hosts.new')}
+        </button>
+        <button className="btn btn-block" onClick={() => setQuickOpen((v) => !v)}>
+          {t('hosts.quick')}
         </button>
         <button className="btn btn-block" onClick={() => void importConfig()}>
           {t('hosts.import')}

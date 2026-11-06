@@ -9,6 +9,7 @@ import TerminalPane from './TerminalPane';
 import { Icon } from './components/Icon';
 import FeedbackLayer from './components/FeedbackLayer';
 import UpdateBanner from './components/UpdateBanner';
+import ShortcutsOverlay from './components/ShortcutsOverlay';
 
 export default function App() {
   const tabs = useApp((s) => s.tabs);
@@ -141,6 +142,7 @@ export default function App() {
       </main>
       {aiPanelOpen && <AiPanel />}
       <CommandPalette />
+      <ShortcutsOverlay />
       <FeedbackLayer />
       {/* Floating AI panel opener when collapsed */}
       {!aiPanelOpen && (

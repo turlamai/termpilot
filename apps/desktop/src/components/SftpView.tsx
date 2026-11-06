@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@termpilot/core';
 import { useApp } from '../state/store';
+import { toast } from '../state/feedback';
 import { confirmDialog } from '../state/feedback';
 
 interface SftpEntry {
@@ -87,8 +88,31 @@ export default function SftpView() {
     setBusy(false);
   };
 
+  const uploadFiles = async (files: FileList) => {
+    for (const file of Array.from(files)) {
+      try {
+        const path = cwd === '.' ? file.name : `${cwd}/${file.name}`;
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        await api.sftpUpload(hostId, path, bytes);
+      } catch (err) {
+        toast(`${file.name}: ${String(err).slice(0, 100)}`, { error: true });
+      }
+    }
+    await load(cwd);
+  };
+
   return (
-    <div className="sidebar-view">
+    <div
+      className="sidebar-view sftp-dropzone"
+      onDragOver={(e) => {
+        if (hostId && uploadCwd) e.preventDefault();
+      }}
+      onDrop={(e) => {
+        if (!hostId || !uploadCwd || e.dataTransfer.files.length === 0) return;
+        e.preventDefault();
+        void uploadFiles(e.dataTransfer.files);
+      }}
+    >
       <div className="row">
         <select value={hostId} onChange={(e) => { setHostId(e.target.value); setCwd('.'); }}>
           <option value="">{t('view.hosts')}…</option>

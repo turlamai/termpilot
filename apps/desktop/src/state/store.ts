@@ -71,6 +71,7 @@ export interface AppState {
 
   aiPanelOpen: boolean;
   paletteOpen: boolean;
+  shortcutsOpen: boolean;
   outputRings: Record<string, OutputRing>;
   selections: Record<string, string>; // sessionId -> selected text
   termThemeId: string;
@@ -88,15 +89,18 @@ export interface AppState {
   openSession: (
     spec:
       | { 'host-id': string; label?: string }
-      | { kind: 'local'; label?: string },
+      | { kind: 'local'; label?: string }
+      | { host: string; port?: number; username?: string; label?: string },
     opts?: { split?: boolean },
   ) => Promise<void>;
   closePane: (tabId: string, sessionId: string) => void;
   closeTab: (tabId: string) => void;
+  reorderTabs: (from: number, to: number) => void;
   focusSession: (sessionId: string) => void;
 
   setAiPanel: (open: boolean) => void;
   setPalette: (open: boolean) => void;
+  setShortcutsOpen: (open: boolean) => void;
   setTermPrefs: (themeId: string, fontSize: number) => void;
   reconnectPane: (tabId: string, sessionId: string) => Promise<void>;
   appendOutput: (sessionId: string, text: string) => void;
@@ -120,6 +124,7 @@ export const useApp = create<AppState>((set, get) => ({
 
   aiPanelOpen: false,
   paletteOpen: false,
+  shortcutsOpen: false,
   outputRings: {},
   selections: {},
   termThemeId: localStorage.getItem('termpilot-termtheme') ?? 'pilot-dark',
@@ -173,7 +178,17 @@ export const useApp = create<AppState>((set, get) => ({
       const body =
         'host-id' in spec
           ? { 'host-id': spec['host-id'], cols: 120, rows: 30 }
-          : { kind: 'local', cols: 120, rows: 30 };
+          : 'host' in spec
+            ? // quick connect: direct profile, nothing saved
+              {
+                host: spec.host,
+                port: spec.port ?? 22,
+                username: spec.username ?? '',
+                label: spec.label ?? spec.host,
+                cols: 120,
+                rows: 30,
+              }
+            : { kind: 'local', cols: 120, rows: 30 };
       const session = await api.terminalOpen(body);
       const hostId = 'host-id' in spec ? spec['host-id'] : undefined;
       const pane: Pane = {
@@ -231,6 +246,13 @@ export const useApp = create<AppState>((set, get) => ({
     }
   },
 
+  reorderTabs: (from, to) => {
+    const tabs = [...get().tabs];
+    const [moved] = tabs.splice(from, 1);
+    tabs.splice(to, 0, moved);
+    set({ tabs });
+  },
+
   closeTab: (tabId) => {
     const tab = get().tabs.find((t) => t.id === tabId);
     if (!tab) return;
@@ -249,6 +271,7 @@ export const useApp = create<AppState>((set, get) => ({
 
   setAiPanel: (open) => set({ aiPanelOpen: open }),
   setPalette: (open) => set({ paletteOpen: open }),
+  setShortcutsOpen: (open) => set({ shortcutsOpen: open }),
 
   setTermPrefs: (themeId, fontSize) => {
     localStorage.setItem('termpilot-termtheme', themeId);

@@ -15,17 +15,19 @@ export default function TabBar() {
   const tabs = useApp((s) => s.tabs);
   const activeTabId = useApp((s) => s.activeTabId);
   const closeTab = useApp((s) => s.closeTab);
+  const reorderTabs = useApp((s) => s.reorderTabs);
   const openSession = useApp((s) => s.openSession);
   const hosts = useApp((s) => s.hosts);
   const t = useApp((s) => s.t);
   const [splitting, setSplitting] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   const activeTab = tabs.find((x) => x.id === activeTabId);
 
   return (
     <div className="tab-bar">
       <div className="tabs">
-        {tabs.map((tab) => {
+        {tabs.map((tab, i) => {
           const first = tab.panes[0];
           const title =
             tab.panes.length > 1
@@ -34,7 +36,17 @@ export default function TabBar() {
           return (
             <div
               key={tab.id}
-              className={`tab ${tab.id === activeTabId ? 'active' : ''}`}
+              className={`tab ${tab.id === activeTabId ? 'active' : ''} ${dragIndex === i ? 'dragging' : ''}`}
+              draggable
+              onDragStart={() => setDragIndex(i)}
+              onDragEnd={() => setDragIndex(null)}
+              onDragOver={(e) => {
+                if (dragIndex !== null && dragIndex !== i) e.preventDefault();
+              }}
+              onDrop={() => {
+                if (dragIndex !== null && dragIndex !== i) reorderTabs(dragIndex, i);
+                setDragIndex(null);
+              }}
               onClick={() => useApp.setState({ activeTabId: tab.id })}
             >
               <span className="tab-icon">
