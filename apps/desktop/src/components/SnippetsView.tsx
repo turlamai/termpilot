@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@termpilot/core';
 import { useApp } from '../state/store';
-import { confirmDialog } from '../state/feedback';
+import { confirmDialog, toast } from '../state/feedback';
 import { Icon } from './Icon';
 
 interface Snippet {
@@ -21,6 +21,8 @@ export default function SnippetsView() {
   const [command, setCommand] = useState('');
   const [group, setGroup] = useState('');
   const [creating, setCreating] = useState(false);
+  const [aiIntent, setAiIntent] = useState('');
+  const [aiBusy, setAiBusy] = useState(false);
   const [filling, setFilling] = useState<{
     id: string;
     params: string[];
@@ -43,6 +45,7 @@ export default function SnippetsView() {
       setName('');
       setCommand('');
       setGroup('');
+      setAiIntent('');
       setCreating(false);
       await refreshSnippets();
     } catch (e) {
@@ -58,6 +61,22 @@ export default function SnippetsView() {
     } catch (e) {
       console.error(e);
     }
+  };
+
+  // AI-drafted snippet: the description is user-typed (no terminal
+  // context is sent), the backend redaction chain still governs the
+  // call. The draft lands in the command field for review — never
+  // saved or run without an explicit user action.
+  const draftWithAi = async () => {
+    if (!aiIntent.trim()) return;
+    setAiBusy(true);
+    try {
+      const r = await api.aiGenerate(aiIntent.trim(), '', '');
+      setCommand(r.command);
+    } catch (e) {
+      toast(`${t('ai.error')}: ${String(e).slice(0, 120)}`, { error: true });
+    }
+    setAiBusy(false);
   };
 
   const extractParams = (cmd: string): string[] => {
@@ -169,6 +188,24 @@ export default function SnippetsView() {
               onChange={(e) => setName(e.target.value)}
               autoFocus
             />
+            <div className="row">
+              <input
+                placeholder={t('snippets.ai-placeholder')}
+                value={aiIntent}
+                onChange={(e) => setAiIntent(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void draftWithAi();
+                }}
+              />
+              <button
+                className="btn"
+                disabled={aiBusy || !aiIntent.trim()}
+                title={t('snippets.ai-draft')}
+                onClick={() => void draftWithAi()}
+              >
+                {aiBusy ? t('ai.thinking') : <Icon name="sparkles" size={13} />}
+              </button>
+            </div>
             <input
               placeholder={t('snippets.command')}
               value={command}

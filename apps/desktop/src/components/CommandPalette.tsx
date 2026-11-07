@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '@termpilot/core';
 import { useApp } from '../state/store';
+import { toast } from '../state/feedback';
 import { Icon } from './Icon';
 
 // The ⌘K palette: natural language → command draft, with redaction
@@ -76,6 +77,20 @@ export default function CommandPalette() {
     setPalette(false);
   };
 
+  // Keep the draft: save it as a snippet named after the intent. The
+  // snippet is inert until the user runs it, so governance holds.
+  const saveAsSnippet = async () => {
+    if (!draft) return;
+    const name = (intent.trim() || draft).slice(0, 40);
+    try {
+      await api.snippetCreate({ name, command: draft, tags: ['ai'] });
+      toast(t('ai.saved-snippet'));
+      setPalette(false);
+    } catch (e) {
+      toast(`${t('ai.error')}: ${String(e).slice(0, 120)}`, { error: true });
+    }
+  };
+
   return (
     <div className="palette-backdrop" onClick={() => setPalette(false)}>
       <div className="palette" onClick={(e) => e.stopPropagation()}>
@@ -141,6 +156,9 @@ export default function CommandPalette() {
                 onClick={() => void navigator.clipboard.writeText(draft)}
               >
                 {t('ai.copy')}
+              </button>
+              <button className="btn" title={t('ai.save-snippet')} onClick={() => void saveAsSnippet()}>
+                <Icon name="sparkles" size={13} /> {t('ai.save-snippet')}
               </button>
               <button
                 className="btn"

@@ -6,6 +6,12 @@ All notable changes to TermPilot are documented here. Format follows
 
 ## [Unreleased]
 
+### Added
+
+- AI-drafted snippets: describe the intent in the snippet editor and
+  the command field fills from the AI draft, editable before saving.
+- ⌘K palette: save a command draft as a snippet (tagged `ai`).
+
 ## [0.6.0] — 2026-11-06
 
 ### Added

@@ -62,9 +62,9 @@ before send; BYOK only):
 | ⌘K command bar: NL → command draft → preview → insert into the focused terminal (never auto-run) | overlay palette | ✓ shipped |
 | Selection explain / error diagnose | side panel | ✓ shipped |
 | Redaction preview before every send | side panel + palette | ✓ shipped |
-| AI-drafted snippets | snippet editor | M1 polish |
-| Session summary: long session → digest for handover/issue text | side panel | M2 |
-| Failure evidence export (bounded, fingerprinted) | CLI | M2 |
+| AI-drafted snippets | snippet editor + ⌘K save-as-snippet | ✓ shipped |
+| Session summary: long session → digest for handover/issue text | side panel | ✓ shipped |
+| Failure evidence export (bounded, fingerprinted) | pane export (UI/API; CLI exposure open) | ✓ shipped |
 | Deterministic CLI + MCP server | cli.rkt / mcp.rkt | ✓ shipped |
 
 ## 5. Sync, vault, teams
