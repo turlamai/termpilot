@@ -63,8 +63,8 @@ before send; BYOK only):
 | Selection explain / error diagnose | side panel | ✓ shipped |
 | Redaction preview before every send | side panel + palette | ✓ shipped |
 | AI-drafted snippets | snippet editor + ⌘K save-as-snippet | ✓ shipped |
-| Session summary: long session → digest for handover/issue text | side panel | ✓ shipped |
-| Failure evidence export (bounded, fingerprinted) | pane export (UI/API; CLI exposure open) | ✓ shipped |
+| Session summary: long session → digest for handover/issue text | side panel + CLI/MCP | ✓ shipped |
+| Failure evidence export (bounded, fingerprinted) | pane export + CLI + MCP | ✓ shipped |
 | Deterministic CLI + MCP server | cli.rkt / mcp.rkt | ✓ shipped |
 
 ## 5. Sync, vault, teams

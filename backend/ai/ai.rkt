@@ -126,6 +126,12 @@
       (redacted-text (redact text))
       text))
 
+;; Honest gating for the agent surfaces (CLI/MCP): whether an API key
+;; resolves (stored key or the provider preset's env var) — the key
+;; itself never leaves this module.
+(define (has-llm-key?)
+  (not (string=? (llm-call-key (resolve-llm-call)) "")))
+
 (define system-prompt-command
   "You are the command assistant inside TermPilot, an SSH client. Given a
 user intent plus optional context (host/os, recent terminal output),
@@ -225,6 +231,7 @@ terminal output, in at most 120 words, plain text.")
          generate-command
          explain-output
          summarize-session
+         has-llm-key?
          test-settings!
          redact-preview
          presets-view

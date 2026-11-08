@@ -11,6 +11,14 @@ All notable changes to TermPilot are documented here. Format follows
 - AI-drafted snippets: describe the intent in the snippet editor and
   the command field fills from the AI draft, editable before saving.
 - ⌘K palette: save a command draft as a snippet (tagged `ai`).
+- Agent surface: CLI gains `logs`, `evidence <logfile>` (bounded tail
+  + sha1 of a session log, `.cast` recordings supported) and
+  `summarize [file|-]` (handover digest through the governed AI path);
+  MCP gains the matching `list_logs`, `failure_evidence` and
+  `session_summary` tools. One evidence implementation
+  (`backend/evidence.rkt`) shared by app, CLI and MCP; log names are
+  validated against the session-logs directory — the agent surfaces
+  never read arbitrary paths.
 
 ## [0.6.0] — 2026-11-06
 

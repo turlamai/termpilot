@@ -16,7 +16,6 @@
          glaze/api-macros ; define-api-routes
          glaze/events     ; make-event-bus
          glaze/types      ; GString, GInt64, GValue, GBytes
-         file/sha1
          glaze/update
          net/base64
          glaze/window     ; webview? / title for the selftest
@@ -29,6 +28,7 @@
          racket/set
          racket/string
          "ai/ai.rkt"
+         "evidence.rkt"
          "forwarding.rkt"
          "keys.rkt"
          "knownhosts.rkt"
@@ -530,25 +530,17 @@
    (summarize-session output)]
   ;; Failure evidence: a bounded, fingerprinted diagnostic dump of one
   ;; session's recent output (family idiom — sized to stay out of LLM
-  ;; context, with a sha256 so agents can cite and dedupe it).
+  ;; context, with a sha256 so agents can cite and dedupe it). The
+  ;; record shape lives in evidence.rkt, shared with the CLI and MCP.
   [(POST "api/terminal/evidence" #:returns GValue)
    (terminal-evidence [id string?])
    (define s (or (get-session sessions id)
                  (error 'terminal/evidence "unknown session")))
-   (define ring-text
-     (bytes->string/utf-8 (apply bytes-append (session-ring s)) #\?))
-   (define tail
-     (if (> (string-length ring-text) 16000)
-         (substring ring-text (- (string-length ring-text) 16000))
-         ring-text))
-   (define fingerprint (sha1 (open-input-bytes (string->bytes/utf-8 tail))))
-   (hasheq 'session id
-           'label (session-label s)
-           'kind (symbol->string (session-kind s))
-           'captured-at (current-seconds)
-           'sha1 fingerprint
-           'bytes (string-length tail)
-           'output tail)])
+   (evidence-from-text
+    id
+    (session-label s)
+    (symbol->string (session-kind s))
+    (bytes->string/utf-8 (apply bytes-append (session-ring s)) #\?))])
 
 ;; ---- app -------------------------------------------------------------------
 

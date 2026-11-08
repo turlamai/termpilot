@@ -20,11 +20,11 @@ model API key, redacted before anything leaves the machine.
 
 ## Start here
 
-TermPilot is in early development (v0.3.0 development preview). The architecture is proven —
+TermPilot is in early development (v0.6.0 development preview). The architecture is proven —
 the Racket backend streams a real PTY session to an xterm.js frontend over
-GLZ1 — and the first release is on the way. What ships today in the
-repository is the working vertical slice: host store, terminal sessions,
-BYOK AI settings with redaction.
+GLZ1 — and what ships in the repository today is the working product
+core: all six connection types, host/key/forwarding/snippet management,
+the AI panel with redaction, and the agent surface below.
 
 - Product spec (feature matrix + UI layout): [docs/PRODUCT-SPEC.md](docs/PRODUCT-SPEC.md)
 - Architecture: [ARCHITECTURE.md](ARCHITECTURE.md)
@@ -59,6 +59,28 @@ packages/core  shared TypeScript bridge (typed RPC + streaming client)
   Qwen, Kimi, Doubao, SiliconFlow, OpenAI, Anthropic and local Ollama.
   Keys live in a 0600 settings file inside the app data directory, are
   held by the Racket backend and never enter the webview.
+
+## Agent surface
+
+Agent-native means coding agents get the same truths as the UI, through
+a deterministic CLI and an MCP server (stdio JSON-RPC) — both over the
+same local store, no network unless you invoke `run`, exit codes that
+never lie, JSON on `--json`:
+
+```bash
+racket cli.rkt hosts --json                      # host profiles
+racket cli.rkt run web-1 "systemctl is-active nginx"   # one-shot over system ssh
+racket cli.rkt logs                              # session-log files (opt-in logging)
+racket cli.rkt evidence web-1-0000000001.log     # bounded tail + sha1 — the citable failure dump
+echo "<output>" | racket cli.rkt summarize -     # handover digest (BYOK key required)
+racket mcp.rkt                                   # MCP: list_hosts, run_command, list_snippets,
+                                                 #      list_logs, failure_evidence, session_summary
+```
+
+Evidence and summaries are the agent feedback loop: after a failed
+`run`, `evidence` yields a bounded, fingerprinted dump an agent can
+cite; `summarize` condenses a long session for handover. Both work
+from the on-disk session logs the app writes on opt-in.
 
 ## Development
 

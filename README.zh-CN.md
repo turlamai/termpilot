@@ -14,7 +14,7 @@ TermPilot 是本地优先的桌面 SSH 客户端，功能对齐 Termius 并超�
 
 ## 从这里开始
 
-TermPilot 处于早期开发阶段（v0.3.0 开发预览）。架构已经验证——Racket 引擎经 GLZ1 把真实 PTY 会话流式推送给 xterm.js 前端——首个版本在路上。仓库当前交付的是可工作的垂直切片：主机存储、终端会话、BYOK AI 设置与脱敏。
+TermPilot 处于早期开发阶段（v0.6.0 开发预览）。架构已经验证——Racket 引擎经 GLZ1 把真实 PTY 会话流式推送给 xterm.js 前端——仓库当前交付的是可工作的产品核心：六种连接类型全量、主机/密钥/转发/Snippet 管理、带脱敏的 AI 面板，以及下文的 agent 面。
 
 - 产品规格（功能矩阵 + 界面布局）：[docs/PRODUCT-SPEC.md](docs/PRODUCT-SPEC.md)
 - 架构：[ARCHITECTURE.md](ARCHITECTURE.md)
@@ -37,6 +37,22 @@ packages/core  共享 TypeScript 桥（类型化 RPC + 流式客户端）
 - **系统 OpenSSH 作传输**——agent 转发、ProxyJump、config 兼容、新算法跟进全部免费获得。引擎层是干净接缝：将来可换进程内 SSH 栈而不动会话、存储与 UI。
 - **AI 只提议、绝不执行**——命令草稿与输出解释只有你确认后才进终端。每条 AI 发送路径都先脱敏（私钥、token、凭据），脱敏预览展示将离开本机的确切内容。
 - **你的 key、你的 provider**——BYOK 预设覆盖 GLM、DeepSeek、Qwen、Kimi、豆包、SiliconFlow、OpenAI、Anthropic 与本地 Ollama。key 存于应用数据目录的 0600 设置文件，由 Racket 引擎持有，永不进入 WebView。
+
+## Agent 面
+
+Agent-native 意味着编码 agent 与 UI 获得同样的真相：一个确定性 CLI 和一个 MCP 服务器（stdio JSON-RPC）——都走同一个本地存储，不调 `run` 就没有网络，退出码从不说谎，`--json` 出 JSON：
+
+```bash
+racket cli.rkt hosts --json                      # 主机档案
+racket cli.rkt run web-1 "systemctl is-active nginx"   # 一次性命令，走系统 ssh
+racket cli.rkt logs                              # 会话日志文件（应用内按会话开启）
+racket cli.rkt evidence web-1-0000000001.log     # 有界尾部 + sha1——可引用的失败证据
+echo "<输出>" | racket cli.rkt summarize -       # 交接摘要（需 BYOK key）
+racket mcp.rkt                                   # MCP：list_hosts、run_command、list_snippets、
+                                                 #     list_logs、failure_evidence、session_summary
+```
+
+evidence 与 summarize 是 agent 的反馈闭环：`run` 失败后，`evidence` 给出有界、带指纹的转储供 agent 引用；`summarize` 把长会话压缩成交接文本。两者都基于应用可选开启后落盘的会话日志工作。
 
 ## 开发
 

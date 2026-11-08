@@ -140,3 +140,40 @@
 (check-equal? (hash-ref web 'username) "admin")
 (check-equal? (hash-ref web 'jump) "bastion")
 (delete-file tmpcfg)
+
+;; ---- failure evidence (shared app/CLI/MCP implementation) -------------------
+
+(require "../evidence.rkt")
+
+(let ([ev (evidence-from-text "s1" "web-1" "ssh" "hello")])
+  (check-equal? (hash-ref ev 'session) "s1")
+  (check-equal? (hash-ref ev 'label) "web-1")
+  (check-equal? (hash-ref ev 'kind) "ssh")
+  (check-equal? (hash-ref ev 'output) "hello")
+  (check-equal? (hash-ref ev 'bytes) 5)
+  (check-true (string? (hash-ref ev 'sha1)))
+  (check-true (exact-integer? (hash-ref ev 'captured-at))))
+
+;; bounded: only the recent tail survives
+(let ([ev (evidence-from-text "" "big" "log" (make-string 20000 #\a))])
+  (check-equal? (hash-ref ev 'bytes) evidence-bound))
+
+;; the fingerprint is of the tail — stable across callers
+(check-equal?
+ (hash-ref (evidence-from-text "" "x" "log" "stable text") 'sha1)
+ (hash-ref (evidence-from-text "" "y" "recording" "stable text") 'sha1))
+
+;; plain session log: raw output passes through
+(check-equal?
+ (hash-ref (evidence-from-log-bytes "" "web-1-0000000001.log" #"raw output\n")
+           'output)
+ "raw output\n")
+
+;; asciinema recording: output events joined, header/input excluded
+(check-equal?
+ (hash-ref
+  (evidence-from-log-bytes
+   "" "web-1-0000000001.cast"
+   #"{\"version\": 2, \"width\": 120, \"height\": 30}\n[0.1, \"o\", \"hello \"]\n[0.2, \"o\", \"world\"]\n[0.3, \"i\", \"secret-typing\"]\n")
+  'output)
+ "hello world")

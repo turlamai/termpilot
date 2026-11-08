@@ -3,9 +3,14 @@
 ;; TermPilot MCP server (stdio, zero dependencies): a coding agent's
 ;; terminal-access surface over the same store the app and CLI use.
 ;; Tools:
-;;   list_hosts    -> host labels + addresses
-;;   run_command   -> one-shot over the ssh sidecar (exit code honest)
-;;   list_snippets -> saved commands
+;;   list_hosts       -> host labels + addresses
+;;   run_command      -> one-shot over the ssh sidecar (exit code honest)
+;;   list_snippets    -> saved commands
+;;   list_logs        -> session-log files written by opt-in logging
+;;   failure_evidence -> bounded tail + sha1 of one session log
+;;   session_summary  -> handover digest of terminal output through
+;;                       the governed AI path (redacted; errors
+;;                       honestly when no API key is configured)
 ;; Protocol: newline-delimited JSON-RPC 2.0 (MCP stdio transport);
 ;; initialize / tools/list / tools/call handled, notifications dropped.
 
@@ -15,12 +20,15 @@
          racket/port
          racket/string
          "backend/store.rkt"
-         "backend/ssh.rkt")
+         "backend/ssh.rkt"
+         "backend/session.rkt"
+         "backend/ai/ai.rkt"
+         "backend/evidence.rkt")
 
 (define protocol-version "2024-11-05")
 
 (define server-info
-  (hasheq 'name "termpilot" 'version "0.1.0"))
+  (hasheq 'name "termpilot" 'version "0.2.0"))
 
 (define (tool-list)
   (list
@@ -40,7 +48,29 @@
                                          'description "host label")
                            'command (hasheq 'type "string"
                                             'description "the command line"))
-                   'required '("host" "command")))))
+                   'required '("host" "command")))
+   (hasheq 'name "list_logs"
+           'description
+           "List session-log files (opt-in terminal logging from the app). Feed a name to failure_evidence."
+           'inputSchema (hasheq 'type "object" 'properties (hasheq)))
+   (hasheq 'name "failure_evidence"
+           'description
+           "Citable failure evidence for one session log: the bounded recent tail plus its sha1 fingerprint (.log raw output or .cast recordings)."
+           'inputSchema
+           (hasheq 'type "object"
+                   'properties
+                   (hasheq 'name (hasheq 'type "string"
+                                         'description "session-log file name from list_logs"))
+                   'required '("name")))
+   (hasheq 'name "session_summary"
+           'description
+           "Handover digest of a terminal session excerpt (what was done, changes, errors, follow-ups). Redaction applies before the LLM call; requires a configured AI key."
+           'inputSchema
+           (hasheq 'type "object"
+                   'properties
+                   (hasheq 'text (hasheq 'type "string"
+                                         'description "the terminal output excerpt"))
+                   'required '("text")))))
 
 (define (text-result text)
   (hasheq 'content (list (hasheq 'type "text" 'text text))))
@@ -100,6 +130,31 @@
                     [(eq? st 'done) 0]
                     [else st])
               out err))]
+    [("list_logs")
+     (define logs (list-log-files))
+     (text-result
+      (if (null? logs)
+          "no session logs (logging is opt-in per session in the app)"
+          (string-join
+           (for/list ([l (in-list logs)])
+             (format "~a (~a bytes)" (hash-ref l 'name) (hash-ref l 'bytes)))
+           "\n")))]
+    [("failure_evidence")
+     ;; Same seam as the CLI: the name is validated against the
+     ;; session-logs directory, never an arbitrary path.
+     (define name (hash-ref params 'name ""))
+     (define ev (evidence-from-log-bytes "" name (read-log-file name)))
+     (text-result
+      (format "~a  sha1: ~a  bytes: ~a\n~a"
+              name (hash-ref ev 'sha1) (hash-ref ev 'bytes)
+              (hash-ref ev 'output)))]
+    [("session_summary")
+     (define text (hash-ref params 'text ""))
+     (unless (has-llm-key?)
+       (error 'session_summary
+              "no AI API key configured — set one in the app's AI settings"))
+     (define r (summarize-session text))
+     (text-result (hash-ref r 'text))]
     [else (error 'tools/call "unknown tool ~a" name)]))
 
 (define (reply id result)
