@@ -19,6 +19,11 @@ All notable changes to TermPilot are documented here. Format follows
   (`backend/evidence.rkt`) shared by app, CLI and MCP; log names are
   validated against the session-logs directory — the agent surfaces
   never read arbitrary paths.
+- SFTP: recursive directory upload — drop folders onto the manager or
+  use the folder picker; one batch sftp run transfers the whole tree
+  (`-mkdir` tolerant of existing dirs, per-file ≤10 MiB, tree ≤50 MiB).
+  Relative paths are sanitized (no absolute, no `..`) before anything
+  is written; plain-file drops keep their per-file toasts.
 
 ## [0.6.0] — 2026-11-06
 

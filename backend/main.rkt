@@ -369,6 +369,15 @@
          data))
    (upload! host-id path payload)
    (hasheq 'ok #t)]
+  [(POST "api/sftp/upload-dir" #:returns GValue)
+   (sftp-upload-dir [host-id string?] [path string?] [files GValue])
+   (define count
+     (upload-dir!
+      host-id path
+      (for/list ([f (in-list files)])
+        (hasheq 'path (hash-ref f 'path)
+                'data (base64-decode (hash-ref f 'data))))))
+   (hasheq 'count count)]
 
   ;; ssh keys
   [(POST "api/keys/list" #:returns GValue)

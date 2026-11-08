@@ -12,6 +12,7 @@
          racket/file
          racket/format
          racket/list
+         racket/path
          racket/port
          racket/string
          racket/system
@@ -192,6 +193,87 @@
   (unless ok? (error 'sftp/put "upload failed: ~a" (string-trim out)))
   #t)
 
+;; ---- recursive directory upload ----------------------------------------------
+;; Symmetric to download-dir! but honest about the tree: the UI walks a
+;; dropped/picked directory and sends {relative-path, bytes} entries;
+;; the backend stages them in a temp tree and transfers the whole tree
+;; over ONE batch run (a single sftp connection — `-mkdir` per remote
+;; directory with the leading dash so existing dirs don't abort, `put`
+;; per file). Per-file ≤10 MiB inline limit, tree ≤50 MiB (parity with
+;; the archive cap).
+
+;; A relative path is accepted only when it stays inside the upload
+;; root: no leading "/", no "." or ".." segments, no empty segments.
+;; Returns the normalized path or #f.
+(define (sanitize-rel-path p)
+  (and (string? p)
+       (not (string=? p ""))
+       ;; string-prefix? takes (full-string prefix) — leading "/" rejected
+       (not (string-prefix? p "/"))
+       (let ([segs (string-split p "/")])
+         (and (andmap (lambda (s)
+                        (and (not (string=? s "")) (not (string=? s "."))
+                             (not (string=? s ".."))))
+                      segs)
+              (string-join segs "/")))))
+
+;; Every ancestor directory of "a/b/c.txt" — ("a" "a/b") — so mkdir
+;; commands can be issued parents-first in one batch.
+(define (ancestor-dirs p)
+  (define segs (string-split p "/"))
+  (if (< (length segs) 2)
+      '()
+      (for/list ([i (in-range 1 (length segs))])
+        (string-join (take segs i) "/"))))
+
+(define (rel->remote remote-dir rel)
+  (if (string=? remote-dir ".") rel (format "~a/~a" remote-dir rel)))
+
+(define (upload-dir! host-id remote-dir entries)
+  (define profile (profile-for host-id))
+  (define clean
+    (for/list ([e (in-list entries)])
+      (define p (sanitize-rel-path (hash-ref e 'path "")))
+      (unless p
+        (error 'sftp/put-dir "unsafe path in upload: ~a" (hash-ref e 'path "")))
+      (define data (hash-ref e 'data))
+      (when (> (bytes-length data) max-transfer-bytes)
+        (error 'sftp/put-dir
+               "file exceeds the ~a MiB inline limit: ~a"
+               (/ max-transfer-bytes 1024 1024) p))
+      (cons p data)))
+  (define total (for/sum ([e (in-list clean)]) (bytes-length (cdr e))))
+  (when (> total max-archive-bytes)
+    (error 'sftp/put-dir "tree exceeds the ~a MiB upload limit"
+           (/ max-archive-bytes 1024 1024)))
+  (define tmp (make-temporary-file "tpdirup-~a" 'directory))
+  (dynamic-wind
+    void
+    (lambda ()
+      (for ([e (in-list clean)])
+        (define local (build-path tmp (string->path (car e))))
+        (make-directory* (path-only local))
+        (with-output-to-file local (lambda () (write-bytes (cdr e))) #:exists 'replace))
+      (define dirs
+        (remove-duplicates
+         (append* (for/list ([e (in-list clean)]) (ancestor-dirs (car e))))
+         string=?))
+      (define cmds
+        (append
+         (for/list ([d (in-list dirs)])
+           (format "-mkdir ~a" (sh-quote (rel->remote remote-dir d))))
+         (for/list ([e (in-list clean)])
+           (format "put ~a ~a"
+                   (sh-quote (path->string (build-path tmp (string->path (car e)))))
+                   (sh-quote (rel->remote remote-dir (car e)))))))
+      (define-values (ok? out) (run-batch profile cmds))
+      (unless ok?
+        (error 'sftp/put-dir
+               "directory upload failed (some files may have transferred): ~a"
+               (string-trim out)))
+      (length clean))
+    (lambda () (delete-directory/files tmp))))
+
 (provide list-dir
          mkdir!
          rename!
@@ -199,4 +281,7 @@
          remove-dir!
          download!
          download-dir!
-         upload!)
+         upload!
+         sanitize-rel-path
+         ancestor-dirs
+         upload-dir!)

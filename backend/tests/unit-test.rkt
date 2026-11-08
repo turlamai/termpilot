@@ -177,3 +177,24 @@
    #"{\"version\": 2, \"width\": 120, \"height\": 30}\n[0.1, \"o\", \"hello \"]\n[0.2, \"o\", \"world\"]\n[0.3, \"i\", \"secret-typing\"]\n")
   'output)
  "hello world")
+
+;; ---- sftp directory upload (path safety, pure parts) ------------------------
+
+(require "../sftp.rkt")
+
+;; relative paths normalize; anything that escapes the upload root is
+;; rejected — the agent/UI surface never writes outside it
+(check-equal? (sanitize-rel-path "a/b.txt") "a/b.txt")
+(check-equal? (sanitize-rel-path "single.txt") "single.txt")
+(check-equal? (sanitize-rel-path "my proj/config (v2).yml") "my proj/config (v2).yml")
+(check-false (sanitize-rel-path "/etc/passwd"))
+(check-false (sanitize-rel-path "../escape"))
+(check-false (sanitize-rel-path "a/../../escape"))
+(check-false (sanitize-rel-path "a/./b"))
+(check-false (sanitize-rel-path "a//b"))
+(check-false (sanitize-rel-path ""))
+(check-false (sanitize-rel-path #f))
+
+;; mkdir commands need parents before children
+(check-equal? (ancestor-dirs "a/b/c.txt") '("a" "a/b"))
+(check-equal? (ancestor-dirs "top.txt") '())

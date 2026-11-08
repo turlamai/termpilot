@@ -101,6 +101,45 @@ export default function SftpView() {
     await load(cwd);
   };
 
+  // Directory drops and folder picks transfer the tree in one call.
+  // The walk collects {relative-path, bytes} pairs; the backend does
+  // one batch sftp run per tree (see backend/sftp.rkt upload-dir!).
+  const readEntries = (reader: FileSystemDirectoryReader): Promise<FileSystemEntry[]> =>
+    new Promise((res, rej) => reader.readEntries(res, rej));
+
+  const readEntryTree = async (
+    entry: FileSystemEntry,
+    base: string,
+    out: { path: string; data: Uint8Array }[],
+  ): Promise<void> => {
+    if (entry.isFile) {
+      const file = await new Promise<File>((res, rej) =>
+        (entry as FileSystemFileEntry).file(res, rej),
+      );
+      out.push({ path: `${base}${entry.name}`, data: new Uint8Array(await file.arrayBuffer()) });
+    } else if (entry.isDirectory) {
+      const reader = (entry as FileSystemDirectoryEntry).createReader();
+      let batch: FileSystemEntry[];
+      do {
+        batch = await readEntries(reader);
+        for (const child of batch) await readEntryTree(child, `${base}${entry.name}/`, out);
+      } while (batch.length > 0);
+    }
+  };
+
+  const uploadDir = async (files: { path: string; data: Uint8Array }[]) => {
+    if (files.length === 0 || !hostId || !uploadCwd) return;
+    setBusy(true);
+    try {
+      const r = await api.sftpUploadDir(hostId, uploadCwd, files);
+      toast(`${t('sftp.upload-dir.done')}: ${r.count}`);
+      await load(uploadCwd);
+    } catch (err) {
+      toast(String(err).slice(0, 140), { error: true });
+    }
+    setBusy(false);
+  };
+
   return (
     <div
       className="sidebar-view sftp-dropzone"
@@ -108,9 +147,22 @@ export default function SftpView() {
         if (hostId && uploadCwd) e.preventDefault();
       }}
       onDrop={(e) => {
-        if (!hostId || !uploadCwd || e.dataTransfer.files.length === 0) return;
+        if (!hostId || !uploadCwd) return;
         e.preventDefault();
-        void uploadFiles(e.dataTransfer.files);
+        // Capture the entries synchronously — the item list dies with
+        // the event, the entries themselves stay valid.
+        const dropped = Array.from(e.dataTransfer.items)
+          .map((i) => i.webkitGetAsEntry())
+          .filter((x): x is FileSystemEntry => !!x);
+        if (dropped.some((d) => d.isDirectory)) {
+          const files: { path: string; data: Uint8Array }[] = [];
+          void (async () => {
+            for (const d of dropped) await readEntryTree(d, '', files);
+            await uploadDir(files);
+          })();
+        } else if (e.dataTransfer.files.length > 0) {
+          void uploadFiles(e.dataTransfer.files);
+        }
       }}
     >
       <div className="row">
@@ -237,6 +289,35 @@ export default function SftpView() {
               onChange={(e) => {
                 const f = e.target.files?.[0];
                 if (f) void upload(f);
+                e.target.value = '';
+              }}
+            />
+          </label>
+          <label
+            className={`btn ${hostId && uploadCwd ? '' : 'disabled'}`}
+            title={t('sftp.upload-folder')}
+          >
+            ⬆📁 {t('sftp.upload-folder')}
+            <input
+              type="file"
+              style={{ display: 'none' }}
+              {...({ webkitdirectory: '', directory: '' } as Record<string, string>)}
+              onChange={(e) => {
+                const fs = e.target.files;
+                if (fs && fs.length > 0) {
+                  void (async () => {
+                    const files: { path: string; data: Uint8Array }[] = [];
+                    for (const f of Array.from(fs)) {
+                      files.push({
+                        // webkitRelativePath names the picked folder
+                        // itself first: myproj/src/a.ts
+                        path: f.webkitRelativePath || f.name,
+                        data: new Uint8Array(await f.arrayBuffer()),
+                      });
+                    }
+                    await uploadDir(files);
+                  })();
+                }
                 e.target.value = '';
               }}
             />

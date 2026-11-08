@@ -50,6 +50,19 @@ export function hasBackend(): Promise<boolean> {
   return probe;
 }
 
+/**
+ * Base64 for arbitrary byte lengths: String.fromCharCode accepts only
+ * ~64k arguments per call, so large files convert in chunks.
+ */
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
 /** POST JSON to the backend; returns the parsed response. */
 export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
   const g = nativeBridge();
@@ -281,7 +294,16 @@ export const api = {
       {
         'host-id': hostId,
         path,
-        data: btoa(String.fromCharCode(...data)),
+        data: bytesToBase64(data),
+      },
+    ),
+  sftpUploadDir: (hostId: string, remotePath: string, files: { path: string; data: Uint8Array }[]) =>
+    apiPost<{ count: number }>(
+      '/api/sftp/upload-dir',
+      {
+        'host-id': hostId,
+        path: remotePath,
+        files: files.map((f) => ({ path: f.path, data: bytesToBase64(f.data) })),
       },
     ),
   keysList: () =>

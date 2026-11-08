@@ -20,7 +20,7 @@ session, one scrollback ring, one streaming channel):
 | Telnet | ✓ | ✓ shipped | `telnet` sidecar, availability-gated (doctor/transports) |
 | Mosh | ✓ | ✓ shipped | `mosh` sidecar, availability-gated |
 | Serial | ✓ | ✓ shipped | one-shot termios config + plain file ports (read leg validates on hardware) |
-| SFTP | ✓ | ✓ shipped | batch-mode sidecar; inline transfers ≤10 MiB |
+| SFTP | ✓ | ✓ shipped | batch-mode sidecar; inline transfers ≤10 MiB; recursive directory upload |
 
 Rule: the transport seam (`backend/ssh.rkt`, to become
 `backend/transports/`) maps a connection profile to `command + args`
