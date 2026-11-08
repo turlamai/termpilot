@@ -6,8 +6,9 @@
 ;; network). Subcommands:
 ;;   hosts                 list host profiles (label, address, tags)
 ;;   run <host> <command>  one-shot command over the ssh sidecar
-;;                         (BatchMode; prints stdout, exits non-zero
-;;                         with the remote exit code on failure)
+;;                         (BatchMode; prints stdout/stderr, exits
+;;                         non-zero with the remote exit code on
+;;                         failure, 124 on --timeout like timeout(1))
 ;;   snippets              list snippets
 ;;   transports            which transports are available
 ;;   logs                  list session-log files (app opt-in logs)
@@ -31,7 +32,8 @@
          "backend/ssh.rkt"
          "backend/session.rkt"
          "backend/ai/ai.rkt"
-         "backend/evidence.rkt")
+         "backend/evidence.rkt"
+         "backend/runproc.rkt")
 
 (define (host-by-ref reference)
   ;; by label, or user@host style quick match
@@ -64,7 +66,7 @@
                  (hash-ref h 'port 22)
                  (string-join (hash-ref h 'tags '()) ","))))))
 
-(define (cmd-run reference command)
+(define (cmd-run reference command timeout-secs)
   (define h (host-by-ref reference))
   (define-values (cmd args)
     (ssh-argv
@@ -76,19 +78,15 @@
              'strict-host-key (hash-ref h 'strict-host-key "accept-new")
              'jump (hash-ref h 'jump "")
              'keep-alive 0)))
-  (define argv (append args (list command)))
-  (with-handlers ([exn:fail? (lambda (e)
-                               (eprintf "~a\n" (exn-message e))
-                               2)])
-    ;; No pty needed for a one-shot: plain pipes, blocking to completion.
-    (define-values (proc stdout stdin stderr)
-      (apply subprocess #f #f #f cmd argv))
-    (copy-port stdout (current-output-port))
-    (copy-port stderr (current-error-port))
-    (define st (subprocess-status proc))
-    (cond [(not st) 2]
-          [(eq? st 'done) 0]
-          [else st])))
+  (define argv (append (list cmd) args (list command)))
+  (define-values (code out err timed-out?)
+    (run-command-with-timeout argv timeout-secs))
+  (display out)
+  (display err (current-error-port))
+  (cond
+    ;; timeout(1) convention: a timed-out run exits 124, honestly.
+    [timed-out? (eprintf "timeout: killed after ~a s\n" timeout-secs) 124]
+    [else code]))
 
 (define (cmd-snippets json?)
   (define snippets (list-snippets))
@@ -151,10 +149,28 @@
   (define argv
     (vector->list
      (current-command-line-arguments)))
-  (define positional (filter (lambda (a) (not (string-prefix? a "--"))) argv))
+  (define timeout-arg
+    (let loop ([xs argv])
+      (cond
+        [(null? xs) #f]
+        [(and (string=? (car xs) "--timeout")
+              (pair? (cdr xs))
+              (string->number (cadr xs)))
+         (string->number (cadr xs))]
+        [else (loop (cdr xs))])))
+  ;; Positional filter also swallows the --timeout flag and its value,
+  ;; so they never leak into a command string.
+  (define positional
+    (let loop ([xs argv] [skip? #f] [acc '()])
+      (cond
+        [(null? xs) (reverse acc)]
+        [skip? (loop (cdr xs) #f acc)]
+        [(string=? (car xs) "--timeout") (loop (cdr xs) #t acc)]
+        [(string-prefix? (car xs) "--") (loop (cdr xs) #f acc)]
+        [else (loop (cdr xs) #f (cons (car xs) acc))])))
   ;; Exit codes that never lie: any subcommand failure prints the
   ;; message to stderr and exits 2 (0 = ok, 1 = usage, 2 = failed,
-  ;; remote exit code for `run`).
+  ;; 124 = run timed out, remote exit code for `run`).
   (define result
     (with-handlers ([exn:fail?
                      (lambda (e) (eprintf "~a\n" (exn-message e)) 2)])
@@ -174,9 +190,9 @@
         [(list "summarize" path)
          (cmd-summarize path (and json? #t))]
         [(list "run" reference command-parts ...)
-         (cmd-run reference (string-join command-parts " "))]
+         (cmd-run reference (string-join command-parts " ") timeout-arg)]
         [(list)
-         (displayln "usage: termpilot hosts|snippets|transports|logs|evidence <logfile>|summarize [file|-]|run <host> <command...> [--json]")
+         (displayln "usage: termpilot hosts|snippets|transports|logs|evidence <logfile>|summarize [file|-]|run <host> <command...> [--timeout N] [--json]")
          1]
         [_ (displayln "unknown subcommand") 1])))
   (exit (if (exact-integer? result) result 0)))

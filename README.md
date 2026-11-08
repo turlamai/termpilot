@@ -70,6 +70,7 @@ never lie, JSON on `--json`:
 ```bash
 racket cli.rkt hosts --json                      # host profiles
 racket cli.rkt run web-1 "systemctl is-active nginx"   # one-shot over system ssh
+                                                 #   add --timeout N to bound it (exit 124)
 racket cli.rkt logs                              # session-log files (opt-in logging)
 racket cli.rkt evidence web-1-0000000001.log     # bounded tail + sha1 — the citable failure dump
 echo "<output>" | racket cli.rkt summarize -     # handover digest (BYOK key required)

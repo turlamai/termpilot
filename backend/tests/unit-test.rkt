@@ -198,3 +198,43 @@
 ;; mkdir commands need parents before children
 (check-equal? (ancestor-dirs "a/b/c.txt") '("a" "a/b"))
 (check-equal? (ancestor-dirs "top.txt") '())
+
+;; ---- subprocess timeout runner (shared CLI/MCP seam) ------------------------
+
+(require "../runproc.rkt")
+
+;; exec-file can be a bare "racket" when the suite runs under racket;
+;; subprocess needs a resolvable path
+(define racket-bin
+  (path->string
+   (or (find-executable-path (find-system-path 'exec-file))
+       (find-system-path 'exec-file))))
+
+;; normal run: exit code passes through, output intact
+(let-values ([(code out err to?)
+              (run-command-with-timeout (list racket-bin "-e" "(display \"hi\")") 10)])
+  (check-equal? code 0)
+  (check-equal? out "hi")
+  (check-false to?))
+
+;; non-zero exit code passes through honestly
+(let-values ([(code out err to?)
+              (run-command-with-timeout (list racket-bin "-e" "(exit 7)") 10)])
+  (check-equal? code 7)
+  (check-false to?))
+
+;; deadline kill: timed-out? is set, the process does not survive,
+;; and output printed before the deadline is not lost
+(let-values ([(code out err to?)
+              (run-command-with-timeout
+               (list racket-bin "-e" "(display \"partial\") (flush-output) (sleep 30)") 1)])
+  (check-true to?)
+  (check-equal? out "partial"))
+
+;; no timeout requested: waits to completion
+(let-values ([(code out err to?)
+              (run-command-with-timeout
+               (list racket-bin "-e" "(display \"slow\")") #f)])
+  (check-equal? code 0)
+  (check-equal? out "slow")
+  (check-false to?))

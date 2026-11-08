@@ -24,6 +24,14 @@ All notable changes to TermPilot are documented here. Format follows
   (`-mkdir` tolerant of existing dirs, per-file ≤10 MiB, tree ≤50 MiB).
   Relative paths are sanitized (no absolute, no `..`) before anything
   is written; plain-file drops keep their per-file toasts.
+- Agent surface: honest run timeouts — CLI `run --timeout N` (exit 124,
+  timeout(1) convention) and MCP `run_command` `timeout` seconds
+  (default 300); a deadline kill is reported as a timeout, never as a
+  borrowed exit code. `backend/runproc.rkt` shares the watchdog
+  implementation and fixes a latent spawn bug: bare binary names from
+  `ssh-argv` were resolved against the cwd only (Racket's subprocess
+  never consults PATH), so `run`/`run_command` failed from any
+  directory without an ssh in it.
 
 ## [0.6.0] — 2026-11-06
 

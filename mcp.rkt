@@ -23,12 +23,13 @@
          "backend/ssh.rkt"
          "backend/session.rkt"
          "backend/ai/ai.rkt"
-         "backend/evidence.rkt")
+         "backend/evidence.rkt"
+         "backend/runproc.rkt")
 
 (define protocol-version "2024-11-05")
 
 (define server-info
-  (hasheq 'name "termpilot" 'version "0.2.0"))
+  (hasheq 'name "termpilot" 'version "0.3.0"))
 
 (define (tool-list)
   (list
@@ -40,14 +41,16 @@
            'inputSchema (hasheq 'type "object" 'properties (hasheq)))
    (hasheq 'name "run_command"
            'description
-           "Run ONE command on a saved host over the system ssh (BatchMode). Returns stdout/stderr and the exit code. Never interactive; agent auth only."
+           "Run ONE command on a saved host over the system ssh (BatchMode). Returns stdout/stderr and the exit code; a timeout reports honestly instead of hanging. Never interactive; agent auth only."
            'inputSchema
            (hasheq 'type "object"
                    'properties
                    (hasheq 'host (hasheq 'type "string"
                                          'description "host label")
                            'command (hasheq 'type "string"
-                                            'description "the command line"))
+                                            'description "the command line")
+                           'timeout (hasheq 'type "integer"
+                                            'description "kill the command after this many seconds (default 300)"))
                    'required '("host" "command")))
    (hasheq 'name "list_logs"
            'description
@@ -103,6 +106,11 @@
     [("run_command")
      (define reference (hash-ref params 'host ""))
      (define command (hash-ref params 'command ""))
+     (define timeout
+       (let ([t (hash-ref params 'timeout 300)])
+         (unless (and (exact-integer? t) (>= t 1) (<= t 86400))
+           (error 'run_command "timeout must be an integer, 1..86400"))
+         t))
      (define h
        (or (findf (lambda (x)
                     (string=? (hash-ref x 'label) reference))
@@ -118,18 +126,15 @@
                 'strict-host-key (hash-ref h 'strict-host-key "accept-new")
                 'jump (hash-ref h 'jump "")
                 'keep-alive 0)))
-     (define-values (proc stdout stdin stderr)
-       (apply subprocess #f #f #f cmd (append args (list command))))
-     (close-output-port stdin)
-     (define out (port->string stdout))
-     (define err (port->string stderr))
-     (define st (subprocess-status proc))
+     (define-values (code out err timed-out?)
+       (run-command-with-timeout
+        (append (list cmd) args (list command)) timeout))
      (text-result
-      (format "exit: ~a\nstdout:\n~a\nstderr:\n~a"
-              (cond [(not st) "timeout"]
-                    [(eq? st 'done) 0]
-                    [else st])
-              out err))]
+      (if timed-out?
+          (format "timeout: killed after ~a s\nstdout:\n~a\nstderr:\n~a"
+                  timeout out err)
+          (format "exit: ~a\nstdout:\n~a\nstderr:\n~a"
+                  code out err)))]
     [("list_logs")
      (define logs (list-log-files))
      (text-result
