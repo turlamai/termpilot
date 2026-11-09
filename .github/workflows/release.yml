@@ -83,21 +83,23 @@ jobs:
 
       - name: Package
         run: |
+          # --installer runs glaze's native installer chain (it silently
+          # degrades to tar.gz without toolchains — the test -f gates
+          # below turn that into a hard failure).
           raco glaze build \
             --entry backend/main.rkt \
             --name TermPilot \
             --version "$VERSION" \
+            --installer \
             --out dist
-          # glaze emits termpilot.{deb,rpm,AppImage} (no version in the
-          # name); rename to the family asset form. Each format degrades
-          # independently, so require them explicitly here — a missing
-          # toolchain must fail the job, not ship silently.
-          test -f dist/termpilot.deb
-          test -f dist/termpilot.rpm
-          test -f dist/termpilot.AppImage
-          mv dist/termpilot.deb      "termpilot-$VERSION-linux-x64.deb"
-          mv dist/termpilot.rpm      "termpilot-$VERSION-linux-x64.rpm"
-          mv dist/termpilot.AppImage "termpilot-$VERSION-linux-x64.AppImage"
+          # glaze emits TermPilot.{deb,rpm,AppImage} (app-name case, no
+          # version); rename to the family asset form.
+          test -f dist/TermPilot.deb
+          test -f dist/TermPilot.rpm
+          test -f dist/TermPilot.AppImage
+          mv dist/TermPilot.deb      "termpilot-$VERSION-linux-x64.deb"
+          mv dist/TermPilot.rpm      "termpilot-$VERSION-linux-x64.rpm"
+          mv dist/TermPilot.AppImage "termpilot-$VERSION-linux-x64.AppImage"
 
       - name: Tarball (the portable runtime, installers excluded)
         run: |
@@ -277,14 +279,17 @@ jobs:
       - name: Package
         shell: bash
         run: |
+          # --installer runs glaze's native installer chain (WiX MSI,
+          # falling back to NSIS/zip by tool availability — the test -f
+          # gate below makes a silent degradation a hard failure).
           raco glaze build \
             --entry backend/main.rkt \
             --name TermPilot \
             --version "$VERSION" \
+            --installer \
             --out dist
           # glaze emits TermPilot.msi (no version in the name); rename
-          # to the family asset form. Fail the job rather than ship
-          # silently if the installer toolchain was unavailable.
+          # to the family asset form.
           test -f dist/TermPilot.msi
           mv dist/TermPilot.msi "termpilot-$VERSION-windows-x64.msi"
 
