@@ -1,5 +1,5 @@
 {
-  "version": "0.7.0",
-  "url": "https://github.com/turlamai/termpilot/releases/tag/v0.7.0",
-  "notes": " ### Added  - AI-drafted snippets: describe the intent in the snippet editor and   the command field fills from the AI draft, editable before saving. - ⌘K palette: save a command draft as a snippet (tagged `ai`). - Agent surface: CLI gains `logs`, `evidence <logfile>` (bounded tail   + sha1 of a session log, `.cast` recordings supported) and   `summarize [file|-]` (handover digest through the go"
+  "version": "0.8.0",
+  "url": "https://github.com/turlamai/termpilot/releases/tag/v0.8.0",
+  "notes": " ### Fixed  - The Linux distribution matrix actually ships now: the release   pipeline installs the packaging toolchains and uploads deb, rpm and   AppImage as separate assets alongside the tar.gz (v0.7.0 and earlier   shipped Linux as tar.gz only — the 0.4.0 entry below claimed the   matrix prematurely; that claim was wrong until now). Windows adds   the WiX MSI next to the portable zip (WiX pi"
 }
