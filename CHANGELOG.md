@@ -6,7 +6,14 @@ All notable changes to TermPilot are documented here. Format follows
 
 ## [Unreleased]
 
-## [0.7.0] — 2026-11-09
+### Fixed
+
+- The Linux distribution matrix actually ships now: the release
+  pipeline installs the packaging toolchains and uploads deb, rpm and
+  AppImage as separate assets alongside the tar.gz (v0.7.0 and earlier
+  shipped Linux as tar.gz only — the 0.4.0 entry below claimed the
+  matrix prematurely; that claim was wrong until now). Windows adds
+  the WiX MSI next to the portable zip.
 
 ### Added
 

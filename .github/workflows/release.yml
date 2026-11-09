@@ -69,6 +69,18 @@ jobs:
       - name: Install switchboard
         run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#main
 
+      # The installer toolchains glaze degrades across: dpkg-deb is stock
+      # on ubuntu runners, rpmbuild comes from apt, appimagetool ships as
+      # an AppImage (run with APPIMAGE_EXTRACT_AND_RUN=1 — no FUSE on CI).
+      - name: Install packaging toolchains
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm
+          curl -sL -o /usr/local/bin/appimagetool \
+            https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x /usr/local/bin/appimagetool
+          appimagetool --version || true
+
       - name: Package
         run: |
           raco glaze build \
@@ -76,14 +88,28 @@ jobs:
             --name TermPilot \
             --version "$VERSION" \
             --out dist
+          # glaze emits termpilot.{deb,rpm,AppImage} (no version in the
+          # name); rename to the family asset form. Each format degrades
+          # independently, so require them explicitly here — a missing
+          # toolchain must fail the job, not ship silently.
+          test -f dist/termpilot.deb
+          test -f dist/termpilot.rpm
+          test -f dist/termpilot.AppImage
+          mv dist/termpilot.deb      "termpilot-$VERSION-linux-x64.deb"
+          mv dist/termpilot.rpm      "termpilot-$VERSION-linux-x64.rpm"
+          mv dist/termpilot.AppImage "termpilot-$VERSION-linux-x64.AppImage"
 
-      - name: Tarball
+      - name: Tarball (the portable runtime, installers excluded)
         run: |
-          (cd dist && tar czf "../termpilot-$VERSION-linux-x64.tar.gz" $(ls | grep -v '\.sha256$'))
+          (cd dist && tar czf "../termpilot-$VERSION-linux-x64.tar.gz" \
+            $(ls | grep -v -E '\.(sha256|deb|rpm|AppImage)$'))
 
       - name: Per-asset .sha256 sidecars
         run: |
-          for f in termpilot-$VERSION-linux-x64.tar.gz; do
+          for f in termpilot-$VERSION-linux-x64.tar.gz \
+                   termpilot-$VERSION-linux-x64.deb \
+                   termpilot-$VERSION-linux-x64.rpm \
+                   termpilot-$VERSION-linux-x64.AppImage; do
             sha256sum "$f" > "$f.sha256"
           done
 
@@ -94,6 +120,12 @@ jobs:
           path: |
             termpilot-*-linux-x64.tar.gz
             termpilot-*-linux-x64.tar.gz.sha256
+            termpilot-*-linux-x64.deb
+            termpilot-*-linux-x64.deb.sha256
+            termpilot-*-linux-x64.rpm
+            termpilot-*-linux-x64.rpm.sha256
+            termpilot-*-linux-x64.AppImage
+            termpilot-*-linux-x64.AppImage.sha256
           if-no-files-found: error
 
   macos:
@@ -236,6 +268,12 @@ jobs:
       - name: Install switchboard
         run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#main
 
+      # WiX v4 for the MSI (glaze falls back to NSIS, then zip, by
+      # tool availability); the dotnet global tool is the CI-shaped install.
+      - name: Install WiX
+        shell: bash
+        run: dotnet tool install --global wix
+
       - name: Package
         shell: bash
         run: |
@@ -244,6 +282,11 @@ jobs:
             --name TermPilot \
             --version "$VERSION" \
             --out dist
+          # glaze emits TermPilot.msi (no version in the name); rename
+          # to the family asset form. Fail the job rather than ship
+          # silently if the installer toolchain was unavailable.
+          test -f dist/TermPilot.msi
+          mv dist/TermPilot.msi "termpilot-$VERSION-windows-x64.msi"
 
       - name: Portable zip
         shell: pwsh
@@ -254,6 +297,7 @@ jobs:
         shell: bash
         run: |
           sha256sum termpilot-$VERSION-windows-x64.zip > termpilot-$VERSION-windows-x64.zip.sha256
+          sha256sum termpilot-$VERSION-windows-x64.msi > termpilot-$VERSION-windows-x64.msi.sha256
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -262,6 +306,8 @@ jobs:
           path: |
             termpilot-*-windows-x64.zip
             termpilot-*-windows-x64.zip.sha256
+            termpilot-*-windows-x64.msi
+            termpilot-*-windows-x64.msi.sha256
           if-no-files-found: error
 
   publish:
