@@ -1,0 +1,16 @@
+/* ============================================================
+   TermPilot site.css — per-site sections only.
+   Shared frame lives in family.css (site-kit); do not duplicate.
+   ============================================================ */
+
+/* A tool site keeps its dark-first skin: start sections on the
+   elevated surface so the product reads console-grade. */
+html[data-theme="dark"] .kit-hero {
+    background:
+        radial-gradient(ellipse 60% 45% at 50% -5%,
+            var(--kit-accent-soft-strong), transparent 70%);
+}
+
+/* ---------- Icon visibility per theme ---------- */
+html[data-theme="light"] .kit-icon-moon { display: none; }
+html[data-theme="dark"] .kit-icon-sun { display: none; }

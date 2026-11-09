@@ -1,178 +1,388 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN" data-kit-id="termpilot">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TermPilot — AI 原生的 SSH 客户端</title>
-<meta name="description" content="TermPilot: 本地优先的跨平台 SSH 客户端——主机管理、真实终端会话、Snippets、端口转发，AI 助手用你自己的模型 key 生成命令、解释输出，发送前先脱敏。Glaze 线——Racket 引擎驱动，xterm.js 终端。">
-<link rel="stylesheet" href="styles.css">
-<script>
-  (function () {
-    var t = localStorage.getItem('termpilot-theme');
-    if (!t) t = 'dark'; // a tool site defaults to its dark skin
-    document.documentElement.dataset.theme = t;
-    var l = localStorage.getItem('termpilot-lang');
-    if (!l) l = (navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
-    document.documentElement.lang = l === 'zh' ? 'zh-CN' : 'en';
-  })();
-</script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TermPilot — AI 原生的 SSH 客户端</title>
+    <meta name="description" content="TermPilot: 本地优先的跨平台 SSH 客户端——主机管理、真实终端会话、Snippets、端口转发，AI 助手用你自己的模型 key 生成命令、解释输出，发送前先脱敏。Glaze 线——Racket 引擎驱动，xterm.js 终端。">
+    <link rel="canonical" href="https://termpilot.jrtx.site/">
+    <meta name="theme-color" content="#D97757">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="TermPilot">
+    <meta property="og:title" content="TermPilot — The AI-native SSH client">
+    <meta property="og:description" content="Local-first SSH client for macOS, Windows and Linux: real terminals, hosts, snippets, forwarding — plus a BYOK assistant that drafts commands and explains errors, redacted before anything leaves the machine.">
+    <meta property="og:url" content="https://termpilot.jrtx.site/">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="TermPilot — The AI-native SSH client">
+    <meta name="twitter:description" content="Local-first SSH client with a BYOK assistant. Your keys and your data never leave your machine.">
+
+    <!-- Theme pre-paint: a tool site defaults to its dark skin. -->
+    <script>
+        (function () {
+            var t;
+            try { t = localStorage.getItem('termpilot-theme'); } catch (e) {}
+            if (t !== 'dark' && t !== 'light') {
+                t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            document.documentElement.dataset.theme = t;
+            var l;
+            try { l = localStorage.getItem('termpilot-lang-override-v2'); } catch (e) {}
+            if (l !== 'zh' && l !== 'en') {
+                l = (navigator.language || 'zh').toLowerCase().indexOf('zh') === 0 ? 'zh' : 'en';
+            }
+            document.documentElement.lang = l === 'zh' ? 'zh-CN' : 'en';
+        })();
+    </script>
+
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='115' fill='%23D97757'/%3E%3Cpath d='M150 190 L230 256 L150 322' stroke='%23FFFFFF' stroke-width='34' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M262 340 L390 340' stroke='%23FFFFFF' stroke-width='34' stroke-linecap='round'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="family.css">
+    <link rel="stylesheet" href="site.css">
+    <link rel="preload" href="fonts/newsreader-latin-var.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="fonts/inter-latin-var.woff2" as="font" type="font/woff2" crossorigin>
+    <script src="family.js" defer></script>
 </head>
+
 <body>
-<header class="nav">
-  <div class="nav-inner">
-    <a class="brand" href="#">TermPilot</a>
-    <nav class="nav-links">
-      <a href="#why" data-i18n="nav.why">为什么</a>
-      <a href="#ai" data-i18n="nav.ai">AI 原生</a>
-      <a href="#local" data-i18n="nav.local">本地优先</a>
-      <a href="#start" data-i18n="nav.start">开始</a>
-      <a href="https://github.com/turlamai/termpilot" data-i18n="nav.github">GitHub</a>
-      <div class="lang-dropdown-wrapper">
-        <button class="lang-btn" type="button" aria-label="Switch language">
-          <span id="current-lang-label">English</span>
-        </button>
-        <ul class="lang-menu">
-          <li class="lang-choice"><button type="button" onclick="setLanguage('en')">English</button></li>
-          <li class="lang-choice"><button type="button" onclick="setLanguage('zh')">简体中文</button></li>
-        </ul>
-      </div>
-      <button class="theme-btn" id="theme-btn" aria-label="Toggle theme">◐</button>
-    </nav>
-  </div>
-</header>
+    <header class="kit-nav">
+        <div class="kit-container kit-nav-inner">
+            <a class="kit-brand" href="/">
+                <svg class="kit-brand-mark" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="115" fill="#D97757"/><path d="M150 190 L230 256 L150 322" stroke="#FFFFFF" stroke-width="34" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M262 340 L390 340" stroke="#FFFFFF" stroke-width="34" stroke-linecap="round"/></svg>
+                <span>TermPilot</span>
+            </a>
+            <nav class="kit-nav-links">
+                <a href="#why" data-i18n="nav.why">为什么</a>
+                <a href="#ai" data-i18n="nav.ai">AI 原生</a>
+                <a href="#local" data-i18n="nav.local">本地优先</a>
+                <a href="#start" data-i18n="nav.start">开始</a>
+                <a href="https://github.com/turlamai/termpilot" data-i18n="nav.github">GitHub</a>
+            </nav>
+            <div class="kit-nav-actions">
+                <div class="kit-lang">
+                    <button class="kit-lang-btn" type="button" aria-haspopup="true" aria-expanded="false">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M1.8 8h12.4M8 1.8c-4.6 4-4.6 8.4 0 12.4 4.6-4 4.6-8.4 0-12.4z"/></svg>
+                        <span class="kit-lang-current">简体中文</span>
+                    </button>
+                    <ul class="kit-lang-menu">
+                        <li><button type="button" data-kit-lang="zh">简体中文</button></li>
+                        <li><button type="button" data-kit-lang="en">English</button></li>
+                    </ul>
+                </div>
+                <button class="kit-icon-btn kit-theme-toggle" type="button" aria-pressed="false" aria-label="Theme">
+                    <svg class="kit-icon-sun" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10" cy="10" r="4"/><path d="M10 1.5v2M10 16.5v2M1.5 10h2M16.5 10h2M4 4l1.4 1.4M14.6 14.6L16 16M16 4l-1.4 1.4M5.4 14.6L4 16"/></svg>
+                    <svg class="kit-icon-moon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M16.5 12.2A7 7 0 0 1 7.8 3.5a7 7 0 1 0 8.7 8.7z"/></svg>
+                </button>
+            </div>
+        </div>
+    </header>
 
-<main>
-  <section class="hero">
-    <p class="kicker" data-i18n="kicker">本地优先 · BYOK · 密钥不离机</p>
-    <h1 data-i18n="hero-title">SSH 客户端，长出了 AI 时代的脑子。</h1>
-    <p class="lede" data-i18n="hero-lede">
-      主机管理、真实终端会话、Snippets、端口转发——这些是基本功。
-      TermPilot 多给一样东西：一个用你自己的模型 key 驱动的助手，
-      生成命令、解释报错、排查故障。它只提议，不执行；发送前先脱敏；
-      你的密钥与你的数据，从不离开你的机器。
-    </p>
-    <div class="cta">
-      <a class="btn btn-primary" href="https://github.com/turlamai/termpilot/releases" data-i18n="hero.download">获取 TermPilot</a>
-      <a class="btn btn-secondary" href="https://github.com/turlamai/termpilot" data-i18n="hero.source">查看源码</a>
-    </div>
-    <p class="hero-note reader-zh" lang="zh">早期开发中 · AGPL-3.0 · macOS / Windows / Linux</p>
-    <p class="hero-note reader-en" lang="en">Early development · AGPL-3.0 · macOS / Windows / Linux</p>
-  </section>
+    <main>
+        <section class="kit-hero">
+            <div class="kit-container">
+                <span class="kit-eyebrow" data-i18n="kicker">本地优先 · BYOK · 密钥不离机</span>
+                <h1 data-i18n="hero-title">SSH 客户端，长出了 AI 时代的脑子。</h1>
+                <p class="kit-lead" data-i18n="hero-lede">主机管理、真实终端会话、Snippets、端口转发——这些是基本功。TermPilot 多给一样东西：一个用你自己的模型 key 驱动的助手，生成命令、解释报错、排查故障。它只提议，不执行；发送前先脱敏；你的密钥与你的数据，从不离开你的机器。</p>
+                <div class="kit-btn-row">
+                    <div class="kit-dl">
+                        <a class="kit-btn kit-btn--primary" data-kit-dl-primary href="https://github.com/turlamai/termpilot/releases">
+                            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M10 2.5v10M6 9l4 4 4-4M3.5 16.5h13"/></svg>
+                            <span class="kit-dl-label" data-i18n="dl.generic">获取 TermPilot</span>
+                        </a>
+                        <button class="kit-dl-caret" type="button" aria-haspopup="true" aria-expanded="false" aria-label="All platforms">
+                            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 5.5L7 9.5l4-4"/></svg>
+                        </button>
+                        <ul class="kit-dl-menu">
+                            <li><a href="https://github.com/turlamai/termpilot/releases" data-kit-dl="mac"><span class="kit-dl-os" data-i18n="dl.mac">macOS 版</span><span class="kit-dl-kind">.dmg</span></a></li>
+                            <li><a href="https://github.com/turlamai/termpilot/releases" data-kit-dl="win"><span class="kit-dl-os" data-i18n="dl.win">Windows 版</span><span class="kit-dl-kind">.msi</span></a></li>
+                            <li><a href="https://github.com/turlamai/termpilot/releases" data-kit-dl="linux"><span class="kit-dl-os" data-i18n="dl.linux">Linux 版</span><span class="kit-dl-kind">.AppImage</span></a></li>
+                            <li class="kit-dl-note" data-i18n="dl.note">当前为早期开发版本，请前往 Releases 页面选取对应安装包。</li>
+                        </ul>
+                    </div>
+                    <a class="kit-btn kit-btn--secondary" href="https://github.com/turlamai/termpilot" data-i18n="hero.source">查看源码</a>
+                </div>
+                <p class="kit-hero-meta"><span class="kit-badge" data-i18n="hero.note">早期开发中 · AGPL-3.0 · macOS / Windows / Linux</span></p>
+            </div>
+        </section>
 
-  <section id="why" class="section">
-    <h2 data-i18n="why.title">基本功，先做扎实</h2>
-    <div class="grid-3">
-      <div class="card">
-        <h3 data-i18n="why.terminals.title">真实终端</h3>
-        <p data-i18n="why.terminals.body">每个会话一个伪终端：agent 密码提示、TUI 程序、vim、htop，行为与原生终端一致。标签页 + 分屏、主题、每主机字体、终端内搜索。</p>
-      </div>
-      <div class="card">
-        <h3 data-i18n="why.hosts.title">主机与分组</h3>
-        <p data-i18n="why.hosts.body">主机、分组、标签、备注，存本地 SQLite，一键导入 ~/.ssh/config。搜索到达即用。</p>
-      </div>
-      <div class="card">
-        <h3 data-i18n="why.ssh.title">系统 OpenSSH</h3>
-        <p data-i18n="why.ssh.body">ssh-agent、ProxyJump、known_hosts、config 兼容、新算法跟进——系统带来什么，TermPilot 就有什么。引擎层留有接缝，将来可换进程内栈。</p>
-      </div>
-      <div class="card">
-        <h3 data-i18n="why.snippets.title">Snippets</h3>
-        <p data-i18n="why.snippets.body">常用命令入库，参数占位符，分组管理；支持多会话广播执行。</p>
-      </div>
-      <div class="card">
-        <h3 data-i18n="why.forward.title">端口转发</h3>
-        <p data-i18n="why.forward.body">-L / -R / -D 规则图形化配置，绑定主机，随会话启停。</p>
-      </div>
-      <div class="card">
-        <h3 data-i18n="why.connections.title">六种连接</h3>
-        <p data-i18n="why.connections.body">SSH、本地终端、telnet、mosh、串口（波特率/校验位齐全）、SFTP——一个引擎，一套界面。</p>
-      </div>
-    </div>
-  </section>
+        <section id="why" class="kit-section kit-section--alt">
+            <div class="kit-container">
+                <span class="kit-kicker" data-i18n="why.kicker">为什么是 TermPilot</span>
+                <h2 class="kit-h2" data-i18n="why.title">基本功，先做扎实</h2>
+                <div class="kit-grid kit-grid--3" style="margin-top: 44px;">
+                    <div class="kit-card">
+                        <span class="kit-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></span>
+                        <h3 data-i18n="why.terminals.title">真实终端</h3>
+                        <p data-i18n="why.terminals.body">每个会话一个伪终端：agent 密码提示、TUI 程序、vim、htop，行为与原生终端一致。标签页 + 分屏、主题、每主机字体、终端内搜索。</p>
+                    </div>
+                    <div class="kit-card">
+                        <span class="kit-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+                        <h3 data-i18n="why.hosts.title">主机与分组</h3>
+                        <p data-i18n="why.hosts.body">主机、分组、标签、备注，存本地 SQLite，一键导入 ~/.ssh/config。搜索到达即用。</p>
+                    </div>
+                    <div class="kit-card">
+                        <span class="kit-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15l3-3-3-3M13 15h4"/></svg></span>
+                        <h3 data-i18n="why.ssh.title">系统 OpenSSH</h3>
+                        <p data-i18n="why.ssh.body">ssh-agent、ProxyJump、known_hosts、config 兼容、新算法跟进——系统带来什么，TermPilot 就有什么。引擎层留有接缝，将来可换进程内栈。</p>
+                    </div>
+                    <div class="kit-card">
+                        <span class="kit-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+                        <h3 data-i18n="why.snippets.title">Snippets</h3>
+                        <p data-i18n="why.snippets.body">常用命令入库，参数占位符，分组管理；支持多会话广播执行。</p>
+                    </div>
+                    <div class="kit-card">
+                        <span class="kit-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h8M4 12h8M4 17h8M17 5v14M14 8l3-3 3 3M14 16l3 3 3-3"/></svg></span>
+                        <h3 data-i18n="why.forward.title">端口转发</h3>
+                        <p data-i18n="why.forward.body">-L / -R / -D 规则图形化配置，绑定主机，随会话启停。</p>
+                    </div>
+                    <div class="kit-card">
+                        <span class="kit-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
+                        <h3 data-i18n="why.connections.title">六种连接</h3>
+                        <p data-i18n="why.connections.body">SSH、本地终端、telnet、mosh、串口（波特率/校验位齐全）、SFTP——一个引擎，一套界面。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-  <section id="ai" class="section section-alt">
-    <h2 data-i18n="ai.title">AI 原生，不是 AI 贴皮</h2>
-    <div class="grid-3">
-      <div class="card">
-        <h3 data-i18n="ai.generate.title">⌘K 生成命令</h3>
-        <p data-i18n="ai.generate.body">用自然语言说意图，给出可直接运行的命令草稿。你确认，才发送。</p>
-      </div>
-      <div class="card">
-        <h3 data-i18n="ai.explain.title">选区解释</h3>
-        <p data-i18n="ai.explain.body">选中报错输出，得到「发生了什么、为什么、下一步」。中文报错中文答。</p>
-      </div>
-      <div class="card">
-        <h3 data-i18n="ai.redact.title">发送前脱敏</h3>
-        <p data-i18n="ai.redact.body">私钥、token、凭据、连接串——AI 出站前逐条匹配打码，预览展示打了几处、打掉什么。</p>
-      </div>
-      <div class="card">
-        <h3 data-i18n="ai.byok.title">BYOK，你的 key</h3>
-        <p data-i18n="ai.byok.body">GLM、DeepSeek、Qwen、Kimi、豆包、SiliconFlow、OpenAI、Anthropic、本地 Ollama——预设齐备。key 存 0600，引擎持有，永不进 WebView。</p>
-      </div>
-      <div class="card">
-        <h3 data-i18n="ai.agent.title">Agent 接口</h3>
-        <p data-i18n="ai.agent.body">确定性 JSON CLI 与 MCP：让 coding agent 列主机、跑单次命令、管 Snippets——AI 时代的原生接口。</p>
-      </div>
-      <div class="card">
-        <h3 data-i18n="ai.free.title">不收 AI 税</h3>
-        <p data-i18n="ai.free.body">AI 功能属于完整产品，不是订阅。你的 provider 记你的账，TermPilot 不抽成。</p>
-      </div>
-    </div>
-  </section>
+        <section id="ai" class="kit-section">
+            <div class="kit-container">
+                <span class="kit-kicker" data-i18n="ai.kicker">AI 原生</span>
+                <h2 class="kit-h2" data-i18n="ai.title">AI 原生，不是 AI 贴皮</h2>
+                <div class="kit-grid kit-grid--3" style="margin-top: 44px;">
+                    <div class="kit-card">
+                        <span class="kit-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="3.5"/></svg></span>
+                        <h3 data-i18n="ai.generate.title">⌘K 生成命令</h3>
+                        <p data-i18n="ai.generate.body">用自然语言说意图，给出可直接运行的命令草稿。你确认，才发送。</p>
+                    </div>
+                    <div class="kit-card">
+                        <span class="kit-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1M16 3h1a2 2 0 0 1 2 2v5a2 2 0 0 0 2 2 2 2 0 0 0-2 2v5a2 2 0 0 1-2 2h-1"/></svg></span>
+                        <h3 data-i18n="ai.explain.title">选区解释</h3>
+                        <p data-i18n="ai.explain.body">选中报错输出，得到「发生了什么、为什么、下一步」。中文报错中文答。</p>
+                    </div>
+                    <div class="kit-card">
+                        <span class="kit-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>
+                        <h3 data-i18n="ai.redact.title">发送前脱敏</h3>
+                        <p data-i18n="ai.redact.body">私钥、token、凭据、连接串——AI 出站前逐条匹配打码，预览展示打了几处、打掉什么。</p>
+                    </div>
+                    <div class="kit-card">
+                        <span class="kit-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L19 4M15 4h4v4"/></svg></span>
+                        <h3 data-i18n="ai.byok.title">BYOK，你的 key</h3>
+                        <p data-i18n="ai.byok.body">GLM、DeepSeek、Qwen、Kimi、豆包、SiliconFlow、OpenAI、Anthropic、本地 Ollama——预设齐备。key 存 0600，引擎持有，永不进 WebView。</p>
+                    </div>
+                    <div class="kit-card">
+                        <span class="kit-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
+                        <h3 data-i18n="ai.agent.title">Agent 接口</h3>
+                        <p data-i18n="ai.agent.body">确定性 JSON CLI 与 MCP：让 coding agent 列主机、跑单次命令、管 Snippets——AI 时代的原生接口。</p>
+                    </div>
+                    <div class="kit-card">
+                        <span class="kit-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5c0-1 1-1.8 2.5-1.8s2.5.7 2.5 1.7c0 2-5 2.2-5 4.4 0 1 1 1.8 2.5 1.8s2.5-.7 2.5-1.7"/></svg></span>
+                        <h3 data-i18n="ai.free.title">不收 AI 税</h3>
+                        <p data-i18n="ai.free.body">AI 功能属于完整产品，不是订阅。你的 provider 记你的账，TermPilot 不抽成。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-  <section id="local" class="section">
-    <h2 data-i18n="local.title">本地优先，就这么设计</h2>
-    <p class="section-lede" data-i18n="local.lede">
-      没有账号，没有托管同步，没有遥测。主机、Snippets、会话历史存本地
-      SQLite，随时标准格式导出。AI 只在你调用时出站，且先脱敏。
-      你的密钥，你的数据，你的机器。
-    </p>
-  </section>
+        <section id="local" class="kit-section kit-section--alt">
+            <div class="kit-container" style="text-align: center;">
+                <span class="kit-kicker" data-i18n="local.kicker">本地优先</span>
+                <h2 class="kit-h2" style="margin-inline: auto;" data-i18n="local.title">本地优先，就这么设计</h2>
+                <p class="kit-lead" style="margin-inline: auto;" data-i18n="local.lede">没有账号，没有托管同步，没有遥测。主机、Snippets、会话历史存本地 SQLite，随时标准格式导出。AI 只在你调用时出站，且先脱敏。你的密钥，你的数据，你的机器。</p>
+                <div class="kit-platforms" style="justify-content: center; margin-top: 32px;">
+                    <span class="kit-platform-chip" data-i18n="local.chip1">没有账号</span>
+                    <span class="kit-platform-chip" data-i18n="local.chip2">没有托管同步</span>
+                    <span class="kit-platform-chip" data-i18n="local.chip3">没有遥测</span>
+                </div>
+            </div>
+        </section>
 
-  <section id="start" class="section section-alt">
-    <h2 data-i18n="start.title">开始</h2>
-    <div class="grid-3">
-      <div class="card">
-        <h3 data-i18n="start.dev.title">跟开发</h3>
-        <p data-i18n="start.dev.body">仓库即真相：架构决策、里程计划、验证底座全部公开。</p>
-        <p><a href="https://github.com/turlamai/termpilot" data-i18n="start.dev.link">GitHub →</a></p>
-      </div>
-      <div class="card">
-        <h3 data-i18n="start.release.title">等发布</h3>
-        <p data-i18n="start.release.body">Releases 页提供 macOS（arm64/x64 DMG+zip）、Windows、Linux（tar.gz）包。</p>
-        <p><a href="https://github.com/turlamai/termpilot/releases" data-i18n="start.release.link">Releases →</a></p>
-      </div>
-      <div class="card">
-        <h3 data-i18n="start.pricing.title">定价意向</h3>
-        <p data-i18n="start.pricing.body">一次购买完整产品（目标 ¥168 / US$24），可选更新续费；BYOK AI 不另收费。发布目标，非在售报价。</p>
-        <p><a href="https://github.com/turlamai/termpilot/blob/main/PRICING.md" data-i18n="start.pricing.link">PRICING →</a></p>
-      </div>
-    </div>
-  </section>
-</main>
+        <section id="start" class="kit-section">
+            <div class="kit-container">
+                <span class="kit-kicker" data-i18n="start.kicker">开始</span>
+                <h2 class="kit-h2" data-i18n="start.title">三种跟进方式</h2>
+                <div class="kit-grid kit-grid--3" style="margin-top: 44px;">
+                    <div class="kit-card">
+                        <h3 data-i18n="start.dev.title">跟开发</h3>
+                        <p data-i18n="start.dev.body">仓库即真相：架构决策、里程计划、验证底座全部公开。</p>
+                        <p style="margin-top: 12px;"><a href="https://github.com/turlamai/termpilot" data-i18n="start.dev.link">GitHub →</a></p>
+                    </div>
+                    <div class="kit-card">
+                        <h3 data-i18n="start.release.title">等发布</h3>
+                        <p data-i18n="start.release.body">Releases 页提供 macOS（arm64/x64 DMG+zip）、Windows（MSI+zip）、Linux（tar.gz/deb/rpm/AppImage）包。</p>
+                        <p style="margin-top: 12px;"><a href="https://github.com/turlamai/termpilot/releases" data-i18n="start.release.link">Releases →</a></p>
+                    </div>
+                    <div class="kit-card">
+                        <h3 data-i18n="start.pricing.title">定价意向</h3>
+                        <p data-i18n="start.pricing.body">一次购买完整产品（目标 ¥168 / US$24），可选更新续费；BYOK AI 不另收费。发布目标，非在售报价。</p>
+                        <p style="margin-top: 12px;"><a href="https://github.com/turlamai/termpilot/blob/main/PRICING.md" data-i18n="start.pricing.link">PRICING →</a></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
 
-<footer class="footer">
-  <p>TermPilot — <span class="reader-zh" lang="zh">AI 原生的 SSH 客户端 · 本地优先</span><span class="reader-en" lang="en">The AI-native SSH client · local by design</span></p>
-  <p><a href="https://jrtx.site">TurLamAI</a> · <a href="https://github.com/turlamai/termpilot">GitHub</a> · AGPL-3.0</p>
-</footer>
+    <footer class="kit-footer">
+        <div class="kit-container">
+            <div class="kit-footer-grid">
+                <div>
+                    <a class="kit-brand" href="/">
+                        <svg class="kit-brand-mark" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="115" fill="#D97757"/><path d="M150 190 L230 256 L150 322" stroke="#FFFFFF" stroke-width="34" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M262 340 L390 340" stroke="#FFFFFF" stroke-width="34" stroke-linecap="round"/></svg>
+                        <span>TermPilot</span>
+                    </a>
+                    <p class="kit-footer-tagline" data-i18n="footer.tagline">AI 原生的 SSH 客户端 · 本地优先</p>
+                </div>
+                <div>
+                    <h4 data-i18n="footer.product">产品</h4>
+                    <ul>
+                        <li><a href="#why" data-i18n="nav.why">为什么</a></li>
+                        <li><a href="#ai" data-i18n="nav.ai">AI 原生</a></li>
+                        <li><a href="https://github.com/turlamai/termpilot/releases" data-i18n="footer.releases">版本发布</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 data-i18n="footer.family">家族</h4>
+                    <ul>
+                        <li><a href="https://jrtx.site/" data-i18n="footer.portal">全部产品</a></li>
+                        <li><a href="https://glaze.jrtx.site">Glaze</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 data-i18n="footer.legal">条款</h4>
+                    <ul>
+                        <li><a href="https://github.com/turlamai/termpilot" data-i18n="nav.github">GitHub</a></li>
+                        <li><a href="https://github.com/turlamai/termpilot/blob/main/PRICING.md" data-i18n="start.pricing.title">定价意向</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="kit-footer-bottom">
+                <span data-i18n="footer.copyright">© 2026 TuringLambda AI · AGPL-3.0 · 本地优先，隐私默认。</span>
+                <span class="kit-mono">site-kit v1.0.1</span>
+            </div>
+        </div>
+    </footer>
 
-<script>
-  // Language: pure CSS switching on html:lang, persistence + detection here.
-  function setLanguage(lang) {
-    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
-    localStorage.setItem('termpilot-lang', lang);
-    document.getElementById('current-lang-label').textContent =
-      lang === 'zh' ? '简体中文' : 'English';
-  }
-  var lang = document.documentElement.lang.startsWith('zh') ? 'zh' : 'en';
-  document.getElementById('current-lang-label').textContent =
-    lang === 'zh' ? '简体中文' : 'English';
+    <script type="application/json" id="kit-i18n">
+    {
+        "zh": {
+            "nav.why": "为什么", "nav.ai": "AI 原生", "nav.local": "本地优先", "nav.start": "开始", "nav.github": "GitHub",
+            "kicker": "本地优先 · BYOK · 密钥不离机",
+            "hero-title": "SSH 客户端，长出了 AI 时代的脑子。",
+            "hero-lede": "主机管理、真实终端会话、Snippets、端口转发——这些是基本功。TermPilot 多给一样东西：一个用你自己的模型 key 驱动的助手，生成命令、解释报错、排查故障。它只提议，不执行；发送前先脱敏；你的密钥与你的数据，从不离开你的机器。",
+            "hero.source": "查看源码",
+            "hero.note": "早期开发中 · AGPL-3.0 · macOS / Windows / Linux",
+            "dl.mac": "macOS 版", "dl.win": "Windows 版", "dl.linux": "Linux 版",
+            "dl.generic": "获取 TermPilot",
+            "dl.note": "当前为早期开发版本，请前往 Releases 页面选取对应安装包。",
+            "why.kicker": "为什么是 TermPilot", "why.title": "基本功，先做扎实",
+            "why.terminals.title": "真实终端",
+            "why.terminals.body": "每个会话一个伪终端：agent 密码提示、TUI 程序、vim、htop，行为与原生终端一致。标签页 + 分屏、主题、每主机字体、终端内搜索。",
+            "why.hosts.title": "主机与分组",
+            "why.hosts.body": "主机、分组、标签、备注，存本地 SQLite，一键导入 ~/.ssh/config。搜索到达即用。",
+            "why.ssh.title": "系统 OpenSSH",
+            "why.ssh.body": "ssh-agent、ProxyJump、known_hosts、config 兼容、新算法跟进——系统带来什么，TermPilot 就有什么。引擎层留有接缝，将来可换进程内栈。",
+            "why.snippets.title": "Snippets",
+            "why.snippets.body": "常用命令入库，参数占位符，分组管理；支持多会话广播执行。",
+            "why.forward.title": "端口转发",
+            "why.forward.body": "-L / -R / -D 规则图形化配置，绑定主机，随会话启停。",
+            "why.connections.title": "六种连接",
+            "why.connections.body": "SSH、本地终端、telnet、mosh、串口（波特率/校验位齐全）、SFTP——一个引擎，一套界面。",
+            "ai.kicker": "AI 原生", "ai.title": "AI 原生，不是 AI 贴皮",
+            "ai.generate.title": "⌘K 生成命令",
+            "ai.generate.body": "用自然语言说意图，给出可直接运行的命令草稿。你确认，才发送。",
+            "ai.explain.title": "选区解释",
+            "ai.explain.body": "选中报错输出，得到「发生了什么、为什么、下一步」。中文报错中文答。",
+            "ai.redact.title": "发送前脱敏",
+            "ai.redact.body": "私钥、token、凭据、连接串——AI 出站前逐条匹配打码，预览展示打了几处、打掉什么。",
+            "ai.byok.title": "BYOK，你的 key",
+            "ai.byok.body": "GLM、DeepSeek、Qwen、Kimi、豆包、SiliconFlow、OpenAI、Anthropic、本地 Ollama——预设齐备。key 存 0600，引擎持有，永不进 WebView。",
+            "ai.agent.title": "Agent 接口",
+            "ai.agent.body": "确定性 JSON CLI 与 MCP：让 coding agent 列主机、跑单次命令、管 Snippets——AI 时代的原生接口。",
+            "ai.free.title": "不收 AI 税",
+            "ai.free.body": "AI 功能属于完整产品，不是订阅。你的 provider 记你的账，TermPilot 不抽成。",
+            "local.kicker": "本地优先", "local.title": "本地优先，就这么设计",
+            "local.lede": "没有账号，没有托管同步，没有遥测。主机、Snippets、会话历史存本地 SQLite，随时标准格式导出。AI 只在你调用时出站，且先脱敏。你的密钥，你的数据，你的机器。",
+            "local.chip1": "没有账号", "local.chip2": "没有托管同步", "local.chip3": "没有遥测",
+            "start.kicker": "开始", "start.title": "三种跟进方式",
+            "start.dev.title": "跟开发",
+            "start.dev.body": "仓库即真相：架构决策、里程计划、验证底座全部公开。",
+            "start.dev.link": "GitHub →",
+            "start.release.title": "等发布",
+            "start.release.body": "Releases 页提供 macOS（arm64/x64 DMG+zip）、Windows（MSI+zip）、Linux（tar.gz/deb/rpm/AppImage）包。",
+            "start.release.link": "Releases →",
+            "start.pricing.title": "定价意向",
+            "start.pricing.body": "一次购买完整产品（目标 ¥168 / US$24），可选更新续费；BYOK AI 不另收费。发布目标，非在售报价。",
+            "start.pricing.link": "PRICING →",
+            "footer.tagline": "AI 原生的 SSH 客户端 · 本地优先",
+            "footer.product": "产品", "footer.family": "家族", "footer.legal": "条款",
+            "footer.releases": "版本发布", "footer.portal": "全部产品",
+            "footer.copyright": "© 2026 TuringLambda AI · AGPL-3.0 · 本地优先，隐私默认。"
+        },
+        "en": {
+            "nav.why": "Why", "nav.ai": "AI-native", "nav.local": "Local-first", "nav.start": "Get started", "nav.github": "GitHub",
+            "kicker": "Local-first · BYOK · keys never leave the machine",
+            "hero-title": "An SSH client with an AI-era brain.",
+            "hero-lede": "Host management, real terminal sessions, snippets and port forwarding are the fundamentals. TermPilot adds one more thing: an assistant driven by your own model keys that drafts commands, explains errors and debugs failures. It only suggests and never executes; everything is redacted before it leaves; your keys and your data never leave your machine.",
+            "hero.source": "View source",
+            "hero.note": "Early development · AGPL-3.0 · macOS / Windows / Linux",
+            "dl.mac": "For macOS", "dl.win": "For Windows", "dl.linux": "For Linux",
+            "dl.generic": "Get TermPilot",
+            "dl.note": "Early development builds: pick the right package from the Releases page.",
+            "why.kicker": "Why TermPilot", "why.title": "The fundamentals, done properly",
+            "why.terminals.title": "Real terminals",
+            "why.terminals.body": "One PTY per session: agent password prompts, TUI programs, vim and htop behave exactly like a native terminal. Tabs + splits, themes, per-host fonts, in-terminal search.",
+            "why.hosts.title": "Hosts & groups",
+            "why.hosts.body": "Hosts, groups, tags and notes live in local SQLite; import ~/.ssh/config in one click. Search lands on the host you meant.",
+            "why.ssh.title": "System OpenSSH",
+            "why.ssh.body": "ssh-agent, ProxyJump, known_hosts, config compatibility, new algorithms as they land — what the system has, TermPilot has. The engine layer keeps a seam for an in-process stack later.",
+            "why.snippets.title": "Snippets",
+            "why.snippets.body": "Frequent commands with parameter placeholders and groups; broadcast one command across many sessions.",
+            "why.forward.title": "Port forwarding",
+            "why.forward.body": "Configure -L / -R / -D rules visually, bind hosts, start and stop them with the session.",
+            "why.connections.title": "Six connection types",
+            "why.connections.body": "SSH, local shell, telnet, mosh, serial (full baud and parity options) and SFTP — one engine, one interface.",
+            "ai.kicker": "AI-native", "ai.title": "AI-native, not AI-painted",
+            "ai.generate.title": "⌘K command drafts",
+            "ai.generate.body": "State the intent in natural language and get a runnable command draft. You confirm before anything is sent.",
+            "ai.explain.title": "Selection, explained",
+            "ai.explain.body": "Select an error and get what happened, why, and the next step — answered in your language.",
+            "ai.redact.title": "Redacted before sending",
+            "ai.redact.body": "Private keys, tokens, credentials and connection strings are matched and masked before any AI outbound call, with a preview of how many spots and what was removed.",
+            "ai.byok.title": "BYOK — your keys",
+            "ai.byok.body": "GLM, DeepSeek, Qwen, Kimi, Doubao, SiliconFlow, OpenAI, Anthropic and local Ollama are preset. Keys stay 0600, held by the engine, never entering the WebView.",
+            "ai.agent.title": "Agent interface",
+            "ai.agent.body": "Deterministic JSON CLI and MCP: let coding agents list hosts, run one-off commands and manage snippets — a native interface for the AI era.",
+            "ai.free.title": "No AI tax",
+            "ai.free.body": "AI features belong to the full product, not a subscription. Your provider bills you; TermPilot takes no cut.",
+            "local.kicker": "Local-first", "local.title": "Local-first, by design",
+            "local.lede": "No account, no hosted sync, no telemetry. Hosts, snippets and session history live in local SQLite, exportable in standard formats anytime. AI goes outbound only when you call it, redacted first. Your keys, your data, your machine.",
+            "local.chip1": "No account", "local.chip2": "No hosted sync", "local.chip3": "No telemetry",
+            "start.kicker": "Get started", "start.title": "Three ways to follow along",
+            "start.dev.title": "Follow development",
+            "start.dev.body": "The repository is the source of truth: architecture decisions, milestone plans and the verification base are all public.",
+            "start.dev.link": "GitHub →",
+            "start.release.title": "Wait for releases",
+            "start.release.body": "The Releases page ships macOS (arm64/x64 DMG+zip), Windows (MSI+zip) and Linux (tar.gz/deb/rpm/AppImage) packages.",
+            "start.release.link": "Releases →",
+            "start.pricing.title": "Pricing intent",
+            "start.pricing.body": "One-time purchase for the full product (target ¥168 / US$24) with optional update renewal; BYOK AI costs nothing extra. A release target, not an on-sale price.",
+            "start.pricing.link": "PRICING →",
+            "footer.tagline": "The AI-native SSH client · local by design",
+            "footer.product": "Product", "footer.family": "Family", "footer.legal": "Legal",
+            "footer.releases": "Releases", "footer.portal": "All products",
+            "footer.copyright": "© 2026 TuringLambda AI · AGPL-3.0 · Local-first, private by default."
+        }
+    }
+    </script>
 
-  // Theme toggle.
-  document.getElementById('theme-btn').addEventListener('click', function () {
-    var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-    document.documentElement.dataset.theme = next;
-    localStorage.setItem('termpilot-theme', next);
-  });
-</script>
+    <script type="application/json" id="kit-download">
+    {
+        "repo": "turlamai/termpilot",
+        "assets": {
+            "mac": "termpilot-{v}-macos-{arch}.dmg",
+            "win": "termpilot-{v}-windows-x64.msi",
+            "linux": "termpilot-{v}-linux-{arch}.AppImage"
+        }
+    }
+    </script>
 </body>
+
 </html>
