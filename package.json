@@ -1,7 +1,7 @@
 {
   "name": "termpilot",
   "private": true,
-  "version": "0.7.0",
+  "version": "0.8.0",
   "packageManager": "pnpm@11.3.0",
   "scripts": {
     "dev": "pnpm --filter @termpilot/desktop dev",

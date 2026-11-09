@@ -6,6 +6,8 @@ All notable changes to TermPilot are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-11-09
+
 ### Fixed
 
 - The Linux distribution matrix actually ships now: the release
@@ -13,7 +15,14 @@ All notable changes to TermPilot are documented here. Format follows
   AppImage as separate assets alongside the tar.gz (v0.7.0 and earlier
   shipped Linux as tar.gz only — the 0.4.0 entry below claimed the
   matrix prematurely; that claim was wrong until now). Windows adds
-  the WiX MSI next to the portable zip.
+  the WiX MSI next to the portable zip (WiX pinned to v5.0.2, matching
+  the family pipeline; v7 gates builds behind the OSMF EULA).
+- The release pipeline now dispatches the Pages deployment explicitly
+  after pushing the update manifest — a GITHUB_TOKEN push never
+  triggers other workflows, so the live manifest silently stayed on
+  the previous release after every tag.
+
+## [0.7.0] — 2026-11-09
 
 ### Added
 

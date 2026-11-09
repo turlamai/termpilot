@@ -20,7 +20,7 @@ model API key, redacted before anything leaves the machine.
 
 ## Start here
 
-TermPilot is in early development (v0.6.0 development preview). The architecture is proven —
+TermPilot is in early development (v0.8.0 development preview). The architecture is proven —
 the Racket backend streams a real PTY session to an xterm.js frontend over
 GLZ1 — and what ships in the repository today is the working product
 core: all six connection types, host/key/forwarding/snippet management,
