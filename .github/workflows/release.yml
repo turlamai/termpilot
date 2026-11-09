@@ -325,3 +325,11 @@ jobs:
           git add site/update-manifest.json
           git commit -m "update manifest: v$VERSION" || { echo "no manifest change"; exit 0; }
           git push origin HEAD:main
+      # A GITHUB_TOKEN push never triggers other workflows (recursion
+      # guard), so pages.yml (paths: site/**) would silently stay on
+      # the previous release. workflow_dispatch is one of the two
+      # documented exceptions — dispatch it explicitly.
+      - name: Deploy Pages (manifest push cannot trigger it)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main
