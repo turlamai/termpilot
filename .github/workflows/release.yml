@@ -12,6 +12,9 @@ concurrency:
 
 permissions:
   contents: write
+  # The publish job dispatches pages.yml after the manifest push
+  # (a GITHUB_TOKEN push cannot trigger workflows by itself).
+  actions: write
 
 jobs:
   validate:
