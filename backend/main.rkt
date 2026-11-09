@@ -45,7 +45,7 @@
 
 ;; Keep in sync with package.json and CHANGELOG.md; the release
 ;; workflow's validate job fails the tag if they disagree.
-(define app-version "0.6.0")
+(define app-version "0.7.0")
 
 ;; net/base64 in Racket 9.3 ships only the stream encoder; a compact
 ;; standard-table decoder for the GBytes payloads (base64 strings).

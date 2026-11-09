@@ -6,6 +6,8 @@ All notable changes to TermPilot are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-11-09
+
 ### Added
 
 - AI-drafted snippets: describe the intent in the snippet editor and
