@@ -270,11 +270,12 @@ jobs:
       - name: Install switchboard
         run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#main
 
-      # WiX v4 for the MSI (glaze falls back to NSIS, then zip, by
-      # tool availability); the dotnet global tool is the CI-shaped install.
-      - name: Install WiX
+      # WiX pinned to v5.0.2 like the taskly release pipeline: v7 gates
+      # builds behind the OSMF EULA acceptance (WIX7015). glaze falls
+      # back to NSIS, then zip, by tool availability.
+      - name: Install WiX (v5; the family MSI toolchain)
         shell: bash
-        run: dotnet tool install --global wix
+        run: dotnet tool install --global wix --version 5.0.2
 
       - name: Package
         shell: bash
