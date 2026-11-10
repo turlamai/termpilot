@@ -46,6 +46,16 @@ finish-args:
 modules:
   - name: termpilot
     buildsystem: simple
+    build-options:
+      # The payload's launchers (bin/TermPilot) carry the whole program in a
+      # non-alloc ELF section (.rackprog; racketcs-9.3 embeds its boot the
+      # same way). flatpak-builder's debuginfo extraction (on by default)
+      # strips those files, which drops non-alloc sections: the launcher
+      # survives as a ~15KB stub and dies at startup with "read failed to
+      # read all N bytes from file ... at offset ..." (reproduced locally
+      # and in every smoke leg so far). The payload ships prebuilt — keep
+      # it byte-exact.
+      no-debuginfo: true
     sources:
       - type: archive
         # The release tarball is flat (bin/, lib/ at the root, no leading
@@ -66,10 +76,23 @@ modules:
       - mkdir -p /app/termpilot
       - cp -a bin lib /app/termpilot/
       # The bundle's `command` resolves on the sandbox PATH (/app/bin); the
-      # payload lives outside it. A symlink keeps /proc/self/exe pointing
-      # at the real binary so the runtime layout discovery works.
+      # payload lives outside it. A wrapper execs the real binary, so
+      # /proc/self/exe still resolves to it (runtime layout discovery
+      # keeps working). The redirect is required, not cosmetic: /app is
+      # mounted read-only in the sandbox and the payload launcher pins
+      # find-system-path 'config-dir inside the payload (ustart passes
+      # -G/-X pointing at a payload-relative etc/), so the default data
+      # dir resolution lands on a read-only path. $XDG_CONFIG_HOME is
+      # flatpak's per-app writable dir (~/.var/app/<app-id>/config).
       - mkdir -p /app/bin
-      - ln -s /app/termpilot/bin/TermPilot /app/bin/TermPilot
+      - |
+        cat > /app/bin/TermPilot <<'EOF'
+        #!/bin/sh
+        : "${TERMPILOT_DATA_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/termpilot}"
+        export TERMPILOT_DATA_DIR
+        exec /app/termpilot/bin/TermPilot
+        EOF
+        chmod +x /app/bin/TermPilot
       - install -Dm644 icon-512.png
                     /app/share/icons/hicolor/512x512/apps/site.jrtx.termpilot.png
       - install -Dm644 site.jrtx.termpilot.desktop
