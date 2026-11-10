@@ -117,10 +117,11 @@ jobs:
 
       - name: Package (Linux)
         run: |
+          VERSION="$(node -p "require('./package.json').version")"
           raco glaze build \
             --entry backend/main.rkt \
             --name TermPilot \
-            --version 0.1.0 \
+            --version "$VERSION" \
             --out dist
         env:
           TERMPILOT_SELFTEST: "0"
