@@ -31,14 +31,17 @@ In scope:
   of `~/.ssh/known_hosts` (`backend/knownhosts.rkt` — hashed `|1|`
   entries are listed with the hash intact, removal matches whole
   entries and never corrupts the file).
-- The update check: the legacy glaze/update probe against the plain
-  manifest at `https://termpilot.jrtx.site/update-manifest.json`
-  (`backend/main.rkt`). The honest current state: the manifest is
-  **unsigned**, the check is **notify-and-open only** (a banner linking
-  to the release page), and nothing is downloaded or installed
-  automatically. Any move toward auto-install without first adding a
-  signature chain is a bug; so is turning the notify path into a
-  fetch path.
+- The update check: the Ed25519-signed manifest fetched from
+  `https://github.com/turlamai/termpilot/releases/latest/download/update-manifest.json`
+  and verified against the public key embedded in
+  `backend/updater.rkt` (wrapper schema + key id via `glaze/update`,
+  signature via the crypto package's libcrypto FFI). The check is
+  **notify-and-open only** (a banner linking to the release page) and
+  nothing is downloaded or installed automatically. Any move toward
+  auto-install is a bug; so is degrading the check to accept an
+  unsigned manifest, a foreign key id, or an HTTP (non-TLS) feed. The
+  unsigned manifest at termpilot.jrtx.site serves 0.8.0-and-older
+  clients only and is never read by the current backend.
 - The AI send path: the BYOK API key lives in a 0600 settings file in
   the app data directory, is held by the Racket backend and never
   enters the webview; every outbound AI request passes redaction
@@ -77,10 +80,17 @@ their upstreams; social engineering; physical access.
   telemetry: host lists, snippets and session output stay on disk and
   are never uploaded anywhere. The AI send path is the one place
   content leaves the machine, redacted and previewed.
-- **The update manifest is not a trust root.** It is plain JSON over
-  HTTPS from the product site; releases publish a checked
-  `SHA256SUMS` covering every payload. Do not represent the update
-  banner as an authenticated publisher statement.
+- **The update feed is the trust root for update notifications.** The
+  manifest is an Ed25519-signed wrapper (family feed format:
+  `{schema, payload, signature{ed25519, key_id, value}}`) published as
+  a GitHub release asset; the backend verifies the signature against
+  the embedded public key and the pinned key id (`termpilot-2026-11`)
+  before trusting anything inside it. The private key exists only in
+  the `UPDATE_ED25519_PRIVATE_KEY` CI secret and locally outside the
+  repository. Releases also publish a checked `SHA256SUMS` covering
+  every payload and build-provenance attestations. Do not represent
+  the update banner as more than it is: a verified notification, not
+  an install.
 
 ## Supported versions
 

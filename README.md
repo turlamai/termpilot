@@ -51,18 +51,25 @@ duplicate release downloads.
 **Distribution trust — the honest current state:** macOS builds use an
 **ad-hoc signature** (no Developer ID signing, no notarization) — on
 first launch, right-click → Open. The Windows MSI is **unsigned**, so
-SmartScreen may show a warning — choose More info → Run anyway. No
-release asset carries a publisher code signature today; get packages
+SmartScreen may show a warning — choose More info → Run anyway. The
+installer binaries carry no OS-level publisher signature; get packages
 only from the official Releases page and verify the published
-SHA-256 checksums (integrity only, not authenticated publisher
-identity).
+SHA-256 checksums. Two verifiable signals exist on top: every
+versioned payload is covered by a build-provenance attestation
+(GitHub artifact attestations, `gh attestation verify`), and the
+update feed is an Ed25519-signed manifest the app verifies against an
+embedded public key.
 
-**Updates are notify-only.** On startup the app fetches a plain
-manifest from termpilot.jrtx.site and, when a newer version exists,
-shows a banner that links to the release page. Nothing is downloaded
-or installed automatically, and the manifest is **not signed** — treat
-it as a convenience pointer, not a trust root; the signed auto-install
-chain is future work.
+**Updates are notify-only.** On startup the app fetches the
+Ed25519-signed `update-manifest.json` from GitHub Releases
+(`releases/latest/download/…`), verifies the signature and key id
+against the key embedded in the backend, and, when a newer version
+exists, shows a banner that links to the release page. Nothing is
+downloaded or installed automatically — the behavior is unchanged
+from the 0.8.0 notify-and-open banner; what changed is the trust
+chain, from an unsigned convenience pointer to a signature the app
+can actually verify. (The unsigned manifest at termpilot.jrtx.site
+stays up for 0.8.0-and-older clients only.)
 
 To build from source instead, see [Development](#development).
 

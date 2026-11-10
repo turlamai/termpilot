@@ -6,6 +6,27 @@ All notable changes to TermPilot are documented here. Format follows
 
 ## [Unreleased]
 
+### Added
+
+- Ed25519-signed update feed: releases publish a signed
+  `update-manifest.json` (family feed format, key id
+  `termpilot-2026-11`) as a release asset; the backend
+  (`backend/updater.rkt`) verifies the signature against the embedded
+  public key before showing the update banner. Behavior is unchanged
+  — notify-and-open, nothing auto-installed; the trust chain upgrades
+  from an unsigned site-manifest pointer to a verified feed. The
+  unsigned manifest at termpilot.jrtx.site stays for 0.8.0-and-older
+  clients only. Release pipelines fail closed: no
+  `UPDATE_ED25519_PRIVATE_KEY` secret, no release.
+- Build-provenance attestations for the ten versioned release payloads
+  (`actions/attest-build-provenance`; `gh attestation verify`).
+
+### Changed
+
+- Glaze dependency pinned to the `v0.18.0` tagged release (contains
+  the verified main head this code was built against) — same family
+  pin as hackdigest, replacing the main-head pin.
+
 ## [0.8.0] — 2026-11-09
 
 ### Fixed

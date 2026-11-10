@@ -16,7 +16,6 @@
          glaze/api-macros ; define-api-routes
          glaze/events     ; make-event-bus
          glaze/types      ; GString, GInt64, GValue, GBytes
-         glaze/update
          net/base64
          glaze/window     ; webview? / title for the selftest
          json
@@ -38,7 +37,8 @@
          "ssh-config.rkt"
          "transports.rkt"
          "ssh.rkt"
-         "store.rkt")
+         "store.rkt"
+         "updater.rkt")   ; signed update check (Ed25519 release-asset manifest)
 
 ;; The route list schema tooling reads (glaze.rktd points here).
 (provide api)
@@ -89,9 +89,10 @@
 
 ;; Commercial baseline: notify-and-open (not silent auto-install —
 ;; unsigned auto-install is how update systems become attack surface).
-(define update-manifest-url
-  (or (getenv "TERMPILOT_UPDATE_MANIFEST")
-      "https://termpilot.jrtx.site/update-manifest.json"))
+;; The check verifies the Ed25519-signed manifest published as a release
+;; asset (backend/updater.rkt); a failed check degrades to no banner,
+;; never to a less-verified one. The legacy plain manifest at
+;; termpilot.jrtx.site stays up for 0.8.0-and-older clients only.
 (define update-box (box #f)) ; (cons checked-at info-or-false)
 
 (define (update-check)
@@ -104,8 +105,7 @@
     [else
      (define info
        (with-handlers ([exn:fail? (lambda (_) #f)])
-         (check-update update-manifest-url
-                       #:current-version app-version)))
+         (check-update-signed app-version)))
      (set-box! update-box (cons (current-seconds) info))
      info]))
 

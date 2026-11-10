@@ -15,6 +15,9 @@ permissions:
   # The publish job dispatches pages.yml after the manifest push
   # (a GITHUB_TOKEN push cannot trigger workflows by itself).
   actions: write
+  # Build provenance attestations for the published payloads.
+  id-token: write
+  attestations: write
 
 jobs:
   validate:
@@ -29,6 +32,19 @@ jobs:
             exit 0
           fi
           bash scripts/check-release-version.sh "$GITHUB_REF_NAME"
+      # Fail-closed like hackdigest: the signed update feed is part of the
+      # release contract, so a missing secret must stop the release before
+      # the expensive builds run, not after.
+      - name: Require Ed25519 update signing secret before packaging
+        if: github.event_name == 'push'
+        shell: bash
+        env:
+          UPDATE_ED25519_PRIVATE_KEY: ${{ secrets.UPDATE_ED25519_PRIVATE_KEY }}
+        run: |
+          if [[ -z "${UPDATE_ED25519_PRIVATE_KEY:-}" ]]; then
+            echo "::error::UPDATE_ED25519_PRIVATE_KEY missing; refusing unsigned release before expensive builds"
+            exit 1
+          fi
 
   linux:
     name: Linux package
@@ -60,7 +76,12 @@ jobs:
           distribution: full
 
       - name: Install glaze
-        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#1fd99a53d0efde9473d960b73214b2513b0a60f8
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#v0.18.0
+
+      # the updater verifies manifests through the crypto package (libcrypto
+      # FFI bundled with the Racket distribution)
+      - name: Install crypto
+        run: raco pkg install --auto --no-docs --skip-installed crypto
 
       # Pinned to the verified main head — switchboard has no tagged
       # releases yet; flip to its first tag when one exists.
@@ -167,7 +188,12 @@ jobs:
           distribution: full
 
       - name: Install glaze
-        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#1fd99a53d0efde9473d960b73214b2513b0a60f8
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#v0.18.0
+
+      # the updater verifies manifests through the crypto package (libcrypto
+      # FFI bundled with the Racket distribution)
+      - name: Install crypto
+        run: raco pkg install --auto --no-docs --skip-installed crypto
 
       # Pinned to the verified main head — switchboard has no tagged
       # releases yet; flip to its first tag when one exists.
@@ -265,7 +291,12 @@ jobs:
           distribution: full
 
       - name: Install glaze
-        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#1fd99a53d0efde9473d960b73214b2513b0a60f8
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#v0.18.0
+
+      # the updater verifies manifests through the crypto package (libcrypto
+      # FFI bundled with the Racket distribution)
+      - name: Install crypto
+        run: raco pkg install --auto --no-docs --skip-installed crypto
 
       # Pinned to the verified main head — switchboard has no tagged
       # releases yet; flip to its first tag when one exists.
@@ -329,6 +360,17 @@ jobs:
       - name: Resolve version
         run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
 
+      # Signing the update feed needs the same racket the app ships with
+      # (glaze/update schema structs + the crypto package's libcrypto FFI).
+      - uses: Bogdanp/setup-racket@v1.15
+        with:
+          version: stable
+          distribution: full
+
+      - name: Install glaze and crypto
+        run: |
+          raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#v0.18.0 crypto
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -359,6 +401,32 @@ jobs:
           (cd public && sha256sum termpilot-* | LC_ALL=C sort -k2 > SHA256SUMS && sha256sum --check SHA256SUMS)
           test "$(grep -c '^' public/SHA256SUMS)" -eq "$expected"
 
+      # The signed update feed is a release asset (the app reads
+      # releases/latest/download/update-manifest.json) whose signature the
+      # embedded public key verifies. Fail-closed: no secret, no release.
+      - name: Sign and require trusted update feed (update-manifest.json)
+        env:
+          UPDATE_ED25519_PRIVATE_KEY: ${{ secrets.UPDATE_ED25519_PRIVATE_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF_NAME" == v* ]] || { echo "::error::release publishing requires a version tag"; exit 1; }
+          [[ -n "${UPDATE_ED25519_PRIVATE_KEY:-}" ]] || {
+            echo "::error::UPDATE_ED25519_PRIVATE_KEY missing; refusing unsigned release"
+            exit 1
+          }
+          umask 077
+          KEY_PEM="$RUNNER_TEMP/update-signing-key.pem"
+          trap 'rm -f "$KEY_PEM"' EXIT
+          printf '%s\n' "$UPDATE_ED25519_PRIVATE_KEY" > "$KEY_PEM"
+          scripts/make-update-manifest.sh "$GITHUB_REF_NAME" artifacts "$KEY_PEM"
+          test -s artifacts/update-manifest.json || {
+            echo "::error::Signed update manifest missing; refusing to publish"
+            exit 1
+          }
+          cp artifacts/update-manifest.json public/
+          test "$(find public -maxdepth 1 -type f | wc -l)" -eq 12
+
       - name: Extract changelog section
         run: |
           # index() = fixed-string match; ver contains regex metachars ([)
@@ -378,7 +446,8 @@ jobs:
           # products ship supported stable 0.x, and GitHub's "latest"
           # release semantics only count non-prerelease tags).
           # Assets are listed explicitly — never a directory dump — so the
-          # published set is exactly the verified public/ payload.
+          # published set is exactly the verified public/ payload
+          # (ten payloads + SHA256SUMS + the signed update manifest).
           gh release create "v$VERSION" \
             public/termpilot-"$VERSION"-linux-x64.tar.gz \
             public/termpilot-"$VERSION"-linux-x64.deb \
@@ -391,17 +460,30 @@ jobs:
             public/termpilot-"$VERSION"-windows-x64.msi \
             public/termpilot-"$VERSION"-windows-x64.zip \
             public/SHA256SUMS \
+            public/update-manifest.json \
             --title "TermPilot v$VERSION" \
             --notes-file RELEASE-NOTES.md
 
-      - name: Publish update manifest (site/update-manifest.json)
+      # Build provenance for the ten versioned payloads (the checksum
+      # inventory and the signed feed describe the payloads; the payloads
+      # are what gets attested).
+      - name: Attest build provenance (10 versioned payloads)
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: public/termpilot-*
+
+      - name: Publish legacy site manifest (≤0.8.0 clients)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # The app's updater reads this JSON from termpilot.jrtx.site
-          # (Pages) and compares `version` against its own. `url` opens
-          # the release page — notify-and-open until the 1.0 signed
-          # auto-install chain exists.
+          # Migration note (#14 在线升级收敛): since the signed chain, the
+          # app's updater reads the Ed25519-signed release asset
+          # (releases/latest/download/update-manifest.json) — behavior is
+          # unchanged (notify-and-open), the trust chain is upgraded. This
+          # unsigned site JSON stays as a convenience pointer for
+          # 0.8.0-and-older clients, which read termpilot.jrtx.site and
+          # cannot verify signatures. Removal is a separate step once
+          # signed releases are the norm, not part of shipping the chain.
           NOTES=$(head -c 400 RELEASE-NOTES.md | tr '\n' ' ')
           cat > site/update-manifest.json <<EOF
           {

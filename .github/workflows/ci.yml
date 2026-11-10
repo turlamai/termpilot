@@ -39,10 +39,16 @@ jobs:
           version: stable
           distribution: full
 
-      # Pinned to the glaze head this slice was built against; flip to
-      # the next tagged release once it exists.
+      # Pinned to the first tagged release containing the verified main
+      # head this slice was built against (v0.18.0 ⊇ 1fd99a53; the family
+      # pin, same as hackdigest).
       - name: Install glaze
-        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#1fd99a53d0efde9473d960b73214b2513b0a60f8
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#v0.18.0
+
+      # the updater verifies manifests through the crypto package (libcrypto
+      # FFI bundled with the Racket distribution)
+      - name: Install crypto
+        run: raco pkg install --auto --no-docs --skip-installed crypto
 
       # Pinned to the verified main head — switchboard has no tagged
       # releases yet; flip to its first tag when one exists.
@@ -55,10 +61,11 @@ jobs:
           echo probe | script -q -f -c "cat" /dev/null | head -3
           true
 
-      - name: Backend tests (unit + pty smoke)
+      - name: Backend tests (unit + updater + pty smoke)
         run: |
           set -o pipefail
           racket backend/tests/unit-test.rkt
+          racket backend/tests/updater-test.rkt
           racket backend/tests/pty-smoke.rkt
         env:
           TERMPILOT_DATA_DIR: /tmp/termpilot-test-data
@@ -79,7 +86,11 @@ jobs:
           distribution: full
 
       - name: Install glaze
-        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#1fd99a53d0efde9473d960b73214b2513b0a60f8
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#v0.18.0
+
+      # backend/main.rkt pulls in updater.rkt → crypto (libcrypto FFI)
+      - name: Install crypto
+        run: raco pkg install --auto --no-docs --skip-installed crypto
 
       # Pinned to the verified main head — switchboard has no tagged
       # releases yet; flip to its first tag when one exists.
@@ -117,7 +128,11 @@ jobs:
           distribution: full
 
       - name: Install glaze
-        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#1fd99a53d0efde9473d960b73214b2513b0a60f8
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#v0.18.0
+
+      # the packaged app pulls in updater.rkt → crypto (libcrypto FFI)
+      - name: Install crypto
+        run: raco pkg install --auto --no-docs --skip-installed crypto
 
       # Pinned to the verified main head — switchboard has no tagged
       # releases yet; flip to its first tag when one exists.
