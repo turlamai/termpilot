@@ -54,3 +54,10 @@ validate job 拒绝。
 - `pnpm check && pnpm build` — frontend types + bundle.
 - Manual slice: open a local session in the running app and run a
   command end to end before any release tag.
+
+## 设计流程（原型先行）
+
+所有 UI 开发与界面改造一律先原型后代码：brief → `design/DESIGN.md`
+视觉契约 → HTML 原型 → 按 HIG 基准评审通过才开工；改界面先改原型再改
+代码。契约与原型放本仓 `design/`（尚未建立时随首个 UI 切片建立），
+实物截图验收后才能作为对外宣传素材。
