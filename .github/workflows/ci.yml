@@ -20,6 +20,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Release version consistency (offline)
+        run: bash scripts/check-release-version.sh
+
       - name: Type-check
         run: pnpm check
 

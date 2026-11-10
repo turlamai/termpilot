@@ -22,20 +22,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check tag matches package.json, backend app-version, and CHANGELOG
+      - name: Check tag matches VERSION, package.json, backend app-version, and CHANGELOG
         run: |
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
             echo "manual dispatch: skipping tag validation, building from package.json version"
             exit 0
           fi
-          TAG="${GITHUB_REF_NAME#v}"
-          ROOT_VERSION=$(node -p "require('./package.json').version")
-          BACKEND_VERSION=$(sed -n 's/.*(define app-version "\([^"]*\)").*/\1/p' backend/main.rkt)
-          echo "tag=$TAG package.json=$ROOT_VERSION backend=$BACKEND_VERSION"
-          test -n "$BACKEND_VERSION" || { echo "::error::backend/main.rkt has no app-version"; exit 1; }
-          test "$TAG" = "$ROOT_VERSION" || { echo "::error::tag $TAG != package.json $ROOT_VERSION"; exit 1; }
-          test "$TAG" = "$BACKEND_VERSION" || { echo "::error::tag $TAG != backend app-version $BACKEND_VERSION"; exit 1; }
-          grep -q "^## \[$TAG\]" CHANGELOG.md || { echo "::error::CHANGELOG.md has no '## [$TAG]' section"; exit 1; }
+          bash scripts/check-release-version.sh "$GITHUB_REF_NAME"
 
   linux:
     name: Linux package
