@@ -21,6 +21,24 @@ TermPilot 处于早期开发阶段（v0.8.0 开发预览）。架构已经验证
 - 开发约定：[AGENTS.md](AGENTS.md)
 - 定价意向：[PRICING.zh-CN.md](PRICING.zh-CN.md) · [English](PRICING.md)
 
+## 安装
+
+从 [GitHub Releases](https://github.com/turlamai/termpilot/releases/latest) 下载——每个平台一个安装器加一个便携包，全部由 GitHub CI 从源码构建：
+
+| 平台 | 安装器 | 便携包 |
+|---|---|---|
+| macOS（Apple Silicon + Intel） | `termpilot-<version>-macos-<arch>.dmg` | `termpilot-<version>-macos-<arch>.zip` |
+| Windows 10/11（x64） | `termpilot-<version>-windows-x64.msi` | `termpilot-<version>-windows-x64.zip` |
+| Linux x64 | `termpilot-<version>-linux-x64.deb` · `.rpm` · `.AppImage` | `termpilot-<version>-linux-x64.tar.gz` |
+
+每个发布附带一份覆盖全部十个产物的、验证过的 `SHA256SUMS`；单文件 `.sha256` sidecar 只留在 CI 产物里，不在发布页重复。
+
+**分发信任——如实现状：** macOS 构建为 **ad-hoc 签名**（无 Developer ID 签名、无公证）——首次启动请右键 → 打开。Windows MSI **未签名**，SmartScreen 可能告警——选"更多信息" → "仍要运行"。当前没有任何发布资产带发行商代码签名；请只从官方 Releases 页获取安装包，并核对随发布公布的 SHA-256 校验和（仅完整性，不构成发行商身份认证）。
+
+**更新仅为通知。** 应用启动时从 termpilot.jrtx.site 拉取一份纯文本 manifest，发现新版本时展示指向发布页的横幅。不会自动下载或安装任何东西，且该 manifest **未签名**——把它当便利指针，不要当信任根；签名的自动安装链路是后续工作。
+
+从源码构建见[开发](#开发)。
+
 ## 工作方式
 
 ```

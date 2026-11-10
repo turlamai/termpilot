@@ -31,6 +31,41 @@ the AI panel with redaction, and the agent surface below.
 - Development: [AGENTS.md](AGENTS.md)
 - Pricing intent: [PRICING.md](PRICING.md) · [中文](PRICING.zh-CN.md)
 
+## Install
+
+Download from
+[GitHub Releases](https://github.com/turlamai/termpilot/releases/latest) —
+an installer and a portable archive per platform, built from source by
+GitHub CI:
+
+| Platform | Installer | Portable archive |
+|---|---|---|
+| macOS (Apple Silicon + Intel) | `termpilot-<version>-macos-<arch>.dmg` | `termpilot-<version>-macos-<arch>.zip` |
+| Windows 10/11 (x64) | `termpilot-<version>-windows-x64.msi` | `termpilot-<version>-windows-x64.zip` |
+| Linux x64 | `termpilot-<version>-linux-x64.deb` · `.rpm` · `.AppImage` | `termpilot-<version>-linux-x64.tar.gz` |
+
+Every release publishes one verified `SHA256SUMS` covering all ten
+payloads; per-file `.sha256` sidecars remain CI artifacts instead of
+duplicate release downloads.
+
+**Distribution trust — the honest current state:** macOS builds use an
+**ad-hoc signature** (no Developer ID signing, no notarization) — on
+first launch, right-click → Open. The Windows MSI is **unsigned**, so
+SmartScreen may show a warning — choose More info → Run anyway. No
+release asset carries a publisher code signature today; get packages
+only from the official Releases page and verify the published
+SHA-256 checksums (integrity only, not authenticated publisher
+identity).
+
+**Updates are notify-only.** On startup the app fetches a plain
+manifest from termpilot.jrtx.site and, when a newer version exists,
+shows a banner that links to the release page. Nothing is downloaded
+or installed automatically, and the manifest is **not signed** — treat
+it as a convenience pointer, not a trust root; the signed auto-install
+chain is future work.
+
+To build from source instead, see [Development](#development).
+
 ## How it works
 
 ```
