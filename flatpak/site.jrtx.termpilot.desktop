@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=TermPilot
+Comment=AI-native SSH client for macOS, Windows and Linux
+Exec=TermPilot
+Icon=site.jrtx.termpilot
+Terminal=false
+Categories=Network;Utility;Development;
+StartupWMClass=TermPilot

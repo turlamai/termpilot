@@ -125,12 +125,47 @@ jobs:
           (cd dist && tar czf "../termpilot-$VERSION-linux-x64.tar.gz" \
             $(ls | grep -v -E '\.(sha256|deb|rpm|AppImage)$'))
 
+      # Flatpak bundle from the tarball built above (the Linux
+      # distribution contract's last format). The manifest template
+      # declares the exact dependency closure against the GNOME 50
+      # runtime (see the readelf evidence in
+      # flatpak/site.jrtx.termpilot.yml — no extra modules).
+      - name: Flatpak bundle
+        run: |
+          set -euo pipefail
+          sudo apt-get install --yes flatpak flatpak-builder
+          # User-level everything: runner accounts install runtimes and
+          # build without root. GNOME 50 is the oldest supported platform
+          # runtime (48 went EOL 2026-03-24); its glibc covers the
+          # ubuntu-latest-built payload.
+          flatpak --user remote-add --if-not-exists flathub \
+            https://flathub.org/repo/flathub.flatpakrepo
+          flatpak --user install -y --noninteractive flathub \
+            "org.gnome.Platform/x86_64/50" "org.gnome.Sdk/x86_64/50"
+          # The manifest template carries version/arch/sha placeholders so
+          # the archive source's checksum is exact per release. The
+          # tarball sits at the repo root ("Tarball" above).
+          tarball="termpilot-$VERSION-linux-x64.tar.gz"
+          test -s "$tarball"
+          SHA="$(sha256sum "$tarball" | cut -d' ' -f1)"
+          sed -e "s/__VERSION__/${VERSION}/" -e "s/__ARCH__/x64/" \
+              -e "s/__SHA256__/${SHA}/" \
+              flatpak/site.jrtx.termpilot.yml > site.jrtx.termpilot.gen.yml
+          # --disable-rofiles-fuse: runners have no /dev/fuse.
+          flatpak-builder --user --force-clean --disable-rofiles-fuse \
+            --repo=flatpak-repo flatpak-build site.jrtx.termpilot.gen.yml
+          flatpak build-bundle flatpak-repo \
+            "termpilot-$VERSION-linux-x64.flatpak" site.jrtx.termpilot stable
+          rm -rf flatpak-build flatpak-repo site.jrtx.termpilot.gen.yml
+          test -f "termpilot-$VERSION-linux-x64.flatpak"
+
       - name: Per-asset .sha256 sidecars
         run: |
           for f in termpilot-$VERSION-linux-x64.tar.gz \
                    termpilot-$VERSION-linux-x64.deb \
                    termpilot-$VERSION-linux-x64.rpm \
-                   termpilot-$VERSION-linux-x64.AppImage; do
+                   termpilot-$VERSION-linux-x64.AppImage \
+                   termpilot-$VERSION-linux-x64.flatpak; do
             sha256sum "$f" > "$f.sha256"
           done
 
@@ -147,6 +182,8 @@ jobs:
             termpilot-*-linux-x64.rpm.sha256
             termpilot-*-linux-x64.AppImage
             termpilot-*-linux-x64.AppImage.sha256
+            termpilot-*-linux-x64.flatpak
+            termpilot-*-linux-x64.flatpak.sha256
           if-no-files-found: error
 
   macos:
@@ -378,16 +415,17 @@ jobs:
           merge-multiple: true
 
       # Canonical public asset set, verified before anything is uploaded:
-      # the ten versioned payloads the build jobs produce. The per-asset
-      # .sha256 sidecars stay CI artifacts — the unified SHA256SUMS is
-      # the published checksum inventory (family convention).
+      # the eleven versioned payloads the build jobs produce (ten plus the
+      # flatpak bundle). The per-asset .sha256 sidecars stay CI artifacts
+      # — the unified SHA256SUMS is the published checksum inventory
+      # (family convention).
       - name: Verify payload set and build SHA256SUMS
         run: |
           set -euo pipefail
           VERSION="${GITHUB_REF_NAME#v}"
           mkdir -p public
           for suffix in \
-            linux-x64.tar.gz linux-x64.deb linux-x64.rpm linux-x64.AppImage \
+            linux-x64.tar.gz linux-x64.deb linux-x64.rpm linux-x64.AppImage linux-x64.flatpak \
             macos-arm64.dmg macos-arm64.zip \
             macos-x64.dmg macos-x64.zip \
             windows-x64.msi windows-x64.zip; do
@@ -395,7 +433,7 @@ jobs:
             test -s "artifacts/$name" || { echo "::error::Missing or empty $name"; exit 1; }
             cp "artifacts/$name" public/
           done
-          expected=10
+          expected=11
           found="$(find public -maxdepth 1 -type f | wc -l)"
           test "$found" -eq "$expected" || { echo "::error::public/ holds $found files, expected $expected"; exit 1; }
           (cd public && sha256sum termpilot-* | LC_ALL=C sort -k2 > SHA256SUMS && sha256sum --check SHA256SUMS)
@@ -425,7 +463,7 @@ jobs:
             exit 1
           }
           cp artifacts/update-manifest.json public/
-          test "$(find public -maxdepth 1 -type f | wc -l)" -eq 12
+          test "$(find public -maxdepth 1 -type f | wc -l)" -eq 13
 
       - name: Extract changelog section
         run: |
@@ -447,12 +485,13 @@ jobs:
           # release semantics only count non-prerelease tags).
           # Assets are listed explicitly — never a directory dump — so the
           # published set is exactly the verified public/ payload
-          # (ten payloads + SHA256SUMS + the signed update manifest).
+          # (eleven payloads + SHA256SUMS + the signed update manifest).
           gh release create "v$VERSION" \
             public/termpilot-"$VERSION"-linux-x64.tar.gz \
             public/termpilot-"$VERSION"-linux-x64.deb \
             public/termpilot-"$VERSION"-linux-x64.rpm \
             public/termpilot-"$VERSION"-linux-x64.AppImage \
+            public/termpilot-"$VERSION"-linux-x64.flatpak \
             public/termpilot-"$VERSION"-macos-arm64.dmg \
             public/termpilot-"$VERSION"-macos-arm64.zip \
             public/termpilot-"$VERSION"-macos-x64.dmg \
@@ -464,10 +503,10 @@ jobs:
             --title "TermPilot v$VERSION" \
             --notes-file RELEASE-NOTES.md
 
-      # Build provenance for the ten versioned payloads (the checksum
+      # Build provenance for the eleven versioned payloads (the checksum
       # inventory and the signed feed describe the payloads; the payloads
       # are what gets attested).
-      - name: Attest build provenance (10 versioned payloads)
+      - name: Attest build provenance (11 versioned payloads)
         uses: actions/attest-build-provenance@v4
         with:
           subject-path: public/termpilot-*

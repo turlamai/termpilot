@@ -1,0 +1,100 @@
+name: Flatpak smoke
+
+# Validation leg for the Flatpak bundle pipeline without a release: runs
+# the exact steps of release.yml's Flatpak stage against the latest
+# published release payload and uploads the bundle as an artifact. It
+# runs automatically when flatpak/ or the release workflow changes and
+# never publishes anything. (TermPilot's Linux leg is x64-only, so this
+# smoke is too.)
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - flatpak/**
+      - .github/workflows/flatpak-smoke.yml
+      - .github/workflows/release.yml
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Flatpak smoke (x64)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install flatpak + flatpak-builder
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes flatpak flatpak-builder
+      - name: Fetch the published release payload
+        run: |
+          set -euo pipefail
+          # The newest non-draft release's payload; the smoke test
+          # validates the pipeline, not a specific version.
+          VERSION="$(gh release list -R turlamai/termpilot --limit 5 --json tagName,isDraft --jq '.[] | select(.isDraft|not) | .tagName' | head -1 | sed 's/^v//')"
+          echo "Smoke payload version: ${VERSION}"
+          gh release download "v${VERSION}" -R turlamai/termpilot \
+            -p "termpilot-${VERSION}-linux-x64.tar.gz" -D . --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Build the bundle (same steps as the release leg)
+        run: |
+          set -euo pipefail
+          VERSION="$(ls termpilot-*-linux-x64.tar.gz | head -1 | sed -E 's/termpilot-([^-]+)-linux-.*/\1/')"
+          FPARCH=x86_64
+          flatpak --user remote-add --if-not-exists flathub \
+            https://flathub.org/repo/flathub.flatpakrepo
+          flatpak --user install -y --noninteractive flathub \
+            "org.gnome.Platform/${FPARCH}/50" "org.gnome.Sdk/${FPARCH}/50"
+          SHA="$(sha256sum "termpilot-${VERSION}-linux-x64.tar.gz" | cut -d' ' -f1)"
+          sed -e "s/__VERSION__/${VERSION}/" -e "s/__ARCH__/x64/" \
+              -e "s/__SHA256__/${SHA}/" \
+              flatpak/site.jrtx.termpilot.yml > site.jrtx.termpilot.gen.yml
+          # --disable-rofiles-fuse: runners have no /dev/fuse.
+          flatpak-builder --user --force-clean --disable-rofiles-fuse \
+            --repo=flatpak-repo flatpak-build site.jrtx.termpilot.gen.yml
+          flatpak build-bundle flatpak-repo \
+            "termpilot-${VERSION}-linux-x64.flatpak" site.jrtx.termpilot stable
+          sha256sum "termpilot-${VERSION}-linux-x64.flatpak" \
+            > "termpilot-${VERSION}-linux-x64.flatpak.sha256"
+      - name: Sandbox execution check
+        run: |
+          set -euo pipefail
+          sudo apt-get install --yes xvfb x11-utils
+          Xvfb :99 -screen 0 1024x768x24 & xvfb_pid=$!
+          sleep 1
+          # Install the bundle from the local file: the runtime ref is
+          # already present, so nothing reaches for the network here.
+          DISPLAY=:99 flatpak --user install -y --noninteractive \
+            ./termpilot-*-linux-x64.flatpak
+          # No GPU on the runner — the same renderer switch the release
+          # smokes use. TermPilot self-asserts its page render only with
+          # TERMPILOT_SELFTEST; here the gates are the sandboxed process
+          # being alive and the WebKitGTK window mapping on the display.
+          DISPLAY=:99 flatpak run --env=WEBKIT_DISABLE_DMABUF_RENDERER=1 \
+            site.jrtx.termpilot > app-run.log 2>&1 & run_pid=$!
+          for _ in $(seq 1 20); do
+            flatpak ps --columns=application | grep -q site.jrtx.termpilot && break
+            sleep 1
+          done
+          # The sandboxed process is alive under its own instance.
+          flatpak ps --columns=application | grep site.jrtx.termpilot
+          sleep 8
+          # The window mapped on the display and the embedded backend
+          # booted (the GLZ1 runtime layout resolves through
+          # /proc/self/exe inside the sandbox).
+          DISPLAY=:99 xwininfo -root -tree | grep -i termpilot
+          kill "$run_pid" 2>/dev/null || pkill -f site.jrtx.termpilot || true
+          kill "$xvfb_pid" 2>/dev/null || true
+      - name: Dump build dirs (diagnosis)
+        if: failure()
+        run: |
+          find .flatpak-builder/build -maxdepth 3 | head -40 || true
+          find . -maxdepth 2 -name "termpilot-linux-*" -o -maxdepth 2 -name "*.tar.gz" | head -10
+          tail -40 app-run.log 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flatpak-smoke-x64
+          path: termpilot-*.flatpak*
+          if-no-files-found: error

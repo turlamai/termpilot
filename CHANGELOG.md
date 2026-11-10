@@ -21,6 +21,13 @@ All notable changes to TermPilot are documented here. Format follows
 - Build-provenance attestations for the ten versioned release payloads
   (`actions/attest-build-provenance`; `gh attestation verify`).
 
+- Flatpak bundles (`termpilot-<version>-linux-x64.flatpak`) join the
+  Linux release set. The payload needs no modules beyond the GNOME 50
+  runtime (readelf: glibc + libz only; WebKitGTK/GTK3 and OpenSSL 3
+  ship in the runtime). `SHA256SUMS` covers 11 versioned payloads.
+  A `flatpak-smoke` workflow builds and boots the bundle against the
+  latest release.
+
 ### Changed
 
 - Glaze dependency pinned to the `v0.18.0` tagged release (contains

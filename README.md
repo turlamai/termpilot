@@ -42,9 +42,9 @@ GitHub CI:
 |---|---|---|
 | macOS (Apple Silicon + Intel) | `termpilot-<version>-macos-<arch>.dmg` | `termpilot-<version>-macos-<arch>.zip` |
 | Windows 10/11 (x64) | `termpilot-<version>-windows-x64.msi` | `termpilot-<version>-windows-x64.zip` |
-| Linux x64 | `termpilot-<version>-linux-x64.deb` · `.rpm` · `.AppImage` | `termpilot-<version>-linux-x64.tar.gz` |
+| Linux x64 | `termpilot-<version>-linux-x64.deb` · `.rpm` · `.AppImage` · `.flatpak` | `termpilot-<version>-linux-x64.tar.gz` |
 
-Every release publishes one verified `SHA256SUMS` covering all ten
+Every release publishes one verified `SHA256SUMS` covering all eleven
 payloads; per-file `.sha256` sidecars remain CI artifacts instead of
 duplicate release downloads.
 
