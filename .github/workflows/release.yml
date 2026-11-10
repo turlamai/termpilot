@@ -336,6 +336,30 @@ jobs:
           path: artifacts
           merge-multiple: true
 
+      # Canonical public asset set, verified before anything is uploaded:
+      # the ten versioned payloads the build jobs produce. The per-asset
+      # .sha256 sidecars stay CI artifacts — the unified SHA256SUMS is
+      # the published checksum inventory (family convention).
+      - name: Verify payload set and build SHA256SUMS
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          mkdir -p public
+          for suffix in \
+            linux-x64.tar.gz linux-x64.deb linux-x64.rpm linux-x64.AppImage \
+            macos-arm64.dmg macos-arm64.zip \
+            macos-x64.dmg macos-x64.zip \
+            windows-x64.msi windows-x64.zip; do
+            name="termpilot-$VERSION-$suffix"
+            test -s "artifacts/$name" || { echo "::error::Missing or empty $name"; exit 1; }
+            cp "artifacts/$name" public/
+          done
+          expected=10
+          found="$(find public -maxdepth 1 -type f | wc -l)"
+          test "$found" -eq "$expected" || { echo "::error::public/ holds $found files, expected $expected"; exit 1; }
+          (cd public && sha256sum termpilot-* | LC_ALL=C sort -k2 > SHA256SUMS && sha256sum --check SHA256SUMS)
+          test "$(grep -c '^' public/SHA256SUMS)" -eq "$expected"
+
       - name: Extract changelog section
         run: |
           # index() = fixed-string match; ver contains regex metachars ([)
@@ -354,10 +378,22 @@ jobs:
           # 0.x (family baseline: hackdigest and the other glaze-line
           # products ship supported stable 0.x, and GitHub's "latest"
           # release semantics only count non-prerelease tags).
+          # Assets are listed explicitly — never a directory dump — so the
+          # published set is exactly the verified public/ payload.
           gh release create "v$VERSION" \
+            public/termpilot-"$VERSION"-linux-x64.tar.gz \
+            public/termpilot-"$VERSION"-linux-x64.deb \
+            public/termpilot-"$VERSION"-linux-x64.rpm \
+            public/termpilot-"$VERSION"-linux-x64.AppImage \
+            public/termpilot-"$VERSION"-macos-arm64.dmg \
+            public/termpilot-"$VERSION"-macos-arm64.zip \
+            public/termpilot-"$VERSION"-macos-x64.dmg \
+            public/termpilot-"$VERSION"-macos-x64.zip \
+            public/termpilot-"$VERSION"-windows-x64.msi \
+            public/termpilot-"$VERSION"-windows-x64.zip \
+            public/SHA256SUMS \
             --title "TermPilot v$VERSION" \
-            --notes-file RELEASE-NOTES.md \
-            artifacts/*
+            --notes-file RELEASE-NOTES.md
 
       - name: Publish update manifest (site/update-manifest.json)
         env:
