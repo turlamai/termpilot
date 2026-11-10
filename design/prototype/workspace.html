@@ -1,0 +1,137 @@
+<!doctype html>
+<!-- TermPilot 原型 ① 工作区（英雄屏）— 主机侧栏 + 标签 + 分屏终端 + AI 面板解释态 -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>TermPilot 原型 ① 工作区</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* 屏内补充：AI 卡片头操作、断开态按钮组 */
+  .aict .iconbtn, .aibar .iconbtn { width: 20px; height: 20px; font-size: 12px; }
+  .pane-empty .row { display: flex; gap: 8px; }
+</style>
+</head>
+<body>
+<div class="stack">
+  <div class="window" id="win">
+    <div class="titlebar">
+      <div class="lights"><i></i><i></i><i></i></div>
+      <span class="t">TermPilot — web-1</span>
+      <span class="sp"></span>
+      <button class="iconbtn" id="themeBtn" title="切换亮暗主题">◐</button>
+    </div>
+    <div class="app">
+      <nav class="activity">
+        <button class="abtn active" title="主机"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><circle cx="7" cy="7.5" r="1" fill="currentColor" stroke="none"/><circle cx="7" cy="16.5" r="1" fill="currentColor" stroke="none"/></svg></button>
+        <button class="abtn" title="SFTP"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
+        <button class="abtn" title="转发"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h12m0 0-3-3m3 3-3 3M20 17H8m0 0 3-3m-3 3 3 3"/></svg></button>
+        <button class="abtn" title="片段"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg></button>
+        <button class="abtn" title="密钥"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8" cy="16" r="4"/><path d="M11 13 20 4m-3 1 3 3"/></svg></button>
+        <button class="abtn" title="已知主机"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3.5 8.2-7 10-3.5-1.8-7-5-7-10V6z"/></svg></button>
+        <span class="sp"></span>
+        <button class="abtn" title="设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v3m0 12.4v3M2.8 12h3m12.4 0h3M5.5 5.5l2.1 2.1m8.8 8.8 2.1 2.1M18.5 5.5l-2.1 2.1m-8.8 8.8-2.1 2.1"/></svg></button>
+      </nav>
+      <aside class="sidebar">
+        <input class="search" placeholder="搜索主机…">
+        <div class="group-title">PROD</div>
+        <div class="host-row">
+          <button class="host-btn active"><span class="host-label">web-1</span><span class="host-addr">deploy@203.0.113.10</span></button>
+          <span class="lat lat-fast">12ms</span>
+        </div>
+        <div class="host-row">
+          <button class="host-btn"><span class="host-label">db-1</span><span class="host-addr">root@10.0.4.20</span></button>
+          <span class="lat lat-mid">88ms</span>
+        </div>
+        <div class="group-title">STAGING</div>
+        <div class="host-row">
+          <button class="host-btn"><span class="host-label">ci-1</span><span class="host-addr">ci@198.51.100.4</span></button>
+          <span class="lat lat-bad">240ms</span>
+        </div>
+        <div class="side-actions">
+          <button class="btn">快速连接… <kbd>⌘/</kbd></button>
+          <button class="btn">新建主机</button>
+          <div class="hintline">支持导入 ~/.ssh/config</div>
+        </div>
+      </aside>
+      <main class="main">
+        <div class="tabbar">
+          <div class="tabs">
+            <div class="tab active"><span class="tabkind">SSH</span><span>web-1</span></div>
+            <div class="tab"><span class="tabkind">LOC</span><span>本地终端</span></div>
+            <div class="tab"><span class="tabkind">MOSH</span><span>ci-1</span></div>
+          </div>
+          <div class="tab-actions">
+            <button class="iconbtn" title="新建本地终端">＋</button>
+            <button class="iconbtn" title="分屏当前标签">◫</button>
+            <button class="btn btn-primary kchip"><kbd>⌘K</kbd> 起草</button>
+          </div>
+        </div>
+        <div class="terminals">
+          <section class="pane focused">
+            <div class="pane-bar"><span>web-1 — deploy · SSH</span><span><button class="iconbtn" title="终端内搜索">⌕</button></span></div>
+            <div class="pane-body"><pre class="term"><span class="tp">jiren@web-1</span>:<span class="tpath">~</span>$ systemctl status nginx
+<span class="tok">●</span> nginx.service - A high performance web server and reverse proxy server
+   Loaded: loaded (/lib/systemd/system/nginx.service; <span class="tok">enabled</span>)
+   Active: <span class="tok">active (running)</span> since Tue 2026-11-10 09:14:03 UTC; 1 day ago
+
+<span class="tp">jiren@web-1</span>:<span class="tpath">~</span>$ tail -n 40 /var/log/nginx/error.log | grep -i upstream
+<span class="sel"><span class="terr">2026/11/11 03:21:07 [error]</span> upstream timed out (110: Connection timed out) while reading response header from upstream, client: 203.0.113.7, upstream: <span class="tpath">http://10.0.4.12:8080/v1/embeddings</span></span>
+
+<span class="tp">jiren@web-1</span>:<span class="tpath">~</span>$ <span class="cursor"></span></pre></div>
+          </section>
+          <section class="pane">
+            <div class="pane-bar"><span>ci-1 — mosh</span><span><button class="iconbtn" title="终端内搜索">⌕</button></span></div>
+            <div class="pane-body">
+              <div class="pane-empty">
+                <h3>会话已断开</h3>
+                <div class="hint">网络中断，mosh 未能在 240s 内恢复连接</div>
+                <div class="row">
+                  <button class="btn btn-primary">重连</button>
+                  <button class="btn">导出失败证据</button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+      <aside class="aipanel">
+        <div class="aibar"><span>AI 助手</span><span class="sp"></span><kbd>⌘B</kbd><button class="iconbtn" title="收起面板">✕</button></div>
+        <div class="aibody">
+          <div class="aireduct">
+            <div class="airt">脱敏预览 · 已脱敏 2 处<button class="iconbtn" title="查看明细">⌄</button></div>
+            <ul>
+              <li><code>203.0.113.7</code> → <code>[IP_1]</code></li>
+              <li><code>10.0.4.12</code> → <code>[IP_2]</code></li>
+            </ul>
+            <div class="hint">仅占位内容离开本机，原文永不发送</div>
+          </div>
+          <div class="aicard">
+            <div class="aict"><span>解释 · 选中的 error.log 行</span><button class="iconbtn" title="关闭">✕</button></div>
+            <div class="aicb">10.0.4.12:8080 在读取响应头阶段超时（110）。api.example.com 的 upstream 指向内网 10.0.4.12——大概率是该服务未监听 8080、进程假死或被防火墙拦截。
+
+建议先在 web-1 上执行 <code>curl -m 3 http://10.0.4.12:8080/health</code> 区分连通性与服务状态。</div>
+            <div class="row" style="display:flex; gap:8px;">
+              <button class="btn">按 ⌘K 起草排查命令</button>
+              <button class="btn btn-quiet">存为片段</button>
+            </div>
+          </div>
+          <div class="aiempty">没有选中内容？框选终端输出再试，或直接按 ⌘K 描述目标。</div>
+        </div>
+      </aside>
+    </div>
+    <div class="statusbar">
+      <span class="dot ok"></span><span>web-1 · 已连接 · 12ms</span>
+      <span class="dot err"></span><span>ci-1 · 已断开</span>
+      <span class="sp"></span>
+      <span><kbd>⌘K</kbd> 起草</span><span><kbd>⌘B</kbd> AI 面板</span><span><kbd>⌘N</kbd> 本地终端</span><span><kbd>⌘/</kbd> 快速连接</span>
+      <span class="proto">原型 v0.1 · ◐ 切换亮暗</span>
+    </div>
+  </div>
+</div>
+<script>
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    document.getElementById('win').classList.toggle('light');
+  });
+</script>
+</body>
+</html>

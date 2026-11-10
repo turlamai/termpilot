@@ -1,0 +1,102 @@
+<!doctype html>
+<!-- TermPilot 原型 ③ 主机管理 — 新建主机表单（防错一致：TOFU 说明 + 可逆项标注） -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>TermPilot 原型 ③ 主机管理</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* 屏内补充：表单字段说明与危险提示 */
+  .fhint { grid-column: 2; font-size: 11px; color: var(--text-dim); margin-top: -4px; }
+  .modal.wide { width: min(600px, 92vw); }
+  .welcome { margin: auto; text-align: center; color: var(--text-dim); }
+  .welcome h2 { color: var(--text); margin-bottom: 6px; font-size: 18px; }
+</style>
+</head>
+<body>
+<div class="stack">
+  <div class="window" id="win">
+    <div class="titlebar">
+      <div class="lights"><i></i><i></i><i></i></div>
+      <span class="t">TermPilot</span>
+      <span class="sp"></span>
+      <button class="iconbtn" id="themeBtn" title="切换亮暗主题">◐</button>
+    </div>
+    <div class="app">
+      <nav class="activity">
+        <button class="abtn active" title="主机"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><circle cx="7" cy="7.5" r="1" fill="currentColor" stroke="none"/><circle cx="7" cy="16.5" r="1" fill="currentColor" stroke="none"/></svg></button>
+        <button class="abtn" title="SFTP"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
+        <button class="abtn" title="转发"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h12m0 0-3-3m3 3-3 3M20 17H8m0 0 3-3m-3 3 3 3"/></svg></button>
+        <button class="abtn" title="片段"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg></button>
+        <button class="abtn" title="密钥"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8" cy="16" r="4"/><path d="M11 13 20 4m-3 1 3 3"/></svg></button>
+        <button class="abtn" title="已知主机"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3.5 8.2-7 10-3.5-1.8-7-5-7-10V6z"/></svg></button>
+        <span class="sp"></span>
+        <button class="abtn" title="设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v3m0 12.4v3M2.8 12h3m12.4 0h3M5.5 5.5l2.1 2.1m8.8 8.8 2.1 2.1M18.5 5.5l-2.1 2.1m-8.8 8.8-2.1 2.1"/></svg></button>
+      </nav>
+      <aside class="sidebar">
+        <input class="search" placeholder="搜索主机…">
+        <div class="group-title">PROD</div>
+        <div class="host-row">
+          <button class="host-btn"><span class="host-label">web-1</span><span class="host-addr">deploy@203.0.113.10</span></button>
+          <span class="lat lat-fast">12ms</span>
+        </div>
+        <div class="host-row">
+          <button class="host-btn"><span class="host-label">db-1</span><span class="host-addr">root@10.0.4.20</span></button>
+          <span class="lat lat-mid">88ms</span>
+        </div>
+        <div class="side-actions">
+          <button class="btn">快速连接… <kbd>⌘/</kbd></button>
+          <button class="btn btn-primary">新建主机</button>
+          <div class="hintline">支持导入 ~/.ssh/config</div>
+        </div>
+      </aside>
+      <main class="main">
+        <div class="terminals">
+          <div class="welcome">
+            <h2>连接主机开始</h2>
+            <div class="hint">从左侧选择主机，或按 ⌘/ 快速连接而不保存</div>
+          </div>
+        </div>
+      </main>
+    </div>
+    <div class="overlay">
+      <div class="modal wide">
+        <h2>新建主机</h2>
+        <div class="form-grid">
+          <label>名称</label><input value="web-2">
+          <label>分组</label><input value="PROD" placeholder="首个标签即分组">
+          <label>主机地址</label><input value="10.0.4.12">
+          <label>端口</label><input value="22">
+          <label>用户名</label><input value="deploy">
+          <label>连接类型</label><select><option>SSH</option><option>本地终端</option><option>Mosh</option><option>Telnet</option><option>串口</option></select>
+          <label>认证方式</label><select><option>SSH Agent</option><option>密码（终端内输入）</option><option>密钥文件</option></select>
+          <label>主机键校验</label><select><option>接受新主机（TOFU）</option><option>严格</option><option>不校验（不推荐）</option></select>
+          <div class="fhint">首次连接记录指纹；之后指纹不一致才会拒绝，防止中间人</div>
+          <label>跳板 (ProxyJump)</label><input placeholder="可空，如 bastion-1">
+          <label>启动命令</label><input placeholder="可空，连接后自动执行">
+          <label>Keepalive (秒)</label><input value="30">
+          <label>终端字号</label><input value="0（用全局默认）">
+        </div>
+        <div class="modal-actions">
+          <span class="sp"></span>
+          <button class="btn">取消</button>
+          <button class="btn btn-primary">保存并连接</button>
+        </div>
+        <div class="hint" style="margin-top:8px;">保存后仍可再改；删除主机需确认（应用内对话框，不用原生弹窗）。</div>
+      </div>
+    </div>
+    <div class="statusbar">
+      <span class="dot idle"></span><span>暂无活动会话</span>
+      <span class="sp"></span>
+      <span><kbd>⌘K</kbd> 起草</span><span><kbd>⌘B</kbd> AI 面板</span><span><kbd>⌘N</kbd> 本地终端</span><span><kbd>⌘/</kbd> 快速连接</span>
+      <span class="proto">原型 v0.1 · ◐ 切换亮暗</span>
+    </div>
+  </div>
+</div>
+<script>
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    document.getElementById('win').classList.toggle('light');
+  });
+</script>
+</body>
+</html>

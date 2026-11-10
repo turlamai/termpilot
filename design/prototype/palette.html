@@ -1,0 +1,117 @@
+<!doctype html>
+<!-- TermPilot 原型 ② ⌘K 命令面板 — 草稿就绪态（主）+ 窗下三态注记（空态/思考中/草稿就绪） -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>TermPilot 原型 ② 命令面板 ⌘K</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* 屏内补充：面板本体与三态注记卡 */
+  .palette {
+    width: min(640px, 92vw); background: var(--bg-raised); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.25);
+  }
+  .prow { display: flex; align-items: center; gap: 8px; }
+  .pprefix { color: var(--text-dim); font-size: 12px; font-weight: 700; }
+  .prow input { flex: 1; border: none; outline: none; font: inherit; font-size: 15px; background: transparent; padding: 0; min-height: 0; }
+  .predact { font-size: 12px; color: var(--text-dim); }
+  .predact code { margin-right: 6px; }
+  .draft { border: 1px solid var(--border); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 10px; background: var(--bg-sidebar); }
+  .draft code { font-size: 13px; word-break: break-all; }
+  .strip { display: flex; gap: 14px; align-items: stretch; }
+  .mini { width: 300px; display: flex; flex-direction: column; gap: 8px; }
+  .mini .tag { font-size: 11px; font-weight: 600; color: var(--text-dim); letter-spacing: .5px; }
+  .minicard { background: var(--bg-raised); border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .shim { height: 10px; border-radius: 5px; background: var(--bg-sidebar); overflow: hidden; position: relative; }
+  .shim::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(127,127,127,.25), transparent); animation: shine 1.4s ease infinite; }
+  @keyframes shine { to { transform: translateX(100%); } }
+  .spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border); border-top-color: var(--accent); animation: rot .8s linear infinite; flex: none; }
+  @keyframes rot { to { transform: rotate(360deg); } }
+  .kbdline { display: flex; align-items: center; gap: 6px; }
+</style>
+</head>
+<body>
+<div class="stack">
+  <div class="window" id="win">
+    <div class="titlebar">
+      <div class="lights"><i></i><i></i><i></i></div>
+      <span class="t">TermPilot — web-1</span>
+      <span class="sp"></span>
+      <button class="iconbtn" id="themeBtn" title="切换亮暗主题">◐</button>
+    </div>
+    <div class="app">
+      <nav class="activity"></nav>
+      <aside class="sidebar"></aside>
+      <main class="main">
+        <div class="terminals">
+          <section class="pane focused">
+            <div class="pane-bar"><span>web-1 — deploy · SSH</span></div>
+            <div class="pane-body"><pre class="term"><span class="tp">jiren@web-1</span>:<span class="tpath">~</span>$ curl -s -o /dev/null -w '%{http_code}' http://10.0.4.12:8080/health
+<span class="tdim">000</span>
+<span class="tp">jiren@web-1</span>:<span class="tpath">~</span>$ <span class="cursor"></span></pre></div>
+          </section>
+        </div>
+      </main>
+    </div>
+    <div class="overlay">
+      <div class="palette">
+        <div class="prow">
+          <span class="pprefix">⌘K</span>
+          <input value="重启 web-1 上的 nginx 并确认服务健康，别把配置改坏">
+          <kbd>Esc</kbd>
+        </div>
+        <div class="predact">脱敏预览 · 已脱敏 1 处：<code>10.0.4.12</code> → <code>[IP_1]</code> <span class="hint">仅占位内容离开本机</span></div>
+        <div class="draft">
+          <code>sudo systemctl restart nginx &amp;&amp; curl -fsS -m 5 http://127.0.0.1/health &amp;&amp; systemctl is-active nginx</code>
+          <div class="hint">草稿不自动执行 · 插入后回显在终端，由你按 ↵ 运行</div>
+          <div class="prow">
+            <button class="btn btn-primary">插入终端</button>
+            <button class="btn">复制</button>
+            <button class="btn">存为片段</button>
+            <span class="sp"></span>
+            <button class="btn btn-quiet">丢弃</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="statusbar">
+      <span class="dot ok"></span><span>web-1 · 已连接 · 12ms</span>
+      <span class="sp"></span>
+      <span><kbd>⌘K</kbd> 起草</span><span><kbd>⌘B</kbd> AI 面板</span><span><kbd>⌘N</kbd> 本地终端</span><span><kbd>⌘/</kbd> 快速连接</span>
+      <span class="proto">原型 v0.1 · ◐ 切换亮暗</span>
+    </div>
+  </div>
+  <div class="strip">
+    <div class="mini">
+      <span class="tag">空态</span>
+      <div class="minicard">
+        <div class="prow"><span class="pprefix">⌘K</span><input placeholder="描述你想做什么，生成命令草稿…"></div>
+        <div class="hint">选中终端输出后点「解释选中内容」，或按 ⌘K 生成命令。</div>
+      </div>
+    </div>
+    <div class="mini">
+      <span class="tag">进行态</span>
+      <div class="minicard">
+        <div class="prow"><span class="pprefix">⌘K</span><input value="把 /var/log 里 100MB 以上的日志压缩归档"></div>
+        <div class="prow"><span class="spin"></span><span class="hint">思考中…</span><span class="sp"></span><kbd>Esc</kbd> 丢弃</div>
+        <div class="shim"></div><div class="shim" style="width:72%;"></div>
+      </div>
+    </div>
+    <div class="mini">
+      <span class="tag">草稿就绪</span>
+      <div class="minicard">
+        <div class="predact">脱敏预览 · 已脱敏 1 处：<code>[TOKEN_1]</code></div>
+        <code class="draft" style="font:12.5px var(--mono); background:var(--bg-sidebar); border:1px solid var(--border); border-radius:8px; padding:8px;">tar -czf logs.tgz /var/log --exclude='*.tgz'</code>
+        <div class="prow"><button class="btn btn-primary" style="min-height:24px; font-size:12px;">插入终端</button><span class="sp"></span><button class="btn btn-quiet" style="min-height:24px; font-size:12px;">丢弃</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    document.getElementById('win').classList.toggle('light');
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!doctype html>
+<!-- TermPilot 原型 ⑥ 快捷键速查（⌘/ 唤起）— 键盘表面即产品承诺 -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>TermPilot 原型 ⑥ 快捷键</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* 屏内补充：快捷键列表 */
+  .shortcuts { width: min(440px, 90vw); }
+  .slist { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
+  .srow { display: flex; align-items: center; gap: 14px; padding: 5px 0; font-size: 13px; }
+  .srow kbd { min-width: 56px; text-align: center; }
+  .srow span { color: var(--text-dim); }
+  .gov { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 12px; color: var(--text-dim); background: var(--bg-sidebar); }
+  .gov b { color: var(--text); font-weight: 600; }
+  .welcome { margin: auto; text-align: center; color: var(--text-dim); }
+  .welcome h2 { color: var(--text); margin-bottom: 6px; font-size: 18px; }
+</style>
+</head>
+<body>
+<div class="stack">
+  <div class="window" id="win">
+    <div class="titlebar">
+      <div class="lights"><i></i><i></i><i></i></div>
+      <span class="t">TermPilot</span>
+      <span class="sp"></span>
+      <button class="iconbtn" id="themeBtn" title="切换亮暗主题">◐</button>
+    </div>
+    <div class="app">
+      <nav class="activity"></nav>
+      <aside class="sidebar"></aside>
+      <main class="main">
+        <div class="terminals">
+          <div class="welcome">
+            <h2>键盘优先</h2>
+            <div class="hint">每个高频动作都有快捷键 · 按 ⌘/ 随时查看本表</div>
+          </div>
+        </div>
+      </main>
+    </div>
+    <div class="overlay">
+      <div class="modal shortcuts">
+        <h2>键盘快捷键</h2>
+        <div class="slist">
+          <div class="srow"><kbd>⌘K</kbd><span>命令面板（AI 起草命令）</span></div>
+          <div class="srow"><kbd>⌘B</kbd><span>AI 面板开关</span></div>
+          <div class="srow"><kbd>⌘N</kbd><span>新建本地终端</span></div>
+          <div class="srow"><kbd>⌘/</kbd><span>快速连接（直连而不保存主机）</span></div>
+          <div class="srow"><kbd>Esc</kbd><span>丢弃草稿 · 关闭浮层</span></div>
+          <div class="srow"><kbd>⌘Q</kbd><span>快速连接（等效入口）</span></div>
+        </div>
+        <div class="gov"><b>AI 提议，用户执行。</b>命令草稿从不自动运行——必须显式「插入终端」；发送前先看脱敏预览。三平台快捷键语义一致，修饰键随平台惯例（⌘ / Ctrl）。</div>
+        <div class="modal-actions">
+          <span class="sp"></span>
+          <button class="btn">确定</button>
+        </div>
+      </div>
+    </div>
+    <div class="statusbar">
+      <span class="dot idle"></span><span>快捷键速查</span>
+      <span class="sp"></span>
+      <span><kbd>⌘K</kbd> 起草</span><span><kbd>⌘B</kbd> AI 面板</span><span><kbd>⌘N</kbd> 本地终端</span><span><kbd>⌘/</kbd> 快速连接</span>
+      <span class="proto">原型 v0.1 · ◐ 切换亮暗</span>
+    </div>
+  </div>
+</div>
+<script>
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    document.getElementById('win').classList.toggle('light');
+  });
+</script>
+</body>
+</html>
