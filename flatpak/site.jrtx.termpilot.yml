@@ -48,6 +48,12 @@ modules:
     buildsystem: simple
     sources:
       - type: archive
+        # The release tarball is flat (bin/, lib/ at the root, no leading
+        # top-level directory); flatpak-builder's default
+        # strip-components=1 strips the FIRST path component off every
+        # entry (observed in the first smoke run — bin/lib vanished).
+        # Keep the layout exactly as packaged.
+        strip-components: 0
         path: termpilot-__VERSION__-linux-__ARCH__.tar.gz
         sha256: __SHA256__
       - type: file
