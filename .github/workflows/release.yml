@@ -350,13 +350,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # 0.x versions are development previews — marked as prereleases
-          # (family precedent: taskly). 1.0+ publishes as stable.
-          if [[ "$VERSION" == 0.* ]]; then EXTRA="--prerelease"; fi
+          # Every release publishes as stable — no --prerelease, including
+          # 0.x (family baseline: hackdigest and the other glaze-line
+          # products ship supported stable 0.x, and GitHub's "latest"
+          # release semantics only count non-prerelease tags).
           gh release create "v$VERSION" \
             --title "TermPilot v$VERSION" \
             --notes-file RELEASE-NOTES.md \
-            $EXTRA \
             artifacts/*
 
       - name: Publish update manifest (site/update-manifest.json)
