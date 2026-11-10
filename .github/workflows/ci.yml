@@ -53,7 +53,7 @@ jobs:
       # Pinned to the verified main head — switchboard has no tagged
       # releases yet; flip to its first tag when one exists.
       - name: Install switchboard
-        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#50a03c66d65d8ef3cede2b52235b9bc9c46c524e
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#v0.1
 
       - name: Diagnose script bridge (util-linux dialect)
         run: |
@@ -95,7 +95,7 @@ jobs:
       # Pinned to the verified main head — switchboard has no tagged
       # releases yet; flip to its first tag when one exists.
       - name: Install switchboard
-        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#50a03c66d65d8ef3cede2b52235b9bc9c46c524e
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#v0.1
 
       - name: Compile backend (including ConPTY path)
         run: raco make backend/main.rkt
@@ -137,7 +137,7 @@ jobs:
       # Pinned to the verified main head — switchboard has no tagged
       # releases yet; flip to its first tag when one exists.
       - name: Install switchboard
-        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#50a03c66d65d8ef3cede2b52235b9bc9c46c524e
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#v0.1
 
       - name: Package (Linux)
         run: |

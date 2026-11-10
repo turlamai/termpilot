@@ -86,7 +86,7 @@ jobs:
       # Pinned to the verified main head — switchboard has no tagged
       # releases yet; flip to its first tag when one exists.
       - name: Install switchboard
-        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#50a03c66d65d8ef3cede2b52235b9bc9c46c524e
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#v0.1
 
       # The installer toolchains glaze degrades across: dpkg-deb is stock
       # on ubuntu runners, rpmbuild comes from apt, appimagetool ships as
@@ -235,7 +235,7 @@ jobs:
       # Pinned to the verified main head — switchboard has no tagged
       # releases yet; flip to its first tag when one exists.
       - name: Install switchboard
-        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#50a03c66d65d8ef3cede2b52235b9bc9c46c524e
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#v0.1
 
       - name: App icon (icns from icon-1024.png)
         run: |
@@ -338,7 +338,7 @@ jobs:
       # Pinned to the verified main head — switchboard has no tagged
       # releases yet; flip to its first tag when one exists.
       - name: Install switchboard
-        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#50a03c66d65d8ef3cede2b52235b9bc9c46c524e
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#v0.1
 
       # WiX pinned to v5.0.2 like the taskly release pipeline: v7 gates
       # builds behind the OSMF EULA acceptance (WIX7015). glaze falls
