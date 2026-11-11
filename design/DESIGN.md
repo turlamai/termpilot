@@ -53,3 +53,9 @@ Tokens 提取自 `apps/desktop/src/styles.css` 现行值（1:1 同名），保�
 3. 亮暗成对：dark 是默认工具皮肤，light 镜像同结构；活动栏两态皆深，图标对比恒定；不存在只有单态的界面。
 4. 键盘可达：每个高频动作有快捷键且登记在 ShortcutsOverlay；破坏性操作（删主机/删密钥/移除 known_hosts 条目）一律走应用内 ConfirmBox。
 5. 敏感数据零回显：API Key 永远是 `__SAVED__` 哨兵；私钥内容、脱敏前的终端输出不得出现在任何面板中。
+
+
+## 平台渲染差异（glaze 线）
+
+同一 HTML/CSS 三平台共享，交互天然一致；差异仅在 WebView 渲染微差与平台窗口 chrome
+（由宿主提供）。三渲染器（WKWebView / WebView2 / WebKitGTK）截图对照纳入平台验收。
