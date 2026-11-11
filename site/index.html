@@ -5,17 +5,17 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TermPilot — AI 原生的 SSH 客户端</title>
-    <meta name="description" content="TermPilot: 本地优先的跨平台 SSH 客户端——主机管理、真实终端会话、Snippets、端口转发，AI 助手用你自己的模型 key 生成命令、解释输出，发送前先脱敏。Glaze 线——Racket 引擎驱动，xterm.js 终端。">
+    <meta name="description" content="TermPilot: AI 原生的 SSH 客户端——六种连接类型、主机管理、真实终端、Snippets、端口转发；AI 助手用你自己的模型 key 起草命令、解释输出，发送前先脱敏。BYOK 免费，密钥不离机。">
     <link rel="canonical" href="https://termpilot.jrtx.site/">
     <meta name="theme-color" content="#D97757">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="TermPilot">
     <meta property="og:title" content="TermPilot — The AI-native SSH client">
-    <meta property="og:description" content="Local-first SSH client for macOS, Windows and Linux: real terminals, hosts, snippets, forwarding — plus a BYOK assistant that drafts commands and explains errors, redacted before anything leaves the machine.">
+    <meta property="og:description" content="The AI-native SSH client for macOS, Windows and Linux: six connection types, real terminals, hosts, snippets, forwarding — plus a free BYOK assistant that drafts commands and explains errors, with a redaction preview before anything reaches the model.">
     <meta property="og:url" content="https://termpilot.jrtx.site/">
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="TermPilot — The AI-native SSH client">
-    <meta name="twitter:description" content="Local-first SSH client with a BYOK assistant. Your keys and your data never leave your machine.">
+    <meta name="twitter:description" content="Local-first SSH client with a free BYOK assistant. Your keys never leave the machine; AI-bound content is redacted before it goes out.">
 
     <!-- Theme pre-paint: a tool site defaults to its dark skin. -->
     <script>
@@ -81,7 +81,7 @@
             <div class="kit-container">
                 <span class="kit-eyebrow" data-i18n="kicker">本地优先 · BYOK · 密钥不离机</span>
                 <h1 data-i18n="hero-title">SSH 客户端，长出了 AI 时代的脑子。</h1>
-                <p class="kit-lead" data-i18n="hero-lede">主机管理、真实终端会话、Snippets、端口转发——这些是基本功。TermPilot 多给一样东西：一个用你自己的模型 key 驱动的助手，生成命令、解释报错、排查故障。它只提议，不执行；发送前先脱敏；你的密钥与你的数据，从不离开你的机器。</p>
+                <p class="kit-lead" data-i18n="hero-lede">主机管理、真实终端会话、Snippets、端口转发——这些是基本功。TermPilot 多给一样东西：一个用你自己的模型 key 驱动的助手，起草命令、解释报错、排查故障。终端输出是唯一主角：AI 只提议，插入由你确认；发送前先脱敏；你的密钥从不离开机器。</p>
                 <div class="kit-btn-row">
                     <div class="kit-dl">
                         <a class="kit-btn kit-btn--primary" data-kit-dl-primary href="https://github.com/turlamai/termpilot/releases">
@@ -112,12 +112,12 @@
                     <div class="kit-card">
                         <span class="kit-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></span>
                         <h3 data-i18n="why.terminals.title">真实终端</h3>
-                        <p data-i18n="why.terminals.body">每个会话一个伪终端：agent 密码提示、TUI 程序、vim、htop，行为与原生终端一致。标签页 + 分屏、主题、每主机字体、终端内搜索。</p>
+                        <p data-i18n="why.terminals.body">每个会话一个伪终端：密码提示、TUI 程序、vim、htop，行为与原生终端一致。标签页 + 分屏、六套终端主题、每主机字体、终端内搜索；断线即标记断开态、一键重连，会话可录制 .cast 回放。</p>
                     </div>
                     <div class="kit-card">
                         <span class="kit-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
                         <h3 data-i18n="why.hosts.title">主机与分组</h3>
-                        <p data-i18n="why.hosts.body">主机、分组、标签、备注，存本地 SQLite，一键导入 ~/.ssh/config。搜索到达即用。</p>
+                        <p data-i18n="why.hosts.body">主机、分组、标签、备注存本地 SQLite，一键导入 ~/.ssh/config；延迟徽标一眼看出哪台在线，user@host:port 快连免建档。搜索到达即用。</p>
                     </div>
                     <div class="kit-card">
                         <span class="kit-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15l3-3-3-3M13 15h4"/></svg></span>
@@ -137,7 +137,7 @@
                     <div class="kit-card">
                         <span class="kit-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
                         <h3 data-i18n="why.connections.title">六种连接</h3>
-                        <p data-i18n="why.connections.body">SSH、本地终端、telnet、mosh、串口（波特率/校验位齐全）、SFTP——一个引擎，一套界面。</p>
+                        <p data-i18n="why.connections.body">SSH、本地终端、telnet、mosh、串口（波特率/校验位齐全）、SFTP——一个引擎，一套界面。SFTP 支持拖放上传，单个文件或整个目录都行，进度逐条可见。</p>
                     </div>
                 </div>
             </div>
@@ -151,7 +151,7 @@
                     <div class="kit-card">
                         <span class="kit-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="3.5"/></svg></span>
                         <h3 data-i18n="ai.generate.title">⌘K 生成命令</h3>
-                        <p data-i18n="ai.generate.body">用自然语言说意图，给出可直接运行的命令草稿。你确认，才发送。</p>
+                        <p data-i18n="ai.generate.body">用自然语言说意图，面板三态清晰可感：输入、思考中、草稿就绪。草稿可插入终端（显式点击，绝不自动执行）、复制或存为片段；Esc 一律丢弃。</p>
                     </div>
                     <div class="kit-card">
                         <span class="kit-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1M16 3h1a2 2 0 0 1 2 2v5a2 2 0 0 0 2 2 2 2 0 0 0-2 2v5a2 2 0 0 1-2 2h-1"/></svg></span>
@@ -161,12 +161,12 @@
                     <div class="kit-card">
                         <span class="kit-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>
                         <h3 data-i18n="ai.redact.title">发送前脱敏</h3>
-                        <p data-i18n="ai.redact.body">私钥、token、凭据、连接串——AI 出站前逐条匹配打码，预览展示打了几处、打掉什么。</p>
+                        <p data-i18n="ai.redact.body">私钥、token、凭据、连接串——AI 出站前逐条匹配打码，预览展示将离开本机的内容：打了几处、打掉了什么。</p>
                     </div>
                     <div class="kit-card">
                         <span class="kit-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L19 4M15 4h4v4"/></svg></span>
                         <h3 data-i18n="ai.byok.title">BYOK，你的 key</h3>
-                        <p data-i18n="ai.byok.body">GLM、DeepSeek、Qwen、Kimi、豆包、SiliconFlow、OpenAI、Anthropic、本地 Ollama——预设齐备。key 存 0600，引擎持有，永不进 WebView。</p>
+                        <p data-i18n="ai.byok.body">GLM、DeepSeek、Qwen、Kimi、豆包、SiliconFlow、OpenAI、Anthropic、本地 Ollama——预设齐备。key 存 0600，引擎持有，永不进 WebView；保存后界面只显示「已保存」哨兵，永不回显。</p>
                     </div>
                     <div class="kit-card">
                         <span class="kit-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
@@ -211,8 +211,8 @@
                         <p style="margin-top: 12px;"><a href="https://github.com/turlamai/termpilot/releases" data-i18n="start.release.link">Releases →</a></p>
                     </div>
                     <div class="kit-card">
-                        <h3 data-i18n="start.pricing.title">定价意向</h3>
-                        <p data-i18n="start.pricing.body">一次购买完整产品（目标 ¥168 / US$24），可选更新续费；BYOK AI 不另收费。发布目标，非在售报价。</p>
+                        <h3 data-i18n="start.pricing.title">商业计划</h3>
+                        <p data-i18n="start.pricing.body">开发预览免费，BYOK AI 不另收费。商业化按公开门禁推进，未过闸前没有任何在售项目；完整商业计划公开在 PRICING.md。</p>
                         <p style="margin-top: 12px;"><a href="https://github.com/turlamai/termpilot/blob/main/PRICING.md" data-i18n="start.pricing.link">PRICING →</a></p>
                     </div>
                 </div>
@@ -249,7 +249,7 @@
                     <h4 data-i18n="footer.legal">条款</h4>
                     <ul>
                         <li><a href="https://github.com/turlamai/termpilot" data-i18n="nav.github">GitHub</a></li>
-                        <li><a href="https://github.com/turlamai/termpilot/blob/main/PRICING.md" data-i18n="start.pricing.title">定价意向</a></li>
+                        <li><a href="https://github.com/turlamai/termpilot/blob/main/PRICING.md" data-i18n="start.pricing.title">商业计划</a></li>
                     </ul>
                 </div>
             </div>
@@ -266,7 +266,7 @@
             "nav.why": "为什么", "nav.ai": "AI 原生", "nav.local": "本地优先", "nav.start": "开始", "nav.github": "GitHub",
             "kicker": "本地优先 · BYOK · 密钥不离机",
             "hero-title": "SSH 客户端，长出了 AI 时代的脑子。",
-            "hero-lede": "主机管理、真实终端会话、Snippets、端口转发——这些是基本功。TermPilot 多给一样东西：一个用你自己的模型 key 驱动的助手，生成命令、解释报错、排查故障。它只提议，不执行；发送前先脱敏；你的密钥与你的数据，从不离开你的机器。",
+            "hero-lede": "主机管理、真实终端会话、Snippets、端口转发——这些是基本功。TermPilot 多给一样东西：一个用你自己的模型 key 驱动的助手，起草命令、解释报错、排查故障。终端输出是唯一主角：AI 只提议，插入由你确认；发送前先脱敏；你的密钥从不离开机器。",
             "hero.source": "查看源码",
             "hero.note": "早期开发中 · AGPL-3.0 · macOS / Windows / Linux",
             "dl.mac": "macOS 版", "dl.win": "Windows 版", "dl.linux": "Linux 版",
@@ -274,9 +274,9 @@
             "dl.note": "当前为早期开发版本，请前往 Releases 页面选取对应安装包。",
             "why.kicker": "为什么是 TermPilot", "why.title": "基本功，先做扎实",
             "why.terminals.title": "真实终端",
-            "why.terminals.body": "每个会话一个伪终端：agent 密码提示、TUI 程序、vim、htop，行为与原生终端一致。标签页 + 分屏、主题、每主机字体、终端内搜索。",
+            "why.terminals.body": "每个会话一个伪终端：密码提示、TUI 程序、vim、htop，行为与原生终端一致。标签页 + 分屏、六套终端主题、每主机字体、终端内搜索；断线即标记断开态、一键重连，会话可录制 .cast 回放。",
             "why.hosts.title": "主机与分组",
-            "why.hosts.body": "主机、分组、标签、备注，存本地 SQLite，一键导入 ~/.ssh/config。搜索到达即用。",
+            "why.hosts.body": "主机、分组、标签、备注存本地 SQLite，一键导入 ~/.ssh/config；延迟徽标一眼看出哪台在线，user@host:port 快连免建档。搜索到达即用。",
             "why.ssh.title": "系统 OpenSSH",
             "why.ssh.body": "ssh-agent、ProxyJump、known_hosts、config 兼容、新算法跟进——系统带来什么，TermPilot 就有什么。引擎层留有接缝，将来可换进程内栈。",
             "why.snippets.title": "Snippets",
@@ -284,16 +284,16 @@
             "why.forward.title": "端口转发",
             "why.forward.body": "-L / -R / -D 规则图形化配置，绑定主机，随会话启停。",
             "why.connections.title": "六种连接",
-            "why.connections.body": "SSH、本地终端、telnet、mosh、串口（波特率/校验位齐全）、SFTP——一个引擎，一套界面。",
+            "why.connections.body": "SSH、本地终端、telnet、mosh、串口（波特率/校验位齐全）、SFTP——一个引擎，一套界面。SFTP 支持拖放上传，单个文件或整个目录都行，进度逐条可见。",
             "ai.kicker": "AI 原生", "ai.title": "AI 原生，不是 AI 贴皮",
             "ai.generate.title": "⌘K 生成命令",
-            "ai.generate.body": "用自然语言说意图，给出可直接运行的命令草稿。你确认，才发送。",
+            "ai.generate.body": "用自然语言说意图，面板三态清晰可感：输入、思考中、草稿就绪。草稿可插入终端（显式点击，绝不自动执行）、复制或存为片段；Esc 一律丢弃。",
             "ai.explain.title": "选区解释",
             "ai.explain.body": "选中报错输出，得到「发生了什么、为什么、下一步」。中文报错中文答。",
             "ai.redact.title": "发送前脱敏",
-            "ai.redact.body": "私钥、token、凭据、连接串——AI 出站前逐条匹配打码，预览展示打了几处、打掉什么。",
+            "ai.redact.body": "私钥、token、凭据、连接串——AI 出站前逐条匹配打码，预览展示将离开本机的内容：打了几处、打掉了什么。",
             "ai.byok.title": "BYOK，你的 key",
-            "ai.byok.body": "GLM、DeepSeek、Qwen、Kimi、豆包、SiliconFlow、OpenAI、Anthropic、本地 Ollama——预设齐备。key 存 0600，引擎持有，永不进 WebView。",
+            "ai.byok.body": "GLM、DeepSeek、Qwen、Kimi、豆包、SiliconFlow、OpenAI、Anthropic、本地 Ollama——预设齐备。key 存 0600，引擎持有，永不进 WebView；保存后界面只显示「已保存」哨兵，永不回显。",
             "ai.agent.title": "Agent 接口",
             "ai.agent.body": "确定性 JSON CLI 与 MCP：让 coding agent 列主机、跑单次命令、管 Snippets——AI 时代的原生接口。",
             "ai.free.title": "不收 AI 税",
@@ -308,8 +308,8 @@
             "start.release.title": "等发布",
             "start.release.body": "Releases 页提供 macOS（arm64/x64 DMG+zip）、Windows（MSI+zip）、Linux（tar.gz/deb/rpm/AppImage）包。",
             "start.release.link": "Releases →",
-            "start.pricing.title": "定价意向",
-            "start.pricing.body": "一次购买完整产品（目标 ¥168 / US$24），可选更新续费；BYOK AI 不另收费。发布目标，非在售报价。",
+            "start.pricing.title": "商业计划",
+            "start.pricing.body": "开发预览免费，BYOK AI 不另收费。商业化按公开门禁推进，未过闸前没有任何在售项目；完整商业计划公开在 PRICING.md。",
             "start.pricing.link": "PRICING →",
             "footer.tagline": "AI 原生的 SSH 客户端 · 本地优先",
             "footer.product": "产品", "footer.family": "家族", "footer.legal": "条款",
@@ -320,7 +320,7 @@
             "nav.why": "Why", "nav.ai": "AI-native", "nav.local": "Local-first", "nav.start": "Get started", "nav.github": "GitHub",
             "kicker": "Local-first · BYOK · keys never leave the machine",
             "hero-title": "An SSH client with an AI-era brain.",
-            "hero-lede": "Host management, real terminal sessions, snippets and port forwarding are the fundamentals. TermPilot adds one more thing: an assistant driven by your own model keys that drafts commands, explains errors and debugs failures. It only suggests and never executes; everything is redacted before it leaves; your keys and your data never leave your machine.",
+            "hero-lede": "Host management, real terminal sessions, snippets and port forwarding are the fundamentals. TermPilot adds one more thing: an assistant driven by your own model keys that drafts commands, explains errors and debugs failures. The terminal output stays the protagonist: AI only proposes, insertion needs your click, everything is redacted before it reaches the model, and your keys never leave the machine.",
             "hero.source": "View source",
             "hero.note": "Early development · AGPL-3.0 · macOS / Windows / Linux",
             "dl.mac": "For macOS", "dl.win": "For Windows", "dl.linux": "For Linux",
@@ -328,9 +328,9 @@
             "dl.note": "Early development builds: pick the right package from the Releases page.",
             "why.kicker": "Why TermPilot", "why.title": "The fundamentals, done properly",
             "why.terminals.title": "Real terminals",
-            "why.terminals.body": "One PTY per session: agent password prompts, TUI programs, vim and htop behave exactly like a native terminal. Tabs + splits, themes, per-host fonts, in-terminal search.",
+            "why.terminals.body": "One PTY per session: password prompts, TUI programs, vim and htop behave exactly like a native terminal. Tabs + splits, six terminal themes, per-host fonts, in-terminal search; a dropped connection shows its disconnected state and reconnects in one click, and sessions can be recorded as .cast for replay.",
             "why.hosts.title": "Hosts & groups",
-            "why.hosts.body": "Hosts, groups, tags and notes live in local SQLite; import ~/.ssh/config in one click. Search lands on the host you meant.",
+            "why.hosts.body": "Hosts, groups, tags and notes live in local SQLite; import ~/.ssh/config in one click. Latency badges show at a glance who is reachable, and user@host:port connects without saving a profile. Search lands on the host you meant.",
             "why.ssh.title": "System OpenSSH",
             "why.ssh.body": "ssh-agent, ProxyJump, known_hosts, config compatibility, new algorithms as they land — what the system has, TermPilot has. The engine layer keeps a seam for an in-process stack later.",
             "why.snippets.title": "Snippets",
@@ -338,16 +338,16 @@
             "why.forward.title": "Port forwarding",
             "why.forward.body": "Configure -L / -R / -D rules visually, bind hosts, start and stop them with the session.",
             "why.connections.title": "Six connection types",
-            "why.connections.body": "SSH, local shell, telnet, mosh, serial (full baud and parity options) and SFTP — one engine, one interface.",
+            "why.connections.body": "SSH, local shell, telnet, mosh, serial (full baud and parity options) and SFTP — one engine, one interface. SFTP uploads by drag and drop, single files or whole directories, with per-file progress.",
             "ai.kicker": "AI-native", "ai.title": "AI-native, not AI-painted",
             "ai.generate.title": "⌘K command drafts",
-            "ai.generate.body": "State the intent in natural language and get a runnable command draft. You confirm before anything is sent.",
+            "ai.generate.body": "State the intent in natural language and the palette shows its three states clearly: input, thinking, draft ready. Insert a draft into the terminal (explicit click, never auto-run), copy it or save it as a snippet; Esc discards everything.",
             "ai.explain.title": "Selection, explained",
             "ai.explain.body": "Select an error and get what happened, why, and the next step — answered in your language.",
             "ai.redact.title": "Redacted before sending",
-            "ai.redact.body": "Private keys, tokens, credentials and connection strings are matched and masked before any AI outbound call, with a preview of how many spots and what was removed.",
+            "ai.redact.body": "Private keys, tokens, credentials and connection strings are matched and masked before any AI outbound call; the preview shows exactly what will leave the machine — how many spots and what was removed.",
             "ai.byok.title": "BYOK — your keys",
-            "ai.byok.body": "GLM, DeepSeek, Qwen, Kimi, Doubao, SiliconFlow, OpenAI, Anthropic and local Ollama are preset. Keys stay 0600, held by the engine, never entering the WebView.",
+            "ai.byok.body": "GLM, DeepSeek, Qwen, Kimi, Doubao, SiliconFlow, OpenAI, Anthropic and local Ollama are preset. Keys stay 0600, held by the engine, never entering the WebView; once saved the UI shows only a saved sentinel, never the key itself.",
             "ai.agent.title": "Agent interface",
             "ai.agent.body": "Deterministic JSON CLI and MCP: let coding agents list hosts, run one-off commands and manage snippets — a native interface for the AI era.",
             "ai.free.title": "No AI tax",
@@ -362,8 +362,8 @@
             "start.release.title": "Wait for releases",
             "start.release.body": "The Releases page ships macOS (arm64/x64 DMG+zip), Windows (MSI+zip) and Linux (tar.gz/deb/rpm/AppImage) packages.",
             "start.release.link": "Releases →",
-            "start.pricing.title": "Pricing intent",
-            "start.pricing.body": "One-time purchase for the full product (target ¥168 / US$24) with optional update renewal; BYOK AI costs nothing extra. A release target, not an on-sale price.",
+            "start.pricing.title": "Commercial plan",
+            "start.pricing.body": "Development previews are free and BYOK AI costs nothing extra. Commercialization follows the public gate checklist; nothing is on sale until the gates pass. The full commercial plan is public in PRICING.md.",
             "start.pricing.link": "PRICING →",
             "footer.tagline": "The AI-native SSH client · local by design",
             "footer.product": "Product", "footer.family": "Family", "footer.legal": "Legal",
