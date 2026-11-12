@@ -65,7 +65,7 @@ before send; BYOK only):
 | AI-drafted snippets | snippet editor + ⌘K save-as-snippet | ✓ shipped |
 | Session summary: long session → digest for handover/issue text | side panel + CLI/MCP | ✓ shipped |
 | Failure evidence export (bounded, fingerprinted) | pane export + CLI + MCP | ✓ shipped |
-| Deterministic CLI + MCP server | cli.rkt / mcp.rkt | ✓ shipped |
+| Deterministic CLI + MCP server | backend/cli.rkt / backend/mcp.rkt | ✓ shipped |
 
 ## 5. Sync, vault, teams
 
