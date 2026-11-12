@@ -62,13 +62,13 @@ packages/core  共享 TypeScript 桥（类型化 RPC + 流式客户端）
 Agent-native 意味着编码 agent 与 UI 获得同样的真相：一个确定性 CLI 和一个 MCP 服务器（stdio JSON-RPC）——都走同一个本地存储，不调 `run` 就没有网络，退出码从不说谎，`--json` 出 JSON：
 
 ```bash
-racket cli.rkt hosts --json                      # 主机档案
-racket cli.rkt run web-1 "systemctl is-active nginx"   # 一次性命令，走系统 ssh
+racket backend/cli.rkt hosts --json                      # 主机档案
+racket backend/cli.rkt run web-1 "systemctl is-active nginx"   # 一次性命令，走系统 ssh
                                                  #   加 --timeout N 限时（超时退出码 124）
-racket cli.rkt logs                              # 会话日志文件（应用内按会话开启）
-racket cli.rkt evidence web-1-0000000001.log     # 有界尾部 + sha1——可引用的失败证据
-echo "<输出>" | racket cli.rkt summarize -       # 交接摘要（需 BYOK key）
-racket mcp.rkt                                   # MCP：list_hosts、run_command、list_snippets、
+racket backend/cli.rkt logs                              # 会话日志文件（应用内按会话开启）
+racket backend/cli.rkt evidence web-1-0000000001.log     # 有界尾部 + sha1——可引用的失败证据
+echo "<输出>" | racket backend/cli.rkt summarize -       # 交接摘要（需 BYOK key）
+racket backend/mcp.rkt                                   # MCP：list_hosts、run_command、list_snippets、
                                                  #     list_logs、failure_evidence、session_summary
 ```
 

@@ -111,13 +111,13 @@ same local store, no network unless you invoke `run`, exit codes that
 never lie, JSON on `--json`:
 
 ```bash
-racket cli.rkt hosts --json                      # host profiles
-racket cli.rkt run web-1 "systemctl is-active nginx"   # one-shot over system ssh
+racket backend/cli.rkt hosts --json                      # host profiles
+racket backend/cli.rkt run web-1 "systemctl is-active nginx"   # one-shot over system ssh
                                                  #   add --timeout N to bound it (exit 124)
-racket cli.rkt logs                              # session-log files (opt-in logging)
-racket cli.rkt evidence web-1-0000000001.log     # bounded tail + sha1 — the citable failure dump
-echo "<output>" | racket cli.rkt summarize -     # handover digest (BYOK key required)
-racket mcp.rkt                                   # MCP: list_hosts, run_command, list_snippets,
+racket backend/cli.rkt logs                              # session-log files (opt-in logging)
+racket backend/cli.rkt evidence web-1-0000000001.log     # bounded tail + sha1 — the citable failure dump
+echo "<output>" | racket backend/cli.rkt summarize -     # handover digest (BYOK key required)
+racket backend/mcp.rkt                                   # MCP: list_hosts, run_command, list_snippets,
                                                  #      list_logs, failure_evidence, session_summary
 ```
 
