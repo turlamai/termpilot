@@ -21,21 +21,18 @@ Tokens 提取自 `apps/desktop/src/styles.css` 现行值（1:1 同名），保�
 - **反馈及时**：延迟徽标、断开态 + 重连 + 失败证据导出、上传进度条、测试连接成功/失败当场可感；toast 底部居中不阻塞。
 - **层级克制**：activity < sidebar < surface < raised 四层（既有结构，每层职责明确）；accent 只给交互与状态。
 
-## Tokens（与实现 1:1，提取自 apps/desktop/src/styles.css）
+## Tokens（语义；值不在此复制，提取自 apps/desktop/src/styles.css）
 
-| Token | Dark（默认） | Light | 用途 |
-|---|---|---|---|
-| `--bg` | `#242629` | `#f2f3f4` | 主画布 |
-| `--bg-raised` | `#2c2e32` | `#ffffff` | 控件/浮层/modal |
-| `--bg-sidebar` | `#1f2124` | `#e9eaea` | 侧栏/标签条/AI 面板 |
-| `--bg-activity` | `#191b1d` | `#212325` | 活动栏（两态皆深） |
-| `--text` | `#e3e5e7` | `#242628` | 主文字 |
-| `--text-dim` | `#9da1a6` | `#6e7175` | 次级文字 |
-| `--accent` | `#5c8fae` | `#38678a` | 选中/焦点环/主按钮/进行态 |
-| `--accent-hover` | `#6da0bd` | `#2f5a7b` | accent 悬停 |
-| `--border` | `#3a3d41` | `#d4d6d8` | 分隔 |
-| `--error` | `#d46a6a` | `#b04a4a` | 危险/失败/断开 |
-| `--terminal-bg` | `#141728` | `#f7f8f9` | 终端区（唯一大面积色块） |
+值类 token 真源 = `apps/desktop/src/styles.css` 现行值（1:1 同名）；原型 `design/prototype/shared.css` 与其一一对应，本表只记语义与分层。终端前景色为原型推导值，xterm 主题真源在 `packages/core/src/themes.ts`（六主题包）。
+
+| Token | 语义 |
+|---|---|
+| `--bg --bg-raised --bg-sidebar --bg-activity` | 四层表面：主画布 / 控件浮层 modal / 侧栏标签条 AI 面板 / 活动栏（两态皆深） |
+| `--text --text-dim` | 主/次级文字 |
+| `--accent --accent-hover` | 选中/焦点环/主按钮/进行态 + 悬停 |
+| `--border` | 分隔 |
+| `--error` | 危险/失败/断开 |
+| `--terminal-bg` | 终端区（唯一大面积色块） |
 
 - **状态色（lat-badge 既有值 + 亮态推导）**：ok `#4caf78`（亮态 `#2e7d4f`）· warn `#d0a83c`（亮态 `#9a7a20`）· bad 用 `--error`；徽标底取同色 12–14% 透明。亮态加深为原型推导——实现中 lat-badge 未分亮暗，本契约要求补齐。
 - **终端前景（原型推导）**：fg / dim / ok / path / err 两态各一套，按 pilot-dark、pilot-light 底色的可读性取值；选中底 = accent 22–35% 透明。
