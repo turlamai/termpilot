@@ -47,9 +47,15 @@ jobs:
           fi
 
   linux:
-    name: Linux package
+    name: Linux package (${{ matrix.arch }})
     needs: validate
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: x64, runner: ubuntu-latest, racket-arch: x64 }
+          - { arch: arm64, runner: ubuntu-24.04-arm, racket-arch: arm64 }
     steps:
       - uses: actions/checkout@v4
 
@@ -72,6 +78,9 @@ jobs:
 
       - uses: Bogdanp/setup-racket@v1.15
         with:
+          # Each leg builds the architecture it will package (family
+          # convention, macos leg pattern).
+          architecture: ${{ matrix.racket-arch }}
           version: stable
           distribution: full
 
@@ -90,13 +99,18 @@ jobs:
 
       # The installer toolchains glaze degrades across: dpkg-deb is stock
       # on ubuntu runners, rpmbuild comes from apt, appimagetool ships as
-      # an AppImage (run with APPIMAGE_EXTRACT_AND_RUN=1 — no FUSE on CI).
+      # an AppImage (run with APPIMAGE_EXTRACT_AND_RUN=1 — no FUSE on CI),
+      # downloaded per runner architecture.
       - name: Install packaging toolchains
         run: |
           sudo apt-get update
           sudo apt-get install -y rpm
+          case "${{ matrix.arch }}" in
+            x64)   TOOLARCH="x86_64" ;;
+            arm64) TOOLARCH="aarch64" ;;
+          esac
           curl -sL -o /usr/local/bin/appimagetool \
-            https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+            "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-${TOOLARCH}.AppImage"
           chmod +x /usr/local/bin/appimagetool
           appimagetool --version || true
 
@@ -104,7 +118,9 @@ jobs:
         run: |
           # --installer runs glaze's native installer chain (it silently
           # degrades to tar.gz without toolchains — the test -f gates
-          # below turn that into a hard failure).
+          # below turn that into a hard failure). glaze stamps the native
+          # architecture into deb (Architecture: arm64/amd64), rpm
+          # (BuildArch) and the AppImage payload.
           raco glaze build \
             --entry backend/main.rkt \
             --name TermPilot \
@@ -116,13 +132,13 @@ jobs:
           test -f dist/TermPilot.deb
           test -f dist/TermPilot.rpm
           test -f dist/TermPilot.AppImage
-          mv dist/TermPilot.deb      "termpilot-$VERSION-linux-x64.deb"
-          mv dist/TermPilot.rpm      "termpilot-$VERSION-linux-x64.rpm"
-          mv dist/TermPilot.AppImage "termpilot-$VERSION-linux-x64.AppImage"
+          mv dist/TermPilot.deb      "termpilot-$VERSION-linux-${{ matrix.arch }}.deb"
+          mv dist/TermPilot.rpm      "termpilot-$VERSION-linux-${{ matrix.arch }}.rpm"
+          mv dist/TermPilot.AppImage "termpilot-$VERSION-linux-${{ matrix.arch }}.AppImage"
 
       - name: Tarball (the portable runtime, installers excluded)
         run: |
-          (cd dist && tar czf "../termpilot-$VERSION-linux-x64.tar.gz" \
+          (cd dist && tar czf "../termpilot-$VERSION-linux-${{ matrix.arch }}.tar.gz" \
             $(ls | grep -v -E '\.(sha256|deb|rpm|AppImage)$'))
 
       # Flatpak bundle from the tarball built above (the Linux
@@ -137,53 +153,57 @@ jobs:
           # User-level everything: runner accounts install runtimes and
           # build without root. GNOME 50 is the oldest supported platform
           # runtime (48 went EOL 2026-03-24); its glibc covers the
-          # ubuntu-latest-built payload.
+          # ubuntu-built payload. The bundle inherits the runner arch.
+          case "${{ matrix.arch }}" in
+            x64)   FPARCH="x86_64" ;;
+            arm64) FPARCH="aarch64" ;;
+          esac
           flatpak --user remote-add --if-not-exists flathub \
             https://flathub.org/repo/flathub.flatpakrepo
           flatpak --user install -y --noninteractive flathub \
-            "org.gnome.Platform/x86_64/50" "org.gnome.Sdk/x86_64/50"
+            "org.gnome.Platform/${FPARCH}/50" "org.gnome.Sdk/${FPARCH}/50"
           # The manifest template carries version/arch/sha placeholders so
           # the archive source's checksum is exact per release. The
           # tarball sits at the repo root ("Tarball" above).
-          tarball="termpilot-$VERSION-linux-x64.tar.gz"
+          tarball="termpilot-$VERSION-linux-${{ matrix.arch }}.tar.gz"
           test -s "$tarball"
           SHA="$(sha256sum "$tarball" | cut -d' ' -f1)"
-          sed -e "s/__VERSION__/${VERSION}/" -e "s/__ARCH__/x64/" \
+          sed -e "s/__VERSION__/${VERSION}/" -e "s/__ARCH__/${{ matrix.arch }}/" \
               -e "s/__SHA256__/${SHA}/" \
               flatpak/site.jrtx.termpilot.yml > site.jrtx.termpilot.gen.yml
           # --disable-rofiles-fuse: runners have no /dev/fuse.
           flatpak-builder --user --force-clean --disable-rofiles-fuse \
             --repo=flatpak-repo flatpak-build site.jrtx.termpilot.gen.yml
           flatpak build-bundle flatpak-repo \
-            "termpilot-$VERSION-linux-x64.flatpak" site.jrtx.termpilot stable
+            "termpilot-$VERSION-linux-${{ matrix.arch }}.flatpak" site.jrtx.termpilot stable
           rm -rf flatpak-build flatpak-repo site.jrtx.termpilot.gen.yml
-          test -f "termpilot-$VERSION-linux-x64.flatpak"
+          test -f "termpilot-$VERSION-linux-${{ matrix.arch }}.flatpak"
 
       - name: Per-asset .sha256 sidecars
         run: |
-          for f in termpilot-$VERSION-linux-x64.tar.gz \
-                   termpilot-$VERSION-linux-x64.deb \
-                   termpilot-$VERSION-linux-x64.rpm \
-                   termpilot-$VERSION-linux-x64.AppImage \
-                   termpilot-$VERSION-linux-x64.flatpak; do
+          for f in termpilot-$VERSION-linux-${{ matrix.arch }}.tar.gz \
+                   termpilot-$VERSION-linux-${{ matrix.arch }}.deb \
+                   termpilot-$VERSION-linux-${{ matrix.arch }}.rpm \
+                   termpilot-$VERSION-linux-${{ matrix.arch }}.AppImage \
+                   termpilot-$VERSION-linux-${{ matrix.arch }}.flatpak; do
             sha256sum "$f" > "$f.sha256"
           done
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linux-x64
+          name: linux-${{ matrix.arch }}
           path: |
-            termpilot-*-linux-x64.tar.gz
-            termpilot-*-linux-x64.tar.gz.sha256
-            termpilot-*-linux-x64.deb
-            termpilot-*-linux-x64.deb.sha256
-            termpilot-*-linux-x64.rpm
-            termpilot-*-linux-x64.rpm.sha256
-            termpilot-*-linux-x64.AppImage
-            termpilot-*-linux-x64.AppImage.sha256
-            termpilot-*-linux-x64.flatpak
-            termpilot-*-linux-x64.flatpak.sha256
+            termpilot-*-linux-${{ matrix.arch }}.tar.gz
+            termpilot-*-linux-${{ matrix.arch }}.tar.gz.sha256
+            termpilot-*-linux-${{ matrix.arch }}.deb
+            termpilot-*-linux-${{ matrix.arch }}.deb.sha256
+            termpilot-*-linux-${{ matrix.arch }}.rpm
+            termpilot-*-linux-${{ matrix.arch }}.rpm.sha256
+            termpilot-*-linux-${{ matrix.arch }}.AppImage
+            termpilot-*-linux-${{ matrix.arch }}.AppImage.sha256
+            termpilot-*-linux-${{ matrix.arch }}.flatpak
+            termpilot-*-linux-${{ matrix.arch }}.flatpak.sha256
           if-no-files-found: error
 
   macos:
@@ -415,10 +435,10 @@ jobs:
           merge-multiple: true
 
       # Canonical public asset set, verified before anything is uploaded:
-      # the eleven versioned payloads the build jobs produce (ten plus the
-      # flatpak bundle). The per-asset .sha256 sidecars stay CI artifacts
-      # — the unified SHA256SUMS is the published checksum inventory
-      # (family convention).
+      # the sixteen versioned payloads the build jobs produce (both Linux
+      # architectures included). The per-asset .sha256 sidecars stay CI
+      # artifacts — the unified SHA256SUMS is the published checksum
+      # inventory (family convention).
       - name: Verify payload set and build SHA256SUMS
         run: |
           set -euo pipefail
@@ -426,6 +446,7 @@ jobs:
           mkdir -p public
           for suffix in \
             linux-x64.tar.gz linux-x64.deb linux-x64.rpm linux-x64.AppImage linux-x64.flatpak \
+            linux-arm64.tar.gz linux-arm64.deb linux-arm64.rpm linux-arm64.AppImage linux-arm64.flatpak \
             macos-arm64.dmg macos-arm64.zip \
             macos-x64.dmg macos-x64.zip \
             windows-x64.msi windows-x64.zip; do
@@ -433,7 +454,7 @@ jobs:
             test -s "artifacts/$name" || { echo "::error::Missing or empty $name"; exit 1; }
             cp "artifacts/$name" public/
           done
-          expected=11
+          expected=16
           found="$(find public -maxdepth 1 -type f | wc -l)"
           test "$found" -eq "$expected" || { echo "::error::public/ holds $found files, expected $expected"; exit 1; }
           (cd public && sha256sum termpilot-* | LC_ALL=C sort -k2 > SHA256SUMS && sha256sum --check SHA256SUMS)
@@ -463,7 +484,7 @@ jobs:
             exit 1
           }
           cp artifacts/update-manifest.json public/
-          test "$(find public -maxdepth 1 -type f | wc -l)" -eq 13
+          test "$(find public -maxdepth 1 -type f | wc -l)" -eq 18
 
       - name: Extract changelog section
         run: |
@@ -485,13 +506,18 @@ jobs:
           # release semantics only count non-prerelease tags).
           # Assets are listed explicitly — never a directory dump — so the
           # published set is exactly the verified public/ payload
-          # (eleven payloads + SHA256SUMS + the signed update manifest).
+          # (sixteen payloads + SHA256SUMS + the signed update manifest).
           gh release create "v$VERSION" \
             public/termpilot-"$VERSION"-linux-x64.tar.gz \
             public/termpilot-"$VERSION"-linux-x64.deb \
             public/termpilot-"$VERSION"-linux-x64.rpm \
             public/termpilot-"$VERSION"-linux-x64.AppImage \
             public/termpilot-"$VERSION"-linux-x64.flatpak \
+            public/termpilot-"$VERSION"-linux-arm64.tar.gz \
+            public/termpilot-"$VERSION"-linux-arm64.deb \
+            public/termpilot-"$VERSION"-linux-arm64.rpm \
+            public/termpilot-"$VERSION"-linux-arm64.AppImage \
+            public/termpilot-"$VERSION"-linux-arm64.flatpak \
             public/termpilot-"$VERSION"-macos-arm64.dmg \
             public/termpilot-"$VERSION"-macos-arm64.zip \
             public/termpilot-"$VERSION"-macos-x64.dmg \
@@ -503,10 +529,10 @@ jobs:
             --title "TermPilot v$VERSION" \
             --notes-file RELEASE-NOTES.md
 
-      # Build provenance for the eleven versioned payloads (the checksum
+      # Build provenance for the sixteen versioned payloads (the checksum
       # inventory and the signed feed describe the payloads; the payloads
       # are what gets attested).
-      - name: Attest build provenance (11 versioned payloads)
+      - name: Attest build provenance (16 versioned payloads)
         uses: actions/attest-build-provenance@v4
         with:
           subject-path: public/termpilot-*

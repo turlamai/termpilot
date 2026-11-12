@@ -30,8 +30,9 @@ TermPilot 处于早期开发阶段（v0.8.0 开发预览）。架构已经验证
 | macOS（Apple Silicon + Intel） | `termpilot-<version>-macos-<arch>.dmg` | `termpilot-<version>-macos-<arch>.zip` |
 | Windows 10/11（x64） | `termpilot-<version>-windows-x64.msi` | `termpilot-<version>-windows-x64.zip` |
 | Linux x64 | `termpilot-<version>-linux-x64.deb` · `.rpm` · `.AppImage` · `.flatpak` | `termpilot-<version>-linux-x64.tar.gz` |
+| Linux arm64 | `termpilot-<version>-linux-arm64.deb` · `.rpm` · `.AppImage` · `.flatpak` | `termpilot-<version>-linux-arm64.tar.gz` |
 
-每个发布附带一份覆盖全部十一个产物的、验证过的 `SHA256SUMS`；单文件 `.sha256` sidecar 只留在 CI 产物里，不在发布页重复。
+每个发布附带一份覆盖全部十六个产物的、验证过的 `SHA256SUMS`；单文件 `.sha256` sidecar 只留在 CI 产物里，不在发布页重复。
 
 **分发信任——如实现状：** macOS 构建为 **ad-hoc 签名**（无 Developer ID 签名、无公证）——首次启动请右键 → 打开。Windows MSI **未签名**，SmartScreen 可能告警——选"更多信息" → "仍要运行"。安装器二进制本体不带操作系统层发行商签名；请只从官方 Releases 页获取安装包，并核对随发布公布的 SHA-256 校验和。在此之上有两道可验证的信号：每个版本化产物都有构建来源证明（GitHub artifact attestations，`gh attestation verify`），更新清单本身是应用可用内嵌公钥验证的 Ed25519 签名清单。
 

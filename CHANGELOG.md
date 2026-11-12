@@ -34,6 +34,16 @@ All notable changes to TermPilot are documented here. Format follows
   the verified main head this code was built against) — same family
   pin as hackdigest, replacing the main-head pin.
 
+- **arm64 Linux packages ship alongside x64.** The release pipeline's
+  Linux leg is a matrix (ubuntu-latest + ubuntu-24.04-arm) producing
+  deb/rpm/AppImage/flatpak/tar.gz for aarch64, mirroring the x64 leg
+  (termpilot#10). glaze already stamps the native architecture into
+  deb (`Architecture: arm64`) and rpm (`BuildArch: aarch64`); the
+  workflow gains the aarch64 appimagetool and the aarch64 GNOME 50
+  flatpak runtime. The signed update feed carries the arm64 tar.gz
+  entry, so arm64 installs get the in-app update notice too.
+  `SHA256SUMS` now covers 16 versioned payloads.
+
 ## [0.8.0] — 2026-11-09
 
 ### Fixed

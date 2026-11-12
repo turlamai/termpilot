@@ -11,7 +11,8 @@
 #   <tag>       release tag, e.g. v0.9.0 (must match package.json)
 #   <dist-dir>  directory containing the release artifacts:
 #                 termpilot-<ver>-macos-arm64.zip  termpilot-<ver>-macos-x64.zip
-#                 termpilot-<ver>-windows-x64.zip  termpilot-<ver>-linux-x64.tar.gz
+#                 termpilot-<ver>-windows-x64.zip
+#                 termpilot-<ver>-linux-x64.tar.gz  termpilot-<ver>-linux-arm64.tar.gz
 #   <key-path>  Ed25519 private key PEM or DER
 #               (default: $UPDATE_KEY_PATH, then
 #                ~/.termpilot/update-signing-key.pem)
@@ -35,7 +36,8 @@ PKG_VERSION="$(node -p "require('$ROOT/package.json').version")"
 for artifact in "$DIST/termpilot-$VERSION-macos-arm64.zip" \
                 "$DIST/termpilot-$VERSION-macos-x64.zip" \
                 "$DIST/termpilot-$VERSION-windows-x64.zip" \
-                "$DIST/termpilot-$VERSION-linux-x64.tar.gz"; do
+                "$DIST/termpilot-$VERSION-linux-x64.tar.gz" \
+                "$DIST/termpilot-$VERSION-linux-arm64.tar.gz"; do
   [[ -f "$artifact" ]] || { echo "error: missing $artifact" >&2; exit 1; }
 done
 [[ -f "$KEY" ]] || {
@@ -143,7 +145,9 @@ cat > "$SCRIPT" <<'RKT'
                          (artifact 'windows 'x64
                                    (format "termpilot-~a-windows-x64.zip" version) 'zip)
                          (artifact 'linux 'x64
-                                   (format "termpilot-~a-linux-x64.tar.gz" version) 'targz))))
+                                   (format "termpilot-~a-linux-x64.tar.gz" version) 'targz)
+                         (artifact 'linux 'arm64
+                                   (format "termpilot-~a-linux-arm64.tar.gz" version) 'targz))))
 
 ;; update-manifest->payload-bytes validates the struct against the manifest
 ;; schema before signing, so a malformed manifest fails the release instead
@@ -172,7 +176,8 @@ cat > "$SCRIPT" <<'RKT'
   (lambda (out)
     (write-json wrapper out)
     (newline out)))
-(printf "manifest: ~a (4 artifacts, key-id ~a)\n" out-path key-id)
+(printf "manifest: ~a (~a artifacts, key-id ~a)\n"
+        out-path (length (update-manifest-artifacts manifest)) key-id)
 RKT
 
 racket "$SCRIPT" "$VERSION" "$BASE_URL" "$DIST" "$ROOT" "$KEY" "$KEY_ID"
