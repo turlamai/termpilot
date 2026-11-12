@@ -40,10 +40,10 @@ jobs:
           distribution: full
 
       # Pinned to the first tagged release containing the verified main
-      # head this slice was built against (7b084e236ec5bb1e130d9816210f6be6f075474e ⊇ 1fd99a53; the family
+      # head this slice was built against (v0.19.0 ⊇ 1fd99a53; the family
       # pin, same as hackdigest).
       - name: Install glaze
-        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#7b084e236ec5bb1e130d9816210f6be6f075474e
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#v0.19.0
 
       # the updater verifies manifests through the crypto package (libcrypto
       # FFI bundled with the Racket distribution)
@@ -86,7 +86,7 @@ jobs:
           distribution: full
 
       - name: Install glaze
-        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#7b084e236ec5bb1e130d9816210f6be6f075474e
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#v0.19.0
 
       # backend/main.rkt pulls in updater.rkt → crypto (libcrypto FFI)
       - name: Install crypto
@@ -128,7 +128,7 @@ jobs:
           distribution: full
 
       - name: Install glaze
-        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#7b084e236ec5bb1e130d9816210f6be6f075474e
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#v0.19.0
 
       # the packaged app pulls in updater.rkt → crypto (libcrypto FFI)
       - name: Install crypto
