@@ -122,6 +122,43 @@
   (unless ok? (error 'sftp/rename "rename failed: ~a" (string-trim out)))
   #t)
 
+;; Octal permission edit (the design contract's per-file mode control).
+;; SFTP has no chmod verb on every server — fall back to a sidecar ssh
+;; chmod when the batch refuses, so old servers still work.
+(define (chmod! host-id path mode)
+  (unless (regexp-match? #px"^[0-7]{3,4}$" mode)
+    (error 'sftp/chmod "mode must be 3–4 octal digits: ~a" mode))
+  (define-values (ok? out)
+    (run-batch (profile-for host-id)
+               (list (format "chmod ~a ~a" mode (sh-quote path)))))
+  (cond
+    [ok? #t]
+    [else
+     (define h (get-host host-id))
+     (define host (hash-ref h 'host))
+     (define port (hash-ref h 'port 22))
+     (define user (hash-ref h 'username ""))
+     (define destination
+       (if (string=? user "") host (format "~a@~a" user host)))
+     (define argv
+       (append
+        (list "-o" "BatchMode=yes"
+              "-o" (format "StrictHostKeyChecking=~a"
+                           (hash-ref h 'strict-host-key "accept-new")))
+        (if (not (= port 22)) (list "-p" (number->string port)) '())
+        (if (not (string=? (hash-ref h 'identity-file "")))
+            (list "-i" (hash-ref h 'identity-file))
+            '())
+        (list destination "chmod" mode path)))
+     (define ssh (find-executable-path "ssh"))
+     (unless ssh (error 'sftp/chmod "chmod failed: ~a" (string-trim out)))
+     (define-values (proc stdout stdin stderr)
+       (subprocess #f #f #f ssh argv))
+     (subprocess-wait proc)
+     (unless (eq? (subprocess-status proc) 'done)
+       (error 'sftp/chmod "chmod failed: ~a" (string-trim out)))
+     #t]))
+
 ;; Directory download: `get -r` lands the tree in a temp dir; we zip it
 ;; and hand the archive across the bridge (same 50 MiB cap — a source
 ;; tree compresses well, and the UI names it .zip).
@@ -279,6 +316,7 @@
          rename!
          remove!
          remove-dir!
+         chmod!
          download!
          download-dir!
          upload!

@@ -24,7 +24,11 @@ function saveBase64As(name: string, b64: string) {
   URL.revokeObjectURL(url);
 }
 
-export default function SftpView() {
+// SFTP directory browser (the SFTP slice of the transfer surface):
+// interactive browsing, uploads (file/folder/drag-drop), rename,
+// octal permission edits, deletes, downloads. Only SSH-class hosts
+// appear — the protocol's valid-target rule.
+export default function SftpBrowser() {
   const hosts = useApp((s) => s.hosts);
   const t = useApp((s) => s.t);
   const [hostId, setHostId] = useState('');
@@ -34,8 +38,15 @@ export default function SftpView() {
   const [busy, setBusy] = useState(false);
   const [uploadCwd, setUploadCwd] = useState('');
 
+  const sshHosts = hosts.filter((h) =>
+    ['ssh', 'mosh'].includes(h['connection-kind'] ?? 'ssh'),
+  );
+
   useEffect(() => {
-    if (hosts.length > 0 && !hostId) setHostId(hosts[0].id);
+    if (sshHosts.length > 0 && !sshHosts.some((h) => h.id === hostId)) {
+      setHostId(sshHosts[0].id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hosts, hostId]);
 
   const load = async (path: string) => {
@@ -168,7 +179,7 @@ export default function SftpView() {
       <div className="row">
         <select value={hostId} onChange={(e) => { setHostId(e.target.value); setCwd('.'); }}>
           <option value="">{t('view.hosts')}…</option>
-          {hosts.map((h) => (
+          {sshHosts.map((h) => (
             <option key={h.id} value={h.id}>{h.label}</option>
           ))}
         </select>
@@ -189,6 +200,25 @@ export default function SftpView() {
               </button>
             </div>
             <div className="snippet-actions">
+              <button
+                className="btn-icon"
+                title={t('sftp.chmod')}
+                onClick={() => {
+                  const mode = window.prompt(t('sftp.chmod'), '0644');
+                  if (!mode) return;
+                  const path = cwd === '.' ? e.name : `${cwd}/${e.name}`;
+                  void (async () => {
+                    try {
+                      await api.sftpChmod(hostId, path, mode.trim());
+                      await load(cwd);
+                    } catch (err) {
+                      setError(String(err).slice(0, 160));
+                    }
+                  })();
+                }}
+              >
+                ⚿
+              </button>
               <button
                 className="btn-icon"
                 title={t('sftp.rename')}

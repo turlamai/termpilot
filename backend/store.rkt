@@ -64,6 +64,17 @@
   (try-add-column! "hosts" "keep_alive" "INTEGER NOT NULL DEFAULT 0")
   (try-add-column! "hosts" "font_size" "INTEGER NOT NULL DEFAULT 0")
   (try-add-column! "hosts" "connection_kind" "TEXT NOT NULL DEFAULT 'ssh'")
+  ;; Embedded-workspace profile fields (serial line config, local shell).
+  ;; parity/stopbits predate the 0.8 UI but were never persisted — the
+  ;; add-column calls recover them for existing databases too.
+  (try-add-column! "hosts" "data_bits" "INTEGER NOT NULL DEFAULT 8")
+  (try-add-column! "hosts" "parity" "TEXT NOT NULL DEFAULT 'none'")
+  (try-add-column! "hosts" "stopbits" "INTEGER NOT NULL DEFAULT 1")
+  (try-add-column! "hosts" "flow_control" "TEXT NOT NULL DEFAULT 'none'")
+  (try-add-column! "hosts" "encoding" "TEXT NOT NULL DEFAULT 'utf-8'")
+  (try-add-column! "hosts" "line_ending" "TEXT NOT NULL DEFAULT 'crlf'")
+  (try-add-column! "hosts" "shell" "TEXT NOT NULL DEFAULT ''")
+  (try-add-column! "hosts" "cwd" "TEXT NOT NULL DEFAULT ''")
   (void (exec! "CREATE TABLE IF NOT EXISTS snippets (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
@@ -118,6 +129,14 @@
           'keep-alive (hash-ref row 'keep_alive 0)
           'font-size (hash-ref row 'font_size 0)
           'connection-kind (hash-ref row 'connection_kind "ssh")
+          'data-bits (hash-ref row 'data_bits 8)
+          'parity (hash-ref row 'parity "none")
+          'stopbits (hash-ref row 'stopbits 1)
+          'flow-control (hash-ref row 'flow_control "none")
+          'encoding (hash-ref row 'encoding "utf-8")
+          'line-ending (hash-ref row 'line_ending "crlf")
+          'shell (hash-ref row 'shell "")
+          'cwd (hash-ref row 'cwd "")
           'created-at (hash-ref row 'created_at)
           'updated-at (hash-ref row 'updated_at)))
 
@@ -137,8 +156,10 @@
   (exec! "INSERT INTO hosts (id, label, host, port, username, auth_type,
              identity_file, group_name, tags, notes, strict_host_key,
              sort_order, jump, startup_snippet, keep_alive, font_size,
-             connection_kind, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+             connection_kind, data_bits, parity, stopbits, flow_control,
+             encoding, line_ending, shell, cwd, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                  ?, ?, ?, ?, ?, ?, ?, ?)"
          (list id
                (hash-ref h 'label)
                (hash-ref h 'host)
@@ -156,6 +177,14 @@
                (hash-ref h 'keep-alive 0)
                (hash-ref h 'font-size 0)
                (hash-ref h 'connection-kind "ssh")
+               (hash-ref h 'data-bits 8)
+               (hash-ref h 'parity "none")
+               (hash-ref h 'stopbits 1)
+               (hash-ref h 'flow-control "none")
+               (hash-ref h 'encoding "utf-8")
+               (hash-ref h 'line-ending "crlf")
+               (hash-ref h 'shell "")
+               (hash-ref h 'cwd "")
                now now))
   (get-host id))
 
@@ -165,7 +194,9 @@
             auth_type = ?, identity_file = ?, group_name = ?, tags = ?,
             notes = ?, strict_host_key = ?, sort_order = ?,
             jump = ?, startup_snippet = ?, keep_alive = ?, font_size = ?,
-            connection_kind = ?, updated_at = ?
+            connection_kind = ?, data_bits = ?, parity = ?, stopbits = ?,
+            flow_control = ?, encoding = ?, line_ending = ?,
+            shell = ?, cwd = ?, updated_at = ?
           WHERE id = ?"
          (list (hash-ref h 'label)
                (hash-ref h 'host)
@@ -183,6 +214,14 @@
                (hash-ref h 'keep-alive 0)
                (hash-ref h 'font-size 0)
                (hash-ref h 'connection-kind "ssh")
+               (hash-ref h 'data-bits 8)
+               (hash-ref h 'parity "none")
+               (hash-ref h 'stopbits 1)
+               (hash-ref h 'flow-control "none")
+               (hash-ref h 'encoding "utf-8")
+               (hash-ref h 'line-ending "crlf")
+               (hash-ref h 'shell "")
+               (hash-ref h 'cwd "")
                (current-seconds)
                id))
   (get-host id))

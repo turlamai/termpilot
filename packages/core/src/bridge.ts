@@ -177,8 +177,16 @@ export interface HostProfile {
   'keep-alive': number;
   'font-size': number;
   'connection-kind': string;
+  // serial line config (backend defaults when absent)
+  'data-bits'?: number;
   parity?: string;
   stopbits?: number;
+  'flow-control'?: string;
+  encoding?: string;
+  'line-ending'?: string;
+  // local shell profile
+  shell?: string;
+  cwd?: string;
 }
 
 export interface KeyEntry {
@@ -219,6 +227,29 @@ export interface SessionInfo {
   id: string;
   kind: string;
   label: string;
+}
+
+export interface ToolConfig {
+  tool: 'gdb' | 'openocd' | 'adb';
+  executable: string;
+  elf?: string;
+  target?: string;
+  adapter?: string;
+  board?: string;
+  serial?: string;
+}
+
+export interface TransferJob {
+  id: string;
+  mode: string; // scp | tftp | adb | xmodem | ymodem | zmodem
+  direction: string; // upload | download
+  target: string;
+  path: string;
+  name: string;
+  status: string; // running | done | failed | cancelled
+  exit: number | null;
+  detail: string;
+  started: number;
 }
 
 export const api = {
@@ -356,6 +387,13 @@ export const api = {
   }) => apiPost<SessionInfo>('/api/terminal/open', body),
   terminalInput: (id: string, data: string) =>
     apiPost<{ ok: boolean }>('/api/terminal/input', { id, data }),
+  // HEX-mode serial send: raw bytes ride base64, written verbatim.
+  terminalInputBytes: (id: string, data: Uint8Array) =>
+    apiPost<{ ok: boolean }>('/api/terminal/input', {
+      id,
+      data: '',
+      bytes: bytesToBase64(data),
+    }),
   terminalResize: (id: string, cols: number, rows: number) =>
     apiPost<{ ok: boolean }>('/api/terminal/resize', { id, cols, rows }),
   terminalBroadcast: (ids: string[], data: string) =>
@@ -449,4 +487,50 @@ export const api = {
     apiPost<{ text: string }>('/api/ai/explain', { output }),
   aiSummarize: (output: string) =>
     apiPost<{ text: string }>('/api/ai/summarize', { output }),
+  sftpChmod: (hostId: string, path: string, mode: string) =>
+    apiPost<{ ok: boolean }>('/api/sftp/chmod', {
+      'host-id': hostId,
+      path,
+      mode,
+    }),
+  serialPorts: () =>
+    apiPost<{ ports: { path: string; label: string }[] }>('/api/serial/ports'),
+  serialSignal: (id: string, signal: 'break' | 'dtr' | 'rts') =>
+    apiPost<{ result: string }>('/api/serial/signal', { id, signal }),
+  toolsPreview: (config: ToolConfig) =>
+    apiPost<{ tool: string; executable: string; args: string[] }>(
+      '/api/tools/preview',
+      { config },
+    ),
+  toolsStart: (config: ToolConfig) =>
+    apiPost<SessionInfo>('/api/tools/start', { config }),
+  transferStart: (body: {
+    mode: string;
+    direction: string;
+    'host-id': string;
+    'remote-path': string;
+    name: string;
+    data?: Uint8Array;
+  }) =>
+    apiPost<TransferJob>('/api/transfer/start', {
+      mode: body.mode,
+      direction: body.direction,
+      'host-id': body['host-id'],
+      'remote-path': body['remote-path'],
+      name: body.name,
+      ...(body.data !== undefined
+        ? { data: bytesToBase64(body.data) }
+        : {}),
+    }),
+  transferStatus: () =>
+    apiPost<{ jobs: TransferJob[] }>('/api/transfer/status'),
+  transferResult: (id: string) =>
+    apiPost<string>('/api/transfer/result', { id }),
+  transferCancel: (id: string) =>
+    apiPost<{ id: string; cancelled: boolean }>('/api/transfer/cancel', { id }),
+  transferRetry: (id: string, data?: Uint8Array) =>
+    apiPost<TransferJob>('/api/transfer/retry', {
+      id,
+      ...(data !== undefined ? { data: bytesToBase64(data) } : {}),
+    }),
 };

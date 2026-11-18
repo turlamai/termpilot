@@ -13,9 +13,40 @@ export type ViewId =
   | 'snippets'
   | 'keys'
   | 'known'
+  | 'tools'
   | 'settings';
 
 export type Theme = 'light' | 'dark' | 'system';
+
+// Per-serial-session monitor state (the embedded-workspace contract:
+// each session owns its buffers, counters, encoding and history
+// independently). Lives in the store so it survives pane re-keys when
+// the terminal theme or font changes.
+export interface SerialPrefs {
+  sendMode: 'text' | 'hex';
+  encoding: 'utf-8' | 'ascii';
+  ending: 'none' | 'lf' | 'cr' | 'crlf';
+  hexView: boolean;
+  paused: boolean;
+  regex: boolean;
+  rx: number;
+  tx: number;
+  history: string[]; // cap 100; the picker shows the last 10
+  intervalMs: number;
+}
+
+const defaultSerialPrefs = (): SerialPrefs => ({
+  sendMode: 'text',
+  encoding: 'utf-8',
+  ending: 'crlf',
+  hexView: false,
+  paused: false,
+  regex: false,
+  rx: 0,
+  tx: 0,
+  history: [],
+  intervalMs: 1000,
+});
 
 export interface Pane {
   sessionId: string;
@@ -75,8 +106,16 @@ export interface AppState {
   outputRings: Record<string, OutputRing>;
   selections: Record<string, string>; // sessionId -> selected text
   broadcastTabs: Record<string, boolean>; // tabId -> broadcasting
+  serial: Record<string, SerialPrefs>; // sessionId -> monitor state
   termThemeId: string;
   termFontSize: number;
+
+  initSerial: (sessionId: string, prefs?: Partial<SerialPrefs>) => void;
+  setSerial: (sessionId: string, patch: Partial<SerialPrefs>) => void;
+  countSerialRx: (sessionId: string, bytes: number) => void;
+  countSerialTx: (sessionId: string, bytes: number) => void;
+  pushSerialHistory: (sessionId: string, text: string) => void;
+  dropSerial: (sessionId: string) => void;
 
   setView: (v: ViewId) => void;
   setLang: (l: Lang) => void;
@@ -91,9 +130,14 @@ export interface AppState {
     spec:
       | { 'host-id': string; label?: string }
       | { kind: 'local'; label?: string }
-      | { host: string; port?: number; username?: string; label?: string },
+      | { host: string; port?: number; username?: string; label?: string }
+      // quick raw-TCP / ADB-shell tabs (tools view console entries)
+      | { kind: 'tcp'; host: string; port: number; label?: string }
+      | { kind: 'adb-quick'; serial: string; label?: string },
     opts?: { split?: boolean },
   ) => Promise<void>;
+  // Attach an already-open backend session (tools launch) as a new pane.
+  attachSession: (session: { id: string; kind: string; label: string }) => void;
   closePane: (tabId: string, sessionId: string) => void;
   closeTab: (tabId: string) => void;
   reorderTabs: (from: number, to: number) => void;
@@ -131,8 +175,49 @@ export const useApp = create<AppState>((set, get) => ({
   outputRings: {},
   selections: {},
   broadcastTabs: {},
+  serial: {},
   termThemeId: localStorage.getItem('termpilot-termtheme') ?? 'pilot-dark',
   termFontSize: Number(localStorage.getItem('termpilot-fontsize') ?? 13) || 13,
+
+  initSerial: (sessionId, prefs) => {
+    const serial = { ...get().serial };
+    if (!serial[sessionId]) {
+      serial[sessionId] = { ...defaultSerialPrefs(), ...prefs };
+      set({ serial });
+    }
+  },
+
+  setSerial: (sessionId, patch) => {
+    const serial = { ...get().serial };
+    serial[sessionId] = { ...(serial[sessionId] ?? defaultSerialPrefs()), ...patch };
+    set({ serial });
+  },
+
+  countSerialRx: (sessionId, bytes) => {
+    const cur = get().serial[sessionId];
+    if (!cur) return;
+    get().setSerial(sessionId, { rx: cur.rx + bytes });
+  },
+
+  countSerialTx: (sessionId, bytes) => {
+    const cur = get().serial[sessionId];
+    if (!cur) return;
+    get().setSerial(sessionId, { tx: cur.tx + bytes });
+  },
+
+  pushSerialHistory: (sessionId, text) => {
+    const cur = get().serial[sessionId];
+    if (!cur || cur.history.at(-1) === text) return;
+    const history = [...cur.history, text];
+    while (history.length > 100) history.shift();
+    get().setSerial(sessionId, { history });
+  },
+
+  dropSerial: (sessionId) => {
+    const serial = { ...get().serial };
+    delete serial[sessionId];
+    set({ serial });
+  },
 
   setView: (v) => set({ view: v }),
 
@@ -179,21 +264,43 @@ export const useApp = create<AppState>((set, get) => ({
     const active = get().tabs.find((t) => t.id === get().activeTabId);
     const splitInto = opts?.split && active ? active : null;
     try {
-      const body =
-        'host-id' in spec
-          ? { 'host-id': spec['host-id'], cols: 120, rows: 30 }
-          : 'host' in spec
-            ? // quick connect: direct profile, nothing saved
-              {
-                host: spec.host,
-                port: spec.port ?? 22,
-                username: spec.username ?? '',
-                label: spec.label ?? spec.host,
-                cols: 120,
-                rows: 30,
-              }
-            : { kind: 'local', cols: 120, rows: 30 };
-      const session = await api.terminalOpen(body);
+      let body: Record<string, unknown>;
+      if ('host-id' in spec) {
+        body = { 'host-id': spec['host-id'], cols: 120, rows: 30 };
+      } else if ('kind' in spec && spec.kind === 'tcp') {
+        // raw TCP console (OpenOCD telnet, RTT)
+        body = {
+          kind: 'tcp',
+          host: spec.host,
+          port: spec.port,
+          label: spec.label ?? `tcp ${spec.host}:${spec.port}`,
+          cols: 120,
+          rows: 30,
+        };
+      } else if ('kind' in spec && spec.kind === 'adb-quick') {
+        body = {
+          kind: 'adb',
+          host: spec.serial,
+          label: spec.label ?? spec.serial,
+          cols: 120,
+          rows: 30,
+        };
+      } else if ('kind' in spec && spec.kind === 'local') {
+        body = { kind: 'local', cols: 120, rows: 30 };
+      } else if ('host' in spec) {
+        // quick connect: direct profile, nothing saved
+        body = {
+          host: spec.host,
+          port: spec.port ?? 22,
+          username: spec.username ?? '',
+          label: spec.label ?? spec.host,
+          cols: 120,
+          rows: 30,
+        };
+      } else {
+        body = { kind: 'local', cols: 120, rows: 30 };
+      }
+      const session = await api.terminalOpen(body as Parameters<typeof api.terminalOpen>[0]);
       const hostId = 'host-id' in spec ? spec['host-id'] : undefined;
       const pane: Pane = {
         sessionId: session.id,
@@ -233,8 +340,28 @@ export const useApp = create<AppState>((set, get) => ({
     }
   },
 
+  // Attach an already-open backend session (tools launch) as a new pane.
+  attachSession: (session) => {
+    const tab: Tab = {
+      id: nextId(),
+      panes: [
+        {
+          sessionId: session.id,
+          label: session.label,
+          kind: session.kind,
+        },
+      ],
+    };
+    set({
+      tabs: [...get().tabs, tab],
+      activeTabId: tab.id,
+      focusedSessionId: session.id,
+    });
+  },
+
   closePane: (tabId, sessionId) => {
     void api.terminalClose(sessionId).catch(() => undefined);
+    get().dropSerial(sessionId);
     const tabs = get()
       .tabs.map((t) =>
         t.id === tabId
@@ -271,6 +398,7 @@ export const useApp = create<AppState>((set, get) => ({
     if (!tab) return;
     for (const p of tab.panes) {
       void api.terminalClose(p.sessionId).catch(() => undefined);
+      get().dropSerial(p.sessionId);
     }
     const tabs = get().tabs.filter((t) => t.id !== tabId);
     const activeTabId =

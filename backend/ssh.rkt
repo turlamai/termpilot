@@ -61,13 +61,45 @@
   (values "ssh" (append argv (list destination))))
 
 ;; Local-shell spec is the same session machinery with no sidecar.
-(define (local-command argv-extra)
-  (define shell
+;; An explicit shell choice or working directory (from the host profile)
+;; wraps the launch in an argv array — never a concatenated shell string.
+(define (local-command [argv-extra '()] [shell-choice ""] [cwd ""])
+  (define default-shell
     (or (getenv "SHELL")
         (case (system-type 'os)
           [(windows) "powershell.exe"]
           [else "/bin/sh"])))
-  (values shell argv-extra))
+  (define shell
+    (case (string-downcase (string-trim shell-choice))
+      [("") default-shell]
+      [("bash") "bash"]
+      [("zsh") "zsh"]
+      [("powershell") (case (system-type 'os)
+                        [(windows) "powershell.exe"]
+                        [else "pwsh"])]
+      [("cmd") "cmd.exe"]
+      [else default-shell]))
+  (cond
+    [(and (string=? (string-trim cwd) "")
+          (eq? shell default-shell))
+     (values shell argv-extra)]
+    ;; Non-default shell or cwd: a fixed /bin/sh wrapper cd's first and
+    ;; execs the shell so the pty's foreground process is the shell
+    ;; itself. Paths ride the argv after single-quote escaping.
+    [(eq? (system-type 'os) 'windows)
+     ;; The wrapper form is POSIX; the Windows leg validates its own
+     ;; launcher (same policy as ConPTY). Until then fall back.
+     (values shell argv-extra)]
+    [else
+     (define (sh-quote s)
+       (string-append "'" (string-replace s "'" "'\\''") "'"))
+     (define script
+       (string-append
+        (if (string=? (string-trim cwd) "")
+            ""
+            (format "cd ~a && " (sh-quote (string-trim cwd))))
+        (format "exec ~a" (sh-quote shell))))
+     (values "/bin/sh" (list "-c" script))]))
 
 (provide ssh-argv
          local-command)

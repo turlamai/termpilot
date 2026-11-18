@@ -85,6 +85,42 @@
     },
     {
       "method": "POST",
+      "path": "/api/serial/ports"
+    },
+    {
+      "method": "POST",
+      "path": "/api/serial/signal"
+    },
+    {
+      "method": "POST",
+      "path": "/api/tools/preview"
+    },
+    {
+      "method": "POST",
+      "path": "/api/tools/start"
+    },
+    {
+      "method": "POST",
+      "path": "/api/transfer/start"
+    },
+    {
+      "method": "POST",
+      "path": "/api/transfer/status"
+    },
+    {
+      "method": "POST",
+      "path": "/api/transfer/result"
+    },
+    {
+      "method": "POST",
+      "path": "/api/transfer/cancel"
+    },
+    {
+      "method": "POST",
+      "path": "/api/transfer/retry"
+    },
+    {
+      "method": "POST",
       "path": "/api/sftp/list"
     },
     {
@@ -105,6 +141,10 @@
     },
     {
       "method": "POST",
+      "path": "/api/sftp/chmod"
+    },
+    {
+      "method": "POST",
       "path": "/api/sftp/download-dir"
     },
     {
@@ -114,6 +154,10 @@
     {
       "method": "POST",
       "path": "/api/sftp/upload"
+    },
+    {
+      "method": "POST",
+      "path": "/api/sftp/upload-dir"
     },
     {
       "method": "POST",
@@ -568,7 +612,34 @@
       },
       {
         "errors": [],
+        "name": "serialPorts",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "serialSignal",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
         "name": "sessionsList",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "sftpChmod",
         "parameters": [],
         "result": {
           "kind": "scalar",
@@ -657,6 +728,23 @@
       },
       {
         "errors": [],
+        "name": "sftpUploadDir",
+        "parameters": [
+          {
+            "name": "files",
+            "type": {
+              "kind": "scalar",
+              "name": "Value"
+            }
+          }
+        ],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
         "name": "snippetsCreate",
         "parameters": [],
         "result": {
@@ -724,16 +812,17 @@
         }
       },
       {
-        "errors": [
-          "invalid-args",
-          "capability-denied",
-          "token-required",
-          "timed-out",
-          "cancelled",
-          "internal"
-        ],
+        "errors": [],
         "name": "terminalInput",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "bytes",
+            "type": {
+              "kind": "scalar",
+              "name": "Bytes"
+            }
+          }
+        ],
         "result": {
           "kind": "scalar",
           "name": "Value"
@@ -801,6 +890,85 @@
           "internal"
         ],
         "name": "terminalStream",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "toolsPreview",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "toolsStart",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "transferCancel",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "transferResult",
+        "parameters": [],
+        "result": {
+          "kind": "scalar",
+          "name": "Bytes"
+        }
+      },
+      {
+        "errors": [],
+        "name": "transferRetry",
+        "parameters": [
+          {
+            "name": "data",
+            "type": {
+              "kind": "scalar",
+              "name": "Bytes"
+            }
+          }
+        ],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "transferStart",
+        "parameters": [
+          {
+            "name": "data",
+            "type": {
+              "kind": "scalar",
+              "name": "Bytes"
+            }
+          }
+        ],
+        "result": {
+          "kind": "scalar",
+          "name": "Value"
+        }
+      },
+      {
+        "errors": [],
+        "name": "transferStatus",
         "parameters": [],
         "result": {
           "kind": "scalar",

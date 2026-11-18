@@ -15,6 +15,7 @@ import { Terminal } from '@xterm/xterm';
 import { api, apiStream, findTermTheme } from '@termpilot/core';
 import { useApp, type AppState } from './state/store';
 import { Icon } from './components/Icon';
+import SerialControls, { hexDump, serialDefaultsFromHost } from './components/SerialControls';
 
 export interface TerminalPaneProps {
   sessionId: string;
@@ -36,6 +37,8 @@ export default function TerminalPane({
   const [streamEnded, setStreamEnded] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const [regexSearch, setRegexSearch] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [copied, setCopied] = useState(false);
   const [logging, setLogging] = useState(false);
   const [recording, setRecording] = useState(false);
@@ -64,6 +67,10 @@ export default function TerminalPane({
   const pane = useApp(
     (s: AppState) =>
       s.tabs.flatMap((tab) => tab.panes).find((p) => p.sessionId === sessionId),
+  );
+  const isSerial = pane?.kind === 'serial';
+  const serialHost = useApp((s: AppState) =>
+    pane?.hostId ? s.hosts.find((h) => h.id === pane.hostId) : undefined,
   );
   const label = pane?.label ?? sessionId;
   const tabsInTab = useApp(
@@ -97,15 +104,33 @@ export default function TerminalPane({
 
   const effectiveFontSize = hostFontSize > 0 ? hostFontSize : fontSize;
 
+  // Serial monitor state mirrors: pause buffering and the byte offset
+  // for the HEX gutter live in refs so the stream callback always sees
+  // current values without re-subscribing.
+  const pausedRef = useRef(false);
+  const pauseBufRef = useRef<string[]>([]);
+  const hexOffsetRef = useRef(0);
+  const writeChunkRef = useRef<((chunk: string) => void) | null>(null);
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+
+    if (isSerial) {
+      useApp
+        .getState()
+        .initSerial(sessionId, serialDefaultsFromHost(serialHost));
+      hexOffsetRef.current = 0;
+      pauseBufRef.current = [];
+    }
 
     const term = new Terminal({
       cursorBlink: true,
       fontSize: effectiveFontSize || 13,
       fontFamily:
         'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace',
+      // The contract's per-session buffer bound: 2000 lines.
+      scrollback: 2000,
       theme: findTermTheme(themeId).theme as never,
     });
     const fit = new FitAddon();
@@ -123,11 +148,35 @@ export default function TerminalPane({
 
     const abort = new AbortController();
 
+    const writeChunk = (chunk: string) => {
+      const prefs = useApp.getState().serial[sessionId];
+      if (prefs?.hexView) {
+        term.write(hexDump(chunk, hexOffsetRef.current) + '\r\n');
+      } else {
+        term.write(new TextEncoder().encode(chunk));
+      }
+      hexOffsetRef.current += new TextEncoder().encode(chunk).length;
+    };
+    writeChunkRef.current = writeChunk;
+
     apiStream(
       '/api/terminal/stream',
       { id: sessionId },
       (chunk) => {
-        term.write(new TextEncoder().encode(chunk));
+        if (isSerial) {
+          useApp
+            .getState()
+            .countSerialRx(sessionId, new TextEncoder().encode(chunk).length);
+          // Pause keeps a snapshot: incoming chunks buffer and flush on
+          // resume; receiving itself never stops.
+          if (pausedRef.current) {
+            pauseBufRef.current.push(chunk);
+            return;
+          }
+          writeChunk(chunk);
+        } else {
+          term.write(new TextEncoder().encode(chunk));
+        }
         appendOutput(sessionId, chunk);
         const title = extractTitle(chunk);
         if (title) setPaneTitle(sessionId, title);
@@ -197,10 +246,13 @@ export default function TerminalPane({
   const runSearch = useCallback(
     (dir: 'next' | 'prev') => {
       if (!addonRef.current || !searchText) return;
-      if (dir === 'next') addonRef.current.findNext(searchText);
-      else addonRef.current.findPrevious(searchText);
+      // The contract's log filter: plain text or a regular expression
+      // (the addon's regex mode; a bad pattern just fails to match).
+      const opts = { regex: regexSearch, caseSensitive: false };
+      if (dir === 'next') addonRef.current.findNext(searchText, opts);
+      else addonRef.current.findPrevious(searchText, opts);
     },
-    [searchText],
+    [searchText, regexSearch],
   );
 
   return (
@@ -228,7 +280,35 @@ export default function TerminalPane({
                 }}
                 autoFocus
               />
+              <label className="mini-check" title={t('terminal.regex')}>
+                <input
+                  type="checkbox"
+                  checked={regexSearch}
+                  onChange={(e) => setRegexSearch(e.target.checked)}
+                />
+                .*
+              </label>
             </span>
+          )}
+          {isSerial && (
+            <button
+              className={`btn-icon ${paused ? 'recording' : ''}`}
+              title={paused ? t('terminal.resume') : t('terminal.pause')}
+              onClick={() => {
+                const next = !paused;
+                setPaused(next);
+                pausedRef.current = next;
+                if (!next && pauseBufRef.current.length) {
+                  // Flush the buffered snapshot in order; receiving
+                  // continued throughout the pause.
+                  const buffered = pauseBufRef.current;
+                  pauseBufRef.current = [];
+                  for (const chunk of buffered) writeChunkRef.current?.(chunk);
+                }
+              }}
+            >
+              <Icon name={paused ? 'play' : 'pause'} size={13} />
+            </button>
           )}
           <button
             className="btn-icon"
@@ -291,6 +371,25 @@ export default function TerminalPane({
         </span>
       </div>
       <div className="terminal-pane-body" ref={containerRef} />
+      {isSerial && (
+        <SerialControls
+          sessionId={sessionId}
+          flowControl={serialHost?.['flow-control'] ?? 'none'}
+          disabled={streamEnded}
+          onSend={async (payload) => {
+            try {
+              if (payload.bytes) {
+                await api.terminalInputBytes(sessionId, payload.bytes);
+              } else {
+                await api.terminalInput(sessionId, payload.text ?? '');
+              }
+              return true;
+            } catch {
+              return false;
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

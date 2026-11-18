@@ -28,12 +28,12 @@
          racket/port
          racket/string
          json
-         "backend/store.rkt"
-         "backend/ssh.rkt"
-         "backend/session.rkt"
-         "backend/ai/ai.rkt"
-         "backend/evidence.rkt"
-         "backend/runproc.rkt")
+         "store.rkt"
+         "ssh.rkt"
+         "session.rkt"
+         "ai/ai.rkt"
+         "evidence.rkt"
+         "runproc.rkt")
 
 (define (host-by-ref reference)
   ;; by label, or user@host style quick match

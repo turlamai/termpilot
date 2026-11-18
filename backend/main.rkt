@@ -31,10 +31,14 @@
          "forwarding.rkt"
          "keys.rkt"
          "knownhosts.rkt"
+         "netstream.rkt"
          "sftp.rkt"
          "probes.rkt"
+         "serialdev.rkt"
          "session.rkt"
          "ssh-config.rkt"
+         "tools.rkt"
+         "transfer.rkt"
          "transports.rkt"
          "ssh.rkt"
          "store.rkt"
@@ -136,11 +140,26 @@
 
 ;; Build the session spec (command + args + label) for a terminal open
 ;; request: hostId, a free-form quick-connect profile, or kind:"local"
-;; for a local shell tab.
+;; for a local shell tab. Kind "tcp" is the engine's own raw stream
+;; (OpenOCD console / RTT ports); kind "adb" quick-opens a device shell.
 (define (open-spec body)
   (define host-id (hash-ref body 'host-id #f))
+  (define quick-kind (hash-ref body 'kind "ssh"))
   (cond
-    [(equal? (hash-ref body 'kind "ssh") "local")
+    [(equal? quick-kind "tcp")
+     (hasheq 'kind "tcp"
+             'label (or (hash-ref body 'label #f)
+                        (format "tcp ~a:~a"
+                                (hash-ref body 'host "127.0.0.1")
+                                (hash-ref body 'port 23)))
+             'host (hash-ref body 'host "127.0.0.1")
+             'port (hash-ref body 'port 23))]
+    [(equal? quick-kind "adb")
+     (define-values (c a) (adb-argv (hash-ref body 'host "")))
+     (hasheq 'kind "adb"
+             'label (or (hash-ref body 'label #f) (hash-ref body 'host "adb"))
+             'command c 'args a)]
+    [(equal? quick-kind "local")
      (define-values (command args) (local-command '()))
      (hasheq 'kind "local" 'label "local" 'command command 'args args)]
     [(string? host-id)
@@ -148,15 +167,40 @@
                    (error 'terminal/open "unknown host ~a" host-id)))
      (define spec-h (hash-merge h body))
      (case (hash-ref spec-h 'connection-kind "ssh")
-       [(telnet)
+       [(local)
         (define-values (c a)
-          (telnet-argv (hash-ref spec-h 'host "?")
-                       (hash-ref spec-h 'port 23)))
-        (hasheq 'kind "telnet" 'label (hash-ref h 'label)
+          (local-command '()
+                         (hash-ref spec-h 'shell "")
+                         (hash-ref spec-h 'cwd "")))
+        (hasheq 'kind "local" 'label (hash-ref h 'label)
                 'command c 'args a)]
+       [(telnet)
+        (cond
+          ;; Sidecar telnet with IAC negotiation when installed; raw
+          ;; stream fallback keeps the kind usable everywhere (doctor
+          ;; reports which one this is).
+          [(find-executable-path "telnet")
+           (define-values (c a)
+             (telnet-argv (hash-ref spec-h 'host "?")
+                          (hash-ref spec-h 'port 23)))
+           (hasheq 'kind "telnet" 'label (hash-ref h 'label)
+                   'command c 'args a)]
+          [else
+           (hasheq 'kind "tcp" 'label (hash-ref h 'label)
+                   'host (hash-ref spec-h 'host "?")
+                   'port (hash-ref spec-h 'port 23))])]
+       [(tcp)
+        (hasheq 'kind "tcp" 'label (hash-ref h 'label)
+                'host (hash-ref spec-h 'host "?")
+                'port (hash-ref spec-h 'port 9000))]
        [(mosh)
         (define-values (c a) (mosh-argv (host-profile spec-h)))
         (hasheq 'kind "mosh" 'label (hash-ref h 'label)
+                'command c 'args a)]
+       [(adb)
+        ;; The device serial rides the host column for ADB profiles.
+        (define-values (c a) (adb-argv (hash-ref spec-h 'host "?")))
+        (hasheq 'kind "adb" 'label (hash-ref h 'label)
                 'command c 'args a)]
        [(serial)
         ;; No sidecar: serial sessions open the device directly. The
@@ -165,7 +209,11 @@
         (hasheq 'kind "serial"
                 'label (hash-ref h 'label)
                 'device (hash-ref spec-h 'host)
-                'baud (hash-ref spec-h 'port 115200))]
+                'baud (hash-ref spec-h 'port 115200)
+                'databits (hash-ref spec-h 'data-bits 8)
+                'parity (hash-ref spec-h 'parity "none")
+                'stopbits (hash-ref spec-h 'stopbits 1)
+                'flow (hash-ref spec-h 'flow-control "none"))]
        [else
         (define-values (command args) (ssh-argv (host-profile spec-h)))
         (hasheq 'kind "ssh" 'label (hash-ref h 'label)
@@ -333,7 +381,103 @@
            'telnet (and (find-executable-path "telnet") #t)
            'mosh (and (find-executable-path "mosh") #t)
            'serial (if (eq? (system-type 'os) 'windows) "windows-leg" #t)
-           'ssh-keygen (and (find-executable-path "ssh-keygen") #t))]
+           'ssh-keygen (and (find-executable-path "ssh-keygen") #t)
+           'adb (and (find-executable-path "adb") #t)
+           'scp (and (find-executable-path "scp") #t)
+           'curl (and (find-executable-path "curl") #t)
+           'lrzsz (and (find-executable-path "sz")
+                       (find-executable-path "rz")
+                       #t)
+           'gdb (and (find-executable-path "gdb") #t)
+           'openocd (and (find-executable-path "openocd") #t))]
+
+  ;; serial devices: read-only enumeration, no device is opened
+  [(POST "api/serial/ports" #:returns GValue)
+   (serial-ports)
+   (hasheq 'ports (list-serial-ports))]
+  ;; serial signal control: BREAK / DTR / RTS with explicit user intent
+  ;; (dtr/rts toggle; the resulting level rides back in `result`)
+  [(POST "api/serial/signal" #:returns GValue)
+   (serial-signal [id string?] [signal string?])
+   (define action
+     (case (string-downcase signal)
+       [("break") 'break]
+       [("dtr") 'dtr]
+       [("rts") 'rts]
+       [else (error 'serial/signal "unknown signal ~a" signal)]))
+   (define result (serial-signal! sessions id action))
+   (hasheq 'result (if (symbol? result) (symbol->string result) result))]
+
+  ;; external debug tools: preview the exact argv, then launch as a
+  ;; session (stream/input/close all reuse the session routes)
+  [(POST "api/tools/preview" #:returns GValue)
+   (tools-preview [config hash?])
+   (define launch (tool-launch config))
+   (hasheq 'tool (hash-ref launch 'tool)
+           'executable (hash-ref launch 'executable)
+           'args (hash-ref launch 'args))]
+  [(POST "api/tools/start" #:returns GValue)
+   (tools-start [config hash?] [cols integer? 120] [rows integer? 30])
+   (define launch (tool-launch config))
+   (define spec
+     (hasheq 'kind "tool"
+             'label (format "~a" (hash-ref launch 'tool))
+             'command (hash-ref launch 'executable)
+             'args (hash-ref launch 'args)))
+   (define s
+     (parameterize ([current-custodian session-custodian])
+       (open-session! sessions spec #:cols cols #:rows rows)))
+   (hasheq 'id (session-id s)
+           'kind (symbol->string (session-kind s))
+           'label (session-label s))]
+
+  ;; device file transfers: SCP / X-Y-ZMODEM / TFTP / ADB, async jobs
+  [(POST "api/transfer/start" #:returns GValue)
+   (transfer-start [mode string?] [direction string?]
+                   [host-id string?] [remote-path string? "/"]
+                   [name string? ""] [data GBytes ""])
+   (define config
+     (hasheq 'mode mode 'direction direction 'host-id host-id
+             'remote-path remote-path 'name name))
+   ;; Serial XYZMODEM holds the device exclusively: refuse while a
+   ;; serial session on the same device is open, so bytes are not
+   ;; stolen between readers.
+   (when (member (string->symbol mode) '(xmodem ymodem zmodem))
+     (define h (get-host host-id))
+     (define device (and h (hash-ref h 'host "")))
+     (define busy?
+       (for/or ([s (in-list (list-sessions sessions))]
+                #:when (string=? (hash-ref s 'kind "") "serial")
+                #:when (equal? (hash-ref s 'device #f) device))
+         #t))
+     (when busy?
+       (error 'transfer/start
+              "close the serial session on ~a before a ZMODEM-family transfer"
+              device)))
+   (parameterize ([current-custodian session-custodian])
+     (start-transfer! config
+                      (and data
+                           (not (and (string? data) (string=? data "")))
+                           (if (string? data)
+                               (base64-decode data)
+                               data))))]
+  [(POST "api/transfer/status" #:returns GValue)
+   (transfer-status-all)
+   (hasheq 'jobs (transfer-status))]
+  [(POST "api/transfer/result" #:returns GBytes)
+   (transfer-result-r [id string?])
+   (transfer-result id)]
+  [(POST "api/transfer/cancel" #:returns GValue)
+   (transfer-cancel [id string?])
+   (transfer-cancel! id)]
+  [(POST "api/transfer/retry" #:returns GValue)
+   (transfer-retry [id string?] [data GBytes ""])
+   (parameterize ([current-custodian session-custodian])
+     (transfer-retry! id
+                      (and data
+                           (if (string? data)
+                               (base64-decode data)
+                               data))))]
 
   ;; sftp
   [(POST "api/sftp/list" #:returns GValue)
@@ -354,6 +498,10 @@
   [(POST "api/sftp/rename" #:returns GValue)
    (sftp-rename [host-id string?] [from string?] [to string?])
    (rename! host-id from to)
+   (hasheq 'ok #t)]
+  [(POST "api/sftp/chmod" #:returns GValue)
+   (sftp-chmod [host-id string?] [path string?] [mode string?])
+   (chmod! host-id path mode)
    (hasheq 'ok #t)]
   [(POST "api/sftp/download-dir" #:returns GBytes)
    (sftp-download-dir [host-id string?] [path string?])
@@ -456,8 +604,16 @@
            'kind (symbol->string (session-kind s))
            'label (session-label s))]
   [(POST "api/terminal/input")
-   (terminal-input [id string?] [data string?])
-   (unless (write-session! sessions id (string->bytes/utf-8 data))
+   (terminal-input [id string?] [data string? ""] [bytes GBytes ""])
+   ;; bytes (base64) carries HEX-mode serial sends — raw bytes go to the
+   ;; device verbatim, no text encoding, no implicit line ending.
+   ;; An empty string means "absent" (the GBytes optional default).
+   (define payload
+     (cond
+       [(and (string? bytes) (string=? bytes "")) (string->bytes/utf-8 data)]
+       [(string? bytes) (base64-decode bytes)]
+       [else bytes]))
+   (unless (write-session! sessions id payload)
      (error 'terminal/input "session not writable"))
    (hasheq 'ok #t)]
   ;; Broadcast input: same bytes to every listed session (Termius

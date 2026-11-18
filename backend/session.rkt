@@ -18,6 +18,7 @@
          "pty.rkt")
 
 (define-runtime-path serial-mod "pty/serial.rkt")
+(define-runtime-path netstream-mod "netstream.rkt")
 
 ;; Scrollback retained for re-attach (bytes).
 (define ring-cap (* 512 1024))
@@ -83,32 +84,70 @@
 
 ;; ---- session lifecycle ---------------------------------------------------
 
-;; spec: (hash 'kind "ssh"|"local" 'label string? 'command path-string?
+;; Signal control on a serial session: action 'break | 'dtr | 'rts
+;; (dtr/rts toggle, the resulting level comes back as a symbol).
+;; Non-serial sessions refuse.
+(define (serial-signal! mgr id action)
+  (define s (get-session mgr id))
+  (unless s (error 'serial/signal "unknown session"))
+  (unless (eq? (session-kind s) 'serial)
+    (error 'serial/signal "signal control needs a serial session"))
+  ((dynamic-require serial-mod 'serial-control!)
+   (session-pty s) action))
+
+;; spec: (hash 'kind "ssh"|"local"|"telnet"|"mosh"|"adb"|"tcp"|"serial"
+;;             'label string? 'command path-string?
 ;;             'args (listof string?))
+;; "tcp" carries host/port (raw engine stream); "serial" carries device +
+;; line params; everything else is a sidecar command.
 (define (open-session! mgr spec #:cols [cols 80] #:rows [rows 24])
   (define kind
     (match (hash-ref spec 'kind)
       ["ssh" 'ssh]
       ["telnet" 'telnet]
       ["mosh" 'mosh]
+      ["adb" 'adb]
+      ["tcp" 'tcp]
+      ["tool" 'tool]
       ["serial" 'serial]
       [_ 'local]))
   (define handle
-    (if (eq? kind 'serial)
-        ;; Serial is not a sidecar: the device file opens directly with
-        ;; one termios configuration (see pty/serial.rkt). No cols/rows.
-        ((dynamic-require serial-mod 'serial-open)
-         #:device (hash-ref spec 'device)
-         #:baud (hash-ref spec 'baud 115200))
-        (pty-open* #:command (hash-ref spec 'command)
-                   #:args (hash-ref spec 'args)
-                   #:cols cols
-                   #:rows rows)))
+    (case kind
+      [(serial)
+       ;; Serial is not a sidecar: the device file opens directly with
+       ;; one termios configuration (see pty/serial.rkt). No cols/rows.
+       ((dynamic-require serial-mod 'serial-open)
+        #:device (hash-ref spec 'device)
+        #:baud (hash-ref spec 'baud 115200)
+        #:databits (hash-ref spec 'databits 8)
+        #:parity (hash-ref spec 'parity "none")
+        #:stopbits (hash-ref spec 'stopbits 1)
+        #:flow (hash-ref spec 'flow "none"))]
+      [(tcp)
+       ;; Plain TCP stream (OpenOCD console, RTT port, raw net targets):
+       ;; the engine connects; no child process.
+       ((dynamic-require netstream-mod 'tcp-open-stream)
+        #:host (hash-ref spec 'host "127.0.0.1")
+        #:port (hash-ref spec 'port 23))]
+      [else
+       (pty-open* #:command (hash-ref spec 'command)
+                  #:args (hash-ref spec 'args)
+                  #:cols cols
+                  #:rows rows)]))
   (define s
     (session (new-id!) kind
              (hash-ref spec 'label)
              handle
-             (list* (hash-ref spec 'command) (hash-ref spec 'args))
+             ;; Diagnostics argv: sidecar kinds carry command/args;
+             ;; serial/tcp specs carry the device/host instead — keep
+             ;; something honest here for both.
+             (case kind
+               [(serial) (list (hash-ref spec 'device "(serial)"))]
+               [(tcp) (list (format "~a:~a"
+                                    (hash-ref spec 'host "?")
+                                    (hash-ref spec 'port "?")))]
+               [else (list* (hash-ref spec 'command "(unknown)")
+                            (hash-ref spec 'args '()))])
              (current-seconds)
              '() 0 (set) #f #f #f #f))
   ;; The pump thread reads child output until EOF (child exit or close),
@@ -282,11 +321,20 @@
             'label (session-label s)
             'startedAt (session-started-at s)
             'closed (session-closed? s)
-            'ring-bytes (session-ring-size s))))
+            'ring-bytes (session-ring-size s)
+            ;; Serial-only: the device path, so transfer jobs can refuse
+            ;; a ZMODEM-family run while the line is held by a session.
+            'device (and (eq? (session-kind s) 'serial)
+                         (and (pair? (session-command s))
+                              (format "~a" (car (session-command s))))))))
 
 (provide (struct-out session)
          (struct-out manager)
          make-manager
+         ;; Serial signal control (BREAK/DTR/RTS): delegates to the
+         ;; serial module's handle registry; errors on non-serial
+         ;; sessions or hardware-flow-controlled RTS.
+         serial-signal!
          start-logging!
          stop-logging!
          list-log-files

@@ -19,12 +19,12 @@
          racket/match
          racket/port
          racket/string
-         "backend/store.rkt"
-         "backend/ssh.rkt"
-         "backend/session.rkt"
-         "backend/ai/ai.rkt"
-         "backend/evidence.rkt"
-         "backend/runproc.rkt")
+         "store.rkt"
+         "ssh.rkt"
+         "session.rkt"
+         "ai/ai.rkt"
+         "evidence.rkt"
+         "runproc.rkt")
 
 (define protocol-version "2024-11-05")
 

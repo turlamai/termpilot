@@ -4,6 +4,7 @@ import { Icon, type IconName } from './Icon';
 const ITEMS: { id: ViewId; icon: IconName }[] = [
   { id: 'hosts', icon: 'monitor' },
   { id: 'sftp', icon: 'folder' },
+  { id: 'tools', icon: 'wrench' },
   { id: 'forward', icon: 'arrow-right-left' },
   { id: 'snippets', icon: 'zap' },
   { id: 'keys', icon: 'key-round' },

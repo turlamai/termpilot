@@ -38,6 +38,14 @@
     (if (not (= port 22)) (list "--ssh=ssh -p ~a" (number->string port)) '()))
   (values "mosh" (append ssh-opts (list destination))))
 
+;; ---- adb ---------------------------------------------------------------------
+;; `adb -s <serial> shell`. Android Platform Tools is the dependency
+;; (doctor surfaces its absence); the device must be authorized — adb
+;; prints actionable errors through the pty like any real terminal.
+
+(define (adb-argv serial)
+  (values "adb" (list "-s" serial "shell")))
+
 ;; ---- serial ------------------------------------------------------------------
 ;; Serial is NOT a sidecar: the backend opens the device file directly
 ;; and configures the line (baud/parity/stop/flow) once via termios —
@@ -61,4 +69,5 @@
 
 (provide telnet-argv
          mosh-argv
+         adb-argv
          open-command)
