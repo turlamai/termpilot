@@ -86,9 +86,9 @@
     ;; Non-default shell or cwd: a fixed /bin/sh wrapper cd's first and
     ;; execs the shell so the pty's foreground process is the shell
     ;; itself. Paths ride the argv after single-quote escaping.
+    ;; Windows needs no wrapper: the cwd rides the spec through to
+    ;; CreateProcessW's lpCurrentDirectory (pty/windows.rkt).
     [(eq? (system-type 'os) 'windows)
-     ;; The wrapper form is POSIX; the Windows leg validates its own
-     ;; launcher (same policy as ConPTY). Until then fall back.
      (values shell argv-extra)]
     [else
      (define (sh-quote s)

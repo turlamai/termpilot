@@ -102,7 +102,7 @@
     (define available
       (case name
         [("serial")
-         (if (eq? (system-type 'os) 'windows) "windows-leg" "yes")]
+         "yes"]
         [else
          (if (find-executable-path (if (string=? name "sftp") "sftp" name))
              "yes" "no")]))
