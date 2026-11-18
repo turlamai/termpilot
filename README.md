@@ -1,5 +1,7 @@
 # TermPilot
 
+**Product:** [Website](https://termpilot.jrtx.site/) · **Support:** [Issues & feedback](https://github.com/turlamai/termpilot/issues) · [Development policy](https://github.com/turlamai/turlamai.github.io/blob/master/PORTFOLIO.md)
+
 **English** · [中文](README.zh-CN.md)
 
 The AI-native SSH client for macOS, Windows and Linux.
