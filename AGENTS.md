@@ -49,10 +49,11 @@ by itself.
 
 ## Release procedure
 
-发布 = 同值三处：`package.json` 的 version、`backend/main.rkt` 的
-`app-version`、`CHANGELOG.md` 顶部 `## [version]` 段 → 推 annotated
-tag `v*`，`release.yml` 三平台打包并校验一致性。轻量 tag 会被
-validate job 拒绝。
+发布 = 同值四处：仓库根 `VERSION` 文件、`package.json`（含 workspace
+各包）的 version、`backend/main.rkt` 的 `app-version`、`CHANGELOG.md`
+顶部 `## [version]` 段 → 推 annotated tag `v*`，`release.yml` 三平台
+打包并校验一致性。轻量 tag 会被 validate job 拒绝；本地先跑
+`bash scripts/check-release-version.sh` 自查（tag 传参时校验四处）。
 
 ## Verification floor
 
