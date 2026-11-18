@@ -6,8 +6,47 @@ All notable changes to TermPilot are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-11-18
+
+The embedded-workspace redesign (issue #12): serial joins SSH as a
+peer — the daily loop is plug in a board, watch the boot log, drive
+the console, move files, start the debugger.
+
 ### Added
 
+- Embedded-workspace redesign from the 2026-11-14 prototype contract:
+  seven connection kinds with type-specific editors (SSH, Mosh, Telnet,
+  raw TCP, Serial, Local Shell, ADB), a capability strip and kind
+  filter on the hosts view, and a serial quick start.
+- Serial as a first-class transport: full line configuration (baud,
+  5–8 data bits, none/even/odd/mark/space parity, 1/2 stop bits,
+  RTS/CTS and XON/XOFF flow control, UTF-8/ASCII, send line endings);
+  real device enumeration (macOS `cu.*`, Linux ttyUSB/ttyACM and
+  `/dev/serial/by-id`); BREAK/DTR/RTS behind explicit confirmation
+  (ioctl toggle semantics, RTS locked under hardware flow control);
+  errno-based fault classification (busy / no access / unplugged).
+- Serial monitor bar on serial panes: HEX and text send modes with a
+  byte-accurate input path, receive HEX dump with an offset gutter,
+  send history (100 kept, 10 shown), interval send (100–60000 ms,
+  message captured at start, stops on disconnect), RX/TX byte
+  counters, pause-scroll buffering, regex search, 2000-line
+  scrollback.
+- Device file transfers as an async job queue: SCP, ADB push/pull,
+  TFTP (curl) and X/Y/ZMODEM (lrzsz with the child stdio bridged to
+  the serial line) — target/direction/path confirmed before start,
+  honest states (running/done/failed/cancelled with the tool's own
+  stderr), cancel and retry; serial sessions and ZMODEM-family jobs
+  refuse to share a device. SFTP gains octal permission edits.
+- External debug tools: GDB / OpenOCD / ADB launch flows with an exact
+  parameter-array preview (never a concatenated shell string); a
+  launched tool is an ordinary session, so streaming, input, logging
+  and failure evidence all reuse the terminal routes. OpenOCD's telnet
+  console and the RTT port open as raw TCP sessions with an editable
+  port (9090 is only the conventional default).
+- Raw TCP streams from the engine itself (`netstream.rkt`) — the
+  transport for console ports and the telnet fallback where no telnet
+  binary exists; doctor reports adb/scp/curl/lrzsz/gdb/openocd
+  availability.
 - Ed25519-signed update feed: releases publish a signed
   `update-manifest.json` (family feed format, key id
   `termpilot-2026-11`) as a release asset; the backend
@@ -20,7 +59,6 @@ All notable changes to TermPilot are documented here. Format follows
   `UPDATE_ED25519_PRIVATE_KEY` secret, no release.
 - Build-provenance attestations for the ten versioned release payloads
   (`actions/attest-build-provenance`; `gh attestation verify`).
-
 - Flatpak bundles (`termpilot-<version>-linux-x64.flatpak`) join the
   Linux release set. The payload needs no modules beyond the GNOME 50
   runtime (readelf: glibc + libz only; WebKitGTK/GTK3 and OpenSSL 3
@@ -30,9 +68,10 @@ All notable changes to TermPilot are documented here. Format follows
 
 ### Changed
 
-- Glaze dependency pinned to the `v0.18.0` tagged release (contains
-  the verified main head this code was built against) — same family
-  pin as hackdigest, replacing the main-head pin.
+- Glaze dependency pinned to the `v0.19.0` tagged release, replacing
+  the main-head pin.
+- Local-shell profiles carry a shell choice and a working directory
+  (launched through an argv-array wrapper, never a shell string).
 
 - **arm64 Linux packages ship alongside x64.** The release pipeline's
   Linux leg is a matrix (ubuntu-latest + ubuntu-24.04-arm) producing
@@ -43,6 +82,22 @@ All notable changes to TermPilot are documented here. Format follows
   flatpak runtime. The signed update feed carries the arm64 tar.gz
   entry, so arm64 installs get the in-app update notice too.
   `SHA256SUMS` now covers 16 versioned payloads.
+
+### Fixed
+
+- Serial profiles persisted the serial line only partially: parity and
+  stop bits were sent by the editor but never stored — the store now
+  carries data-bits, parity, stopbits, flow control, encoding and
+  line endings (and shell/cwd for local profiles).
+- Serial and raw-TCP session specs crashed the session manager on
+  open (the diagnostics argv read missing spec keys).
+- `cli.rkt` / `mcp.rkt` failed to load since the backend/ layout move
+  (stale require paths), so `raco test backend/` was red on a clean
+  checkout.
+- Transfer spawns resolve sidecar binaries to absolute paths before
+  launch — Racket's subprocess never consults PATH (same seam the
+  0.7.0 runproc fix covered), which had made every queued transfer
+  fail with ENOENT.
 
 ## [0.8.0] — 2026-11-09
 
@@ -219,7 +274,10 @@ product surface (bilingual README, pricing plan, homepage, CI).
   decision record, agent contract, product homepage, CI and release
   workflows.
 
-[Unreleased]: https://github.com/turlamai/termpilot/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/turlamai/termpilot/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/turlamai/termpilot/compare/v0.8.0...v0.9.0
+[0.8.0]: https://github.com/turlamai/termpilot/compare/v0.7.0...v0.8.0
+[0.7.0]: https://github.com/turlamai/termpilot/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/turlamai/termpilot/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/turlamai/termpilot/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/turlamai/termpilot/compare/v0.3.0...v0.4.0
