@@ -1,5 +1,10 @@
 # TermPilot agent contract
 
+## Current owner decision — 2026-11-18 quality-first
+
+This product is in **non-commercial development**. The prior 2026-10/11 product pricing, trial, paid-feature, Free/Pro and family Permit/Commerce rollout decisions are canceled. Do not introduce checkout, subscriptions, activation, commercial entitlement, paid update windows or a paywall. Do not change source-license terms or release signing and identity verification. Prioritize product correctness, reliable native experience, recovery, bilingual README and truthful website claims. The [current family portfolio](https://github.com/turlamai/turlamai.github.io/blob/master/PORTFOLIO.md) governs every slice.
+
+
 Human-first. Agent-native. Local by design.
 
 Start with `raco glaze inspect --json` and `raco glaze doctor --json`.
