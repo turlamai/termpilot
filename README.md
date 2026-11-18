@@ -29,7 +29,6 @@ the AI panel with redaction, and the agent surface below.
 - Product spec (feature matrix + UI layout): [docs/PRODUCT-SPEC.md](docs/PRODUCT-SPEC.md)
 - Architecture: [ARCHITECTURE.md](ARCHITECTURE.md)
 - Development: [AGENTS.md](AGENTS.md)
-- Pricing intent: [PRICING.md](PRICING.md) · [中文](PRICING.zh-CN.md)
 
 ## Install
 
@@ -138,6 +137,4 @@ raco glaze schema check
 
 ## License
 
-[AGPL-3.0](LICENSE) — the source stays open and copyleft. Official
-distribution, updates and services are separate rights; see
-[PRICING.md](PRICING.md) for the commercial model intent.
+[AGPL-3.0](LICENSE) — the source stays open and copyleft. Product development is focused on SSH reliability, credential custody, accessibility and verified platform packaging; no paid product gate is planned.
