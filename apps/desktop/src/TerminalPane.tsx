@@ -16,6 +16,7 @@ import { api, apiStream, findTermTheme } from '@termpilot/core';
 import { useApp, type AppState } from './state/store';
 import { Icon } from './components/Icon';
 import SerialControls, { hexDump, serialDefaultsFromHost } from './components/SerialControls';
+import { serialFaultText } from './utils';
 
 export interface TerminalPaneProps {
   sessionId: string;
@@ -111,6 +112,37 @@ export default function TerminalPane({
   const pauseBufRef = useRef<string[]>([]);
   const hexOffsetRef = useRef(0);
   const writeChunkRef = useRef<((chunk: string) => void) | null>(null);
+  // Line assembly for the monitor affordances (timestamps / persistent
+  // filter): chunks may split lines anywhere, so a carry holds the
+  // pending partial line until a terminator arrives. \r and \n both
+  // end a line (MCU logs commonly use \r alone); the consumed
+  // terminator is re-emitted so the terminal keeps its line rhythm.
+  const lineCarryRef = useRef('');
+
+  const stamp = (): string => {
+    const d = new Date();
+    const p2 = (n: number) => String(n).padStart(2, '0');
+    const p3 = (n: number) => String(n).padStart(3, '0');
+    return `[${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}.${p3(d.getMilliseconds())}]`;
+  };
+
+  const lineMatches = (
+    line: string,
+    filter: string,
+    regex: boolean,
+  ): boolean => {
+    if (!filter) return true;
+    if (regex) {
+      // A bad pattern never throws here: it falls back to plain text
+      // (the monitor bar shows the fallback hint).
+      try {
+        return new RegExp(filter).test(line);
+      } catch {
+        return line.includes(filter);
+      }
+    }
+    return line.includes(filter);
+  };
 
   useEffect(() => {
     const container = containerRef.current;
@@ -122,11 +154,12 @@ export default function TerminalPane({
         .initSerial(sessionId, serialDefaultsFromHost(serialHost));
       hexOffsetRef.current = 0;
       pauseBufRef.current = [];
+      lineCarryRef.current = '';
     }
 
     const term = new Terminal({
       cursorBlink: true,
-      fontSize: effectiveFontSize || 13,
+      fontSize: effectiveFontSize || 14,
       fontFamily:
         'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace',
       // The contract's per-session buffer bound: 2000 lines.
@@ -147,11 +180,38 @@ export default function TerminalPane({
     }
 
     const abort = new AbortController();
+    let endedWithErr = false;
 
     const writeChunk = (chunk: string) => {
       const prefs = useApp.getState().serial[sessionId];
-      if (prefs?.hexView) {
-        term.write(hexDump(chunk, hexOffsetRef.current) + '\r\n');
+      // HEX rows are complete lines by construction; text chunks go
+      // through the line assembler only when a monitor affordance
+      // (timestamps / persistent filter) is active — plain passthrough
+      // keeps byte-exact behavior otherwise.
+      const text = prefs?.hexView
+        ? `${hexDump(chunk, hexOffsetRef.current)}\r\n`
+        : chunk;
+      if (prefs && !prefs.hexView && (prefs.timestamps || prefs.filter)) {
+        lineCarryRef.current += text;
+        const parts = lineCarryRef.current.split(/(\r\n|\r|\n)/);
+        lineCarryRef.current = parts.pop() ?? '';
+        for (let i = 0; i < parts.length; i += 2) {
+          const line = parts[i];
+          const termStr = parts[i + 1] ?? '';
+          if (lineMatches(line, prefs.filter, prefs.filterRegex)) {
+            term.write(
+              (prefs.timestamps ? `${stamp()} ` : '') + line + termStr,
+            );
+          }
+        }
+      } else if (prefs?.hexView) {
+        const lines = text.split(/\r\n/);
+        for (const line of lines) {
+          if (!line) continue;
+          if (lineMatches(line, prefs.filter, prefs.filterRegex)) {
+            term.write(`${prefs.timestamps ? `${stamp()} ` : ''}${line}\r\n`);
+          }
+        }
       } else {
         term.write(new TextEncoder().encode(chunk));
       }
@@ -185,13 +245,27 @@ export default function TerminalPane({
     )
       .catch((err: unknown) => {
         if (!closedRef.current) {
+          // Serial faults carry a classified recovery hint from the
+          // backend (busy / no-access / not-present); others stay
+          // generic. Deduplicated against the finally-side banner.
+          const hint = serialFaultText(useApp.getState().lang, err);
           term.write(
-            `\r\n\x1b[31m[session stream ended: ${String(err)}]\x1b[0m\r\n`,
+            `\r\n\x1b[31m[${hint ?? `session stream ended: ${String(err)}`}]\x1b[0m\r\n`,
           );
+          endedWithErr = true;
         }
       })
       .finally(() => {
-        if (!closedRef.current) setStreamEnded(true);
+        if (!closedRef.current) {
+          setStreamEnded(true);
+          // A serial stream that ends without an error report is most
+          // often an unplug — say so instead of nothing.
+          if (isSerial && !endedWithErr) {
+            term.write(
+              `\r\n\x1b[31m[${t('serial.stream-ended')}]\x1b[0m\r\n`,
+            );
+          }
+        }
       });
 
     const inputSub = term.onData((data) => {
@@ -320,7 +394,7 @@ export default function TerminalPane({
           </button>
           <button
             className="btn-icon"
-            title={logging ? 'Stop logging' : 'Log session to file'}
+            title={logging ? t('terminal.log-stop') : t('terminal.log-start')}
             onClick={() => {
               if (logging) {
                 void api.terminalLogStop(sessionId);
@@ -335,7 +409,11 @@ export default function TerminalPane({
           </button>
           <button
             className={`btn-icon ${recording ? 'recording' : ''}`}
-            title={recording ? 'Stop recording (.cast)' : 'Record session (.cast, asciinema)'}
+            title={
+              recording
+                ? t('terminal.record-stop')
+                : t('terminal.record-start')
+            }
             onClick={() => {
               if (recording) {
                 void api.terminalLogStop(sessionId);
@@ -376,6 +454,7 @@ export default function TerminalPane({
           sessionId={sessionId}
           flowControl={serialHost?.['flow-control'] ?? 'none'}
           disabled={streamEnded}
+          host={serialHost}
           onSend={async (payload) => {
             try {
               if (payload.bytes) {

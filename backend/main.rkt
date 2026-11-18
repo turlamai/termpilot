@@ -45,7 +45,8 @@
          "updater.rkt")   ; signed update check (Ed25519 release-asset manifest)
 
 ;; The route list schema tooling reads (glaze.rktd points here).
-(provide api)
+;; host-spec is provided for unit tests (pure kind dispatch).
+(provide api host-spec)
 
 ;; Keep in sync with package.json and CHANGELOG.md; the release
 ;; workflow's validate job fails the tag if they disagree.
@@ -142,6 +143,62 @@
 ;; request: hostId, a free-form quick-connect profile, or kind:"local"
 ;; for a local shell tab. Kind "tcp" is the engine's own raw stream
 ;; (OpenOCD console / RTT ports); kind "adb" quick-opens a device shell.
+;; Pure: build a session spec from a stored host hash (already merged
+;; with any body overrides; no DB access) so the kind dispatch is
+;; unit-testable. NB: connection-kind is a string (SQLite/JSON); match
+;; with string=?, not case — case compares against symbol datums and
+;; would send every saved non-ssh host down the ssh branch.
+(define (host-spec spec-h)
+  (define conn-kind (hash-ref spec-h 'connection-kind "ssh"))
+  (define label (hash-ref spec-h 'label))
+  (cond
+    [(string=? conn-kind "local")
+     (define-values (c a)
+       (local-command '()
+                      (hash-ref spec-h 'shell "")
+                      (hash-ref spec-h 'cwd "")))
+     (hasheq 'kind "local" 'label label 'command c 'args a)]
+    [(string=? conn-kind "telnet")
+     (cond
+       ;; Sidecar telnet with IAC negotiation when installed; raw
+       ;; stream fallback keeps the kind usable everywhere (doctor
+       ;; reports which one this is).
+       [(find-executable-path "telnet")
+        (define-values (c a)
+          (telnet-argv (hash-ref spec-h 'host "?")
+                       (hash-ref spec-h 'port 23)))
+        (hasheq 'kind "telnet" 'label label 'command c 'args a)]
+       [else
+        (hasheq 'kind "tcp" 'label label
+                'host (hash-ref spec-h 'host "?")
+                'port (hash-ref spec-h 'port 23))])]
+    [(string=? conn-kind "tcp")
+     (hasheq 'kind "tcp" 'label label
+             'host (hash-ref spec-h 'host "?")
+             'port (hash-ref spec-h 'port 9000))]
+    [(string=? conn-kind "mosh")
+     (define-values (c a) (mosh-argv (host-profile spec-h)))
+     (hasheq 'kind "mosh" 'label label 'command c 'args a)]
+    [(string=? conn-kind "adb")
+     ;; The device serial rides the host column for ADB profiles.
+     (define-values (c a) (adb-argv (hash-ref spec-h 'host "?")))
+     (hasheq 'kind "adb" 'label label 'command c 'args a)]
+    [(string=? conn-kind "serial")
+     ;; No sidecar: serial sessions open the device directly; the
+     ;; session manager resolves the device/line params (session.rkt).
+     (hasheq 'kind "serial"
+             'label label
+             'device (hash-ref spec-h 'host)
+             'baud (hash-ref spec-h 'port 115200)
+             'databits (hash-ref spec-h 'data-bits 8)
+             'parity (hash-ref spec-h 'parity "none")
+             'stopbits (hash-ref spec-h 'stopbits 1)
+             'flow (hash-ref spec-h 'flow-control "none"))]
+    [else
+     (define-values (command args) (ssh-argv (host-profile spec-h)))
+     (hasheq 'kind "ssh" 'label label
+             'command command 'args args)]))
+
 (define (open-spec body)
   (define host-id (hash-ref body 'host-id #f))
   (define quick-kind (hash-ref body 'kind "ssh"))
@@ -165,59 +222,7 @@
     [(string? host-id)
      (define h (or (get-host host-id)
                    (error 'terminal/open "unknown host ~a" host-id)))
-     (define spec-h (hash-merge h body))
-     (case (hash-ref spec-h 'connection-kind "ssh")
-       [(local)
-        (define-values (c a)
-          (local-command '()
-                         (hash-ref spec-h 'shell "")
-                         (hash-ref spec-h 'cwd "")))
-        (hasheq 'kind "local" 'label (hash-ref h 'label)
-                'command c 'args a)]
-       [(telnet)
-        (cond
-          ;; Sidecar telnet with IAC negotiation when installed; raw
-          ;; stream fallback keeps the kind usable everywhere (doctor
-          ;; reports which one this is).
-          [(find-executable-path "telnet")
-           (define-values (c a)
-             (telnet-argv (hash-ref spec-h 'host "?")
-                          (hash-ref spec-h 'port 23)))
-           (hasheq 'kind "telnet" 'label (hash-ref h 'label)
-                   'command c 'args a)]
-          [else
-           (hasheq 'kind "tcp" 'label (hash-ref h 'label)
-                   'host (hash-ref spec-h 'host "?")
-                   'port (hash-ref spec-h 'port 23))])]
-       [(tcp)
-        (hasheq 'kind "tcp" 'label (hash-ref h 'label)
-                'host (hash-ref spec-h 'host "?")
-                'port (hash-ref spec-h 'port 9000))]
-       [(mosh)
-        (define-values (c a) (mosh-argv (host-profile spec-h)))
-        (hasheq 'kind "mosh" 'label (hash-ref h 'label)
-                'command c 'args a)]
-       [(adb)
-        ;; The device serial rides the host column for ADB profiles.
-        (define-values (c a) (adb-argv (hash-ref spec-h 'host "?")))
-        (hasheq 'kind "adb" 'label (hash-ref h 'label)
-                'command c 'args a)]
-       [(serial)
-        ;; No sidecar: serial sessions open the device directly. The
-        ;; spec uses a serial:// pseudo-command the session manager
-        ;; resolves; see session.rkt.
-        (hasheq 'kind "serial"
-                'label (hash-ref h 'label)
-                'device (hash-ref spec-h 'host)
-                'baud (hash-ref spec-h 'port 115200)
-                'databits (hash-ref spec-h 'data-bits 8)
-                'parity (hash-ref spec-h 'parity "none")
-                'stopbits (hash-ref spec-h 'stopbits 1)
-                'flow (hash-ref spec-h 'flow-control "none"))]
-       [else
-        (define-values (command args) (ssh-argv (host-profile spec-h)))
-        (hasheq 'kind "ssh" 'label (hash-ref h 'label)
-                'command command 'args args)])]
+     (host-spec (hash-merge h body))]
     [else
      (define-values (command args) (ssh-argv (host-profile body)))
      (hasheq 'kind "ssh"
@@ -583,11 +588,22 @@
                   [host string? "?"] [port integer? 22]
                   [username string? ""] [auth-type string? "agent"]
                   [identity-file string? ""] [label string? #f])
+   ;; The stored profile is authoritative for host sessions; only the
+   ;; quick path carries host/port/username inline. Route param
+   ;; defaults must never reach the merge — hash-merge lets the body
+   ;; win, so a defaulted "?" host / 22 port would silently clobber
+   ;; every saved profile (this is how saved hosts broke).
+   (define quick-extra
+     (if (string? host-id)
+         null
+         (list 'host host 'port port 'username username
+               'auth-type auth-type 'identity-file identity-file)))
    (define body
-     (hasheq 'cols cols 'rows rows 'host-id host-id 'kind kind
-             'host host 'port port 'username username
-             'auth-type auth-type 'identity-file identity-file
-             'label label))
+     (apply hasheq
+            (append
+             (list 'cols cols 'rows rows 'host-id host-id 'kind kind)
+             (if label (list 'label label) null)
+             quick-extra)))
    (define spec (open-spec body))
    (define s
      (parameterize ([current-custodian session-custodian])

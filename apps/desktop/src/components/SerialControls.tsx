@@ -8,9 +8,10 @@
 // current prefs from the store — no stale closures.
 
 import { useEffect, useRef, useState } from 'react';
-import { api } from '@termpilot/core';
+import { api, type HostProfile } from '@termpilot/core';
 import { useApp, type SerialPrefs } from '../state/store';
 import { confirmDialog, toast } from '../state/feedback';
+import HostEditor from './HostEditor';
 
 const ENDINGS: Record<SerialPrefs['ending'], string> = {
   none: '',
@@ -72,6 +73,8 @@ interface SerialControlsProps {
   sessionId: string;
   flowControl: string;
   disabled: boolean;
+  /** Live host profile — powers the in-session parameter editor. */
+  host?: HostProfile;
   onSend: (payload: { text?: string; bytes?: Uint8Array }) => Promise<boolean>;
 }
 
@@ -79,6 +82,7 @@ export default function SerialControls({
   sessionId,
   flowControl,
   disabled,
+  host,
   onSend,
 }: SerialControlsProps) {
   const prefs = useApp((s) => s.serial[sessionId]);
@@ -88,10 +92,27 @@ export default function SerialControls({
   const t = useApp((s) => s.t);
   const [input, setInput] = useState('');
   const [timing, setTiming] = useState(false);
+  const [editing, setEditing] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const inputRef = useRef('');
 
   inputRef.current = input;
+
+  // Regex validity for the persistent filter: a bad pattern never
+  // throws — it degrades to plain text and the bar says so (contract:
+  // 非法正则给出说明，不抛异常).
+  const filter = prefs?.filter ?? '';
+  const filterRegex = prefs?.filterRegex ?? false;
+  const badRegex =
+    filterRegex &&
+    (() => {
+      try {
+        new RegExp(filter);
+        return false;
+      } catch {
+        return true;
+      }
+    })();
 
   // The interval capture: one snapshot of the input at start time, per
   // the contract ("捕获启动时的消息内容"); stops on unmount.
@@ -222,9 +243,42 @@ export default function SerialControls({
             <option value="ascii">ASCII</option>
           </select>
         </label>
+        <label className="mini">
+          {t('serial.timestamps')}
+          <button
+            className={`chip ${prefs.timestamps ? 'active' : ''}`}
+            title={t('serial.timestamps')}
+            onClick={() => setSerial(sessionId, { timestamps: !prefs.timestamps })}
+          >
+            {prefs.timestamps ? 'ON' : 'OFF'}
+          </button>
+        </label>
         <span className="serial-counters mono">
           RX {prefs.rx} B · TX {prefs.tx} B
         </span>
+      </div>
+      <div className="serial-row">
+        <label className="mini grow">
+          {t('serial.filter')}
+          <input
+            className="serial-input"
+            value={filter}
+            placeholder={t('serial.filter')}
+            onChange={(e) => setSerial(sessionId, { filter: e.target.value })}
+            spellCheck={false}
+          />
+        </label>
+        <label className="mini-check" title={t('terminal.regex')}>
+          <input
+            type="checkbox"
+            checked={filterRegex}
+            onChange={(e) => setSerial(sessionId, { filterRegex: e.target.checked })}
+          />
+          .*
+        </label>
+        {filter && badRegex && (
+          <span className="hint">{t('serial.filter.badregex')}</span>
+        )}
       </div>
       <div className="serial-row">
         <label className="mini">
@@ -302,7 +356,20 @@ export default function SerialControls({
           RTS
         </button>
         <span className="hint">{rtsLocked ? t('serial.rts-locked') : t('serial.signal-hint')}</span>
+        {host && (
+          <button
+            className="btn"
+            disabled={disabled}
+            title={t('host.saved-reconnect')}
+            onClick={() => setEditing(true)}
+          >
+            {t('serial.edit-params')}
+          </button>
+        )}
       </div>
+      {editing && host && (
+        <HostEditor host={host} onClose={() => setEditing(false)} />
+      )}
     </div>
   );
 }

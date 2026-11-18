@@ -30,11 +30,15 @@
   --bg-sidebar: #1f2124;
   --bg-activity: #191b1d;
   --text: #e3e5e7;
-  --text-dim: #9da1a6;
+  --text-dim: #acb0b6;
   --accent: #5c8fae;
   --accent-hover: #6da0bd;
+  --accent-ink: #0e202c;
   --border: #3a3d41;
-  --error: #d46a6a;
+  --selection: #293b48;
+  --error: #ee9696;
+  --ok: #84c9a2;
+  --warn: #dfbd6c;
   --terminal-bg: #141728;
 }
 
@@ -44,11 +48,15 @@
   --bg-sidebar: #e9eaea;
   --bg-activity: #212325;
   --text: #242628;
-  --text-dim: #6e7175;
+  --text-dim: #60656b;
   --accent: #38678a;
   --accent-hover: #2f5a7b;
-  --border: #d4d6d8;
-  --error: #b04a4a;
+  --accent-ink: #ffffff;
+  --border: #c9cdd1;
+  --selection: #d8e5ed;
+  --error: #a93434;
+  --ok: #276c47;
+  --warn: #805d12;
   --terminal-bg: #f7f8f9;
 }
 
@@ -336,7 +344,7 @@ body {
 .settings-view h3 { font-size: 14px; margin: 0 0 10px; color: var(--text-dim); }
 .settings-form { max-width: 560px; }
 .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.hint.ok { color: #3a7d44; }
+.hint.ok { color: var(--ok); }
 
 /* ---- snippets ---- */
 .snippet-row { display: flex; align-items: center; gap: 4px; }
@@ -384,7 +392,7 @@ body {
 .btn:hover:not(:disabled) { background: var(--bg-activity); }
 .btn:active:not(:disabled) { background: var(--bg-sidebar); }
 .btn:disabled { opacity: 0.45; cursor: default; }
-.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
 .btn-primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
 .btn-primary:active:not(:disabled) { background: var(--accent); }
 .btn-quiet { background: transparent; border-color: transparent; color: var(--text-dim); }
@@ -518,8 +526,8 @@ body {
   padding: 0 4px;
   border-radius: 4px;
 }
-.lat-fast { color: #4caf78; background: rgba(76, 175, 120, 0.14); }
-.lat-mid { color: #d0a83c; background: rgba(208, 168, 60, 0.14); }
+.lat-fast { color: var(--ok); background: rgba(76, 175, 120, 0.14); }
+.lat-mid { color: var(--warn); background: rgba(208, 168, 60, 0.14); }
 .lat-slow, .lat-bad { color: var(--error); background: rgba(212, 106, 106, 0.12); }
 
 /* broadcast toggle on */
@@ -560,13 +568,29 @@ body {
   padding: 0 4px;
 }
 .status-running { color: var(--accent); border-color: var(--accent); }
-.status-done { color: #4caf78; border-color: #4caf78; }
+.status-done { color: var(--ok); border-color: var(--ok); }
 .status-failed { color: var(--error); border-color: var(--error); }
 .status-cancelled { color: var(--text-dim); }
 
 /* transfer / tools protocol rail */
 .protocol-rail {
   display: flex; gap: 4px; flex-wrap: wrap;
+}
+
+/* small toggle chip (HEX/TXT, timestamps) */
+.chip {
+  font-size: 11px;
+  font-family: ui-monospace, Menlo, monospace;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  padding: 1px 6px;
+  cursor: pointer;
+}
+.chip.active {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 /* serial monitor controls (serial panes only) */

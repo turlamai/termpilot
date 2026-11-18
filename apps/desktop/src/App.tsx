@@ -11,6 +11,13 @@ import FeedbackLayer from './components/FeedbackLayer';
 import UpdateBanner from './components/UpdateBanner';
 import ShortcutsOverlay from './components/ShortcutsOverlay';
 
+// Welcome copy with the platform's modifier spelling ({K} → ⌘K / Ctrl+K).
+function WelcomeBody() {
+  const t = useApp((s) => s.t);
+  const k = /Mac|iPhone|iPad/.test(navigator.userAgent) ? '⌘K' : 'Ctrl+K';
+  return <p>{t('app.welcome.body').replace('{K}', k)}</p>;
+}
+
 export default function App() {
   const tabs = useApp((s) => s.tabs);
   const activeTabId = useApp((s) => s.activeTabId);
@@ -133,10 +140,7 @@ export default function App() {
         ) : (
           <div className="welcome">
             <h2>TermPilot</h2>
-            <p>
-              The AI-native SSH client. Connect from the Hosts view, or
-              press ⌘K anywhere.
-            </p>
+            <WelcomeBody />
           </div>
         )}
       </main>

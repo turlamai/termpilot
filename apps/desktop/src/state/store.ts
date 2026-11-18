@@ -5,6 +5,8 @@
 import { create } from 'zustand';
 import { api, type HostProfile } from '@termpilot/core';
 import { detectLang, translate, type Lang } from '../i18n';
+import { serialFaultText } from '../utils';
+import { toast } from './feedback';
 
 export type ViewId =
   | 'hosts'
@@ -29,6 +31,11 @@ export interface SerialPrefs {
   hexView: boolean;
   paused: boolean;
   regex: boolean;
+  // Monitor-bar log affordances (DESIGN.md §日志): instant timestamps
+  // on each received line and a persistent text/regex filter view.
+  timestamps: boolean;
+  filter: string;
+  filterRegex: boolean;
   rx: number;
   tx: number;
   history: string[]; // cap 100; the picker shows the last 10
@@ -42,6 +49,9 @@ const defaultSerialPrefs = (): SerialPrefs => ({
   hexView: false,
   paused: false,
   regex: false,
+  timestamps: false,
+  filter: '',
+  filterRegex: false,
   rx: 0,
   tx: 0,
   history: [],
@@ -103,6 +113,7 @@ export interface AppState {
   aiPanelOpen: boolean;
   paletteOpen: boolean;
   shortcutsOpen: boolean;
+  quickConnectOpen: boolean;
   outputRings: Record<string, OutputRing>;
   selections: Record<string, string>; // sessionId -> selected text
   broadcastTabs: Record<string, boolean>; // tabId -> broadcasting
@@ -147,6 +158,7 @@ export interface AppState {
   setAiPanel: (open: boolean) => void;
   setPalette: (open: boolean) => void;
   setShortcutsOpen: (open: boolean) => void;
+  setQuickConnect: (open: boolean) => void;
   setTermPrefs: (themeId: string, fontSize: number) => void;
   reconnectPane: (tabId: string, sessionId: string) => Promise<void>;
   appendOutput: (sessionId: string, text: string) => void;
@@ -172,12 +184,14 @@ export const useApp = create<AppState>((set, get) => ({
   aiPanelOpen: false,
   paletteOpen: false,
   shortcutsOpen: false,
+  quickConnectOpen: false,
   outputRings: {},
   selections: {},
   broadcastTabs: {},
   serial: {},
   termThemeId: localStorage.getItem('termpilot-termtheme') ?? 'pilot-dark',
-  termFontSize: Number(localStorage.getItem('termpilot-fontsize') ?? 13) || 13,
+  // Contract default is 14 (DESIGN.md §视觉); a stored value wins.
+  termFontSize: Number(localStorage.getItem('termpilot-fontsize') ?? 14) || 14,
 
   initSerial: (sessionId, prefs) => {
     const serial = { ...get().serial };
@@ -337,6 +351,12 @@ export const useApp = create<AppState>((set, get) => ({
       }
     } catch (e) {
       console.error('open session failed', e);
+      // Open failures must not be silent: the backend embeds a fault
+      // classification for serial (busy / no-access / not-present) —
+      // surface the matching recovery guidance when present.
+      toast(serialFaultText(get().lang, e) ?? String(e).slice(0, 160), {
+        error: true,
+      });
     }
   },
 
@@ -413,6 +433,7 @@ export const useApp = create<AppState>((set, get) => ({
   setAiPanel: (open) => set({ aiPanelOpen: open }),
   setPalette: (open) => set({ paletteOpen: open }),
   setShortcutsOpen: (open) => set({ shortcutsOpen: open }),
+  setQuickConnect: (open) => set({ quickConnectOpen: open }),
 
   setTermPrefs: (themeId, fontSize) => {
     localStorage.setItem('termpilot-termtheme', themeId);

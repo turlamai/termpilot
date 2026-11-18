@@ -88,7 +88,9 @@ export default function HostsView() {
   const [creating, setCreating] = useState(false);
   const [creatingKind, setCreatingKind] = useState<string | undefined>(undefined);
   const [importMsg, setImportMsg] = useState('');
-  const [quickOpen, setQuickOpen] = useState(false);
+  // Rides the store so the ⌘⇧L / Ctrl⇧L shortcut can open it directly.
+  const quickOpen = useApp((s) => s.quickConnectOpen);
+  const setQuickOpen = useApp((s) => s.setQuickConnect);
   const [quickTarget, setQuickTarget] = useState('');
   const [latencies, setLatencies] = useState<Record<string, number | null>>({});
   const [probing, setProbing] = useState(false);
@@ -251,7 +253,7 @@ export default function HostsView() {
         >
           ＋ {t('hosts.new')}
         </button>
-        <button className="btn btn-block" onClick={() => setQuickOpen((v) => !v)}>
+        <button className="btn btn-block" onClick={() => setQuickOpen(!quickOpen)}>
           {t('hosts.quick')}
         </button>
         <button className="btn btn-block" onClick={() => void importConfig()}>

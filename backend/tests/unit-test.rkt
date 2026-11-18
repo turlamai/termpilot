@@ -238,3 +238,43 @@
   (check-equal? code 0)
   (check-equal? out "slow")
   (check-false to?))
+
+;; ---- host kind dispatch (regression: string vs symbol case) ----------------
+;;
+;; A saved serial host must open a serial session (device column = the
+;; path, port column = the baud). The old case-based dispatch compared
+;; the string kind against symbol datums and silently sent every saved
+;; non-ssh host down the ssh branch.
+
+(require "../main.rkt")
+
+(let ([spec (host-spec (hasheq 'label "board"
+                               'connection-kind "serial"
+                               'host "/dev/ttyUSB0"
+                               'port 115200
+                               'data-bits 8
+                               'parity "none"
+                               'stopbits 1.5
+                               'flow-control "rtscts"))])
+  (check-equal? (hash-ref spec 'kind) "serial")
+  (check-equal? (hash-ref spec 'device) "/dev/ttyUSB0")
+  (check-equal? (hash-ref spec 'baud) 115200)
+  (check-equal? (hash-ref spec 'stopbits) 1.5)
+  (check-equal? (hash-ref spec 'flow) "rtscts"))
+
+;; every other saved kind dispatches to its own session kind
+(for ([k '("local" "tcp" "mosh" "adb")])
+  (check-equal? (hash-ref (host-spec (hasheq 'label "x"
+                                             'connection-kind k
+                                             'host "h")) 'kind)
+                k
+                (format "saved ~a host must not fall through to ssh" k)))
+
+;; telnet: sidecar when the binary exists, honest tcp fallback otherwise
+(check-not-false (member (hash-ref (host-spec (hasheq 'label "x"
+                                                      'connection-kind "telnet"
+                                                      'host "h" 'port 2323)) 'kind)
+                         '("telnet" "tcp")))
+
+;; default stays ssh
+(check-equal? (hash-ref (host-spec (hasheq 'label "x" 'host "h")) 'kind) "ssh")

@@ -25,6 +25,14 @@ export default function CommandPalette() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [redactions, setRedactions] = useState<[string, number][] | null>(null);
+  // Two-step guard (DESIGN.md §AI): the redaction preview must be
+  // confirmed before the model is called — generate rides only on the
+  // explicit second click.
+  const [preview, setPreview] = useState<{
+    text: string;
+    counts: [string, number][];
+    clean: boolean;
+  } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -33,6 +41,7 @@ export default function CommandPalette() {
       setDraft('');
       setError('');
       setRedactions(null);
+      setPreview(null);
       setTimeout(() => inputRef.current?.focus(), 30);
     }
   }, [paletteOpen]);
@@ -50,21 +59,40 @@ export default function CommandPalette() {
     : undefined;
   const hostContext = host ? `${host.username ? `${host.username}@` : ''}${host.host}` : '';
 
-  const generate = async () => {
+  // Step 1: redaction preview only — no model call yet.
+  const doPreview = async () => {
     if (!intent.trim()) return;
     setBusy(true);
     setError('');
     setDraft('');
+    setPreview(null);
     try {
       const terminal = recentOutput(focusedSessionId ?? '', 4000);
       if (terminal.trim()) {
-        const preview = await api.aiRedactPreview(terminal);
-        setRedactions(preview.counts.length > 0 ? preview.counts : []);
+        setPreview(await api.aiRedactPreview(terminal));
       } else {
-        setRedactions([]);
+        // Nothing to leak: an empty preview still needs the explicit
+        // confirm click, keeping one consistent flow.
+        setPreview({ text: '', counts: [], clean: true });
       }
+    } catch (e) {
+      setError(String(e));
+    }
+    setBusy(false);
+  };
+
+  // Step 2: explicit confirm — now the model is called. The backend
+  // redacts again on its side; the preview showed the user what that
+  // looks like.
+  const doGenerate = async () => {
+    if (!intent.trim()) return;
+    setBusy(true);
+    setError('');
+    try {
+      const terminal = recentOutput(focusedSessionId ?? '', 4000);
       const r = await api.aiGenerate(intent, hostContext, terminal);
       setDraft(r.command);
+      setRedactions(preview?.counts.length ? preview.counts : []);
     } catch (e) {
       setError(String(e));
     }
@@ -118,18 +146,52 @@ export default function CommandPalette() {
             ref={inputRef}
             value={intent}
             placeholder={t('ai.palette.placeholder')}
-            onChange={(e) => setIntent(e.target.value)}
+            onChange={(e) => {
+              setIntent(e.target.value);
+              // A new intent invalidates the confirmed preview.
+              if (preview) setPreview(null);
+            }}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !draft) void generate();
+              if (e.key === 'Enter' && !draft) {
+                if (preview) void doGenerate();
+                else void doPreview();
+              }
               if (e.key === 'Escape') setPalette(false);
             }}
           />
-          {!draft && (
-            <button className="btn btn-primary" disabled={busy || !intent.trim()} onClick={() => void generate()}>
-              {busy ? t('ai.thinking') : t('ai.generate')}
+          {!draft && !preview && (
+            <button
+              className="btn btn-primary"
+              disabled={busy || !intent.trim()}
+              onClick={() => void doPreview()}
+            >
+              {busy ? t('ai.thinking') : t('ai.preview')}
+            </button>
+          )}
+          {!draft && preview && (
+            <button
+              className="btn btn-primary"
+              disabled={busy || !intent.trim()}
+              onClick={() => void doGenerate()}
+            >
+              {busy ? t('ai.thinking') : t('ai.generate-confirm')}
             </button>
           )}
         </div>
+
+        {preview && !draft && (
+          <div className="palette-redactions">
+            {preview.clean
+              ? t('ai.redact.clean')
+              : `${t('ai.redact-preview')}: ${preview.counts
+                  .map(([name, n]) => `${name}×${n}`)
+                  .join(' · ')}`}
+            {preview.text && (
+              <pre className="draft-code">{preview.text.slice(0, 400)}</pre>
+            )}
+            <p className="hint">{t('ai.step-hint')}</p>
+          </div>
+        )}
 
         {redactions !== null && redactions.length > 0 && (
           <div className="palette-redactions">

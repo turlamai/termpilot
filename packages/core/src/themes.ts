@@ -18,7 +18,7 @@ export const termThemes: TermTheme[] = [
     dark: true,
     theme: {
       background: '#141728',
-      foreground: '#c8ccd2',
+      foreground: '#e3e5e7',
       cursor: '#92a0a7',
       cursorAccent: '#141728',
       selectionBackground: '#3a4250',
@@ -46,7 +46,7 @@ export const termThemes: TermTheme[] = [
     dark: false,
     theme: {
       background: '#f7f8f9',
-      foreground: '#2b2e31',
+      foreground: '#242628',
       cursor: '#5a6a72',
       cursorAccent: '#f7f8f9',
       selectionBackground: '#d3dade',
@@ -93,7 +93,7 @@ export const termThemes: TermTheme[] = [
     dark: true,
     theme: {
       background: '#002b36',
-      foreground: '#839496',
+      foreground: '#d4e2e3',
       cursor: '#93a1a1',
       selectionBackground: '#274642',
       black: '#073642',
@@ -112,7 +112,7 @@ export const termThemes: TermTheme[] = [
     dark: false,
     theme: {
       background: '#fdf6e3',
-      foreground: '#657b83',
+      foreground: '#435a63',
       cursor: '#586e75',
       selectionBackground: '#eee8d5',
       black: '#073642',

@@ -116,7 +116,11 @@ function defaultPort(h: HostProfile | undefined, kind: string | undefined): numb
       label: label.trim(),
       'group-name': groupName.trim(),
       notes,
-      'font-size': clampInt(fontSize, 0, 32) ?? 0,
+      // 0 = follow the global size; otherwise the contract's 11–24.
+      'font-size': (() => {
+        const n = Number(fontSize);
+        return Number.isInteger(n) && n >= 11 && n <= 24 ? n : 0;
+      })(),
       'connection-kind': kind,
     };
     if (kind === 'serial') {
@@ -134,7 +138,11 @@ function defaultPort(h: HostProfile | undefined, kind: string | undefined): numb
       payload.username = '';
       payload['data-bits'] = clampInt(dataBits, 5, 8) ?? 8;
       payload.parity = parity;
-      payload.stopbits = clampInt(stopBits, 1, 2) ?? 1;
+      // 1 / 1.5 / 2 per the contract; 1.5 depends on driver support
+      // (termios can only express 1 or 2 stop bits).
+      payload.stopbits = [1, 1.5, 2].includes(Number(stopBits))
+        ? Number(stopBits)
+        : 1;
       payload['flow-control'] = flowControl;
       payload.encoding = encoding;
       payload['line-ending'] = lineEnding;
@@ -307,6 +315,7 @@ function defaultPort(h: HostProfile | undefined, kind: string | undefined): numb
               <label>{t('host.stopbits')}</label>
               <select value={stopBits} onChange={(e) => setStopBits(e.target.value)}>
                 <option value="1">1</option>
+                <option value="1.5">1.5</option>
                 <option value="2">2</option>
               </select>
               <label>{t('host.flow')}</label>
@@ -423,7 +432,7 @@ function defaultPort(h: HostProfile | undefined, kind: string | undefined): numb
             type="number"
             value={fontSize}
             onChange={(e) => setFontSize(e.target.value)}
-            placeholder="13"
+            placeholder="14"
           />
           {!isSerial && !connKind.startsWith('local') && connKind !== 'adb' && (
             <>

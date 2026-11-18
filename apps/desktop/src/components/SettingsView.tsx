@@ -95,6 +95,9 @@ export default function SettingsView() {
   const termThemeId = useApp((s) => s.termThemeId);
   const termFontSize = useApp((s) => s.termFontSize);
   const setTermPrefs = useApp((s) => s.setTermPrefs);
+  // Backend /api/health is the runtime truth; the build-time package
+  // version is the fallback (vite define).
+  const [version, setVersion] = useState<string>(__APP_VERSION__);
   const fileRef = useRef<HTMLInputElement>(null);
   const [dataMsg, setDataMsg] = useState('');
   const [passphrase, setPassphrase] = useState('');
@@ -165,6 +168,14 @@ export default function SettingsView() {
   useEffect(() => {
     void refreshLogs();
     void refreshPresets();
+    void (async () => {
+      try {
+        const h = await api.health();
+        if (h.version) setVersion(h.version);
+      } catch {
+        // backend absent (vite dev); keep the build-time version
+      }
+    })();
     void (async () => {
       try {
         const s = await api.aiSettings();
@@ -294,9 +305,14 @@ export default function SettingsView() {
           <label>{t('settings.fontsize')}</label>
           <input
             type="number"
+            min={11}
+            max={24}
             value={termFontSize}
             onChange={(e) =>
-              setTermPrefs(termThemeId, Number(e.target.value) || 13)
+              setTermPrefs(
+                termThemeId,
+                Math.min(24, Math.max(11, Number(e.target.value) || 14)),
+              )
             }
           />
         </div>
@@ -398,7 +414,7 @@ export default function SettingsView() {
 
       <section>
         <h3>{t('settings.about')}</h3>
-        <p className="hint">TermPilot v0.1.0 — AGPL-3.0 · termpilot.jrtx.site</p>
+        <p className="hint">TermPilot v{version} — AGPL-3.0 · termpilot.jrtx.site</p>
       </section>
     </div>
   );

@@ -2,20 +2,25 @@ import { useEffect } from 'react';
 import { useApp } from '../state/store';
 
 // Keyboard shortcuts overlay (⌘/). A tool advertises its keyboard
-// surface or users never find it.
+// surface or users never find it. Bindings mirror DESIGN.md §快捷键:
+// quick connect is ⌘⇧L / Ctrl⇧L and opens the quick-connect form via
+// the store — never by poking DOM buttons by label text (locale-
+// dependent and brittle; that was the bug behind the dead shortcut).
 
-const BINDINGS: { keys: string; key: string }[] = [
-  { keys: '⌘K', key: 'shortcuts.palette' },
-  { keys: '⌘B', key: 'shortcuts.ai' },
-  { keys: '⌘N', key: 'shortcuts.newlocal' },
-  { keys: '⌘/ ', key: 'shortcuts.quick' },
-];
+const isMac =
+  typeof navigator !== 'undefined' &&
+  /Mac|iPhone|iPad/.test(navigator.userAgent);
+
+// Display form: ⌘⇧L on macOS, Ctrl⇧L elsewhere (DESIGN.md platform
+// table).
+const mod = (keys: string): string => (isMac ? `⌘${keys}` : `Ctrl+${keys}`);
 
 export default function ShortcutsOverlay() {
   const open = useApp((s) => s.shortcutsOpen);
   const setOpen = useApp((s) => s.setShortcutsOpen);
   const t = useApp((s) => s.t);
   const setView = useApp((s) => s.setView);
+  const setQuickConnect = useApp((s) => s.setQuickConnect);
   const openSession = useApp((s) => s.openSession);
   const setPalette = useApp((s) => s.setPalette);
   const setAiPanel = useApp((s) => s.setAiPanel);
@@ -31,23 +36,29 @@ export default function ShortcutsOverlay() {
         e.preventDefault();
         void openSession({ kind: 'local' });
       }
-      if (meta && !e.shiftKey && e.key === 'q') {
+      // Quick connect: ⌘⇧L / Ctrl⇧L per the contract's shortcut table.
+      // Goes through the store so it works in every locale.
+      if (meta && e.shiftKey && e.key.toLowerCase() === 'l') {
         e.preventDefault();
         setView('hosts');
-        setTimeout(() => {
-          const btn = [...document.querySelectorAll('button')].find(
-            (b) => (b.textContent || '').includes('Quick Connect'),
-          );
-          btn?.click();
-        }, 60);
+        setQuickConnect(true);
       }
       if (e.key === 'Escape') setOpen(false);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [setOpen, openSession, setView, setPalette, setAiPanel]);
+  }, [setOpen, openSession, setView, setQuickConnect, setPalette, setAiPanel]);
 
   if (!open) return null;
+
+  const BINDINGS: { keys: string; key: string }[] = [
+    { keys: mod('⇧L'), key: 'shortcuts.quick' },
+    { keys: mod('K'), key: 'shortcuts.palette' },
+    { keys: mod('B'), key: 'shortcuts.ai' },
+    { keys: mod('N'), key: 'shortcuts.newlocal' },
+    { keys: `${mod('/')} `, key: 'shortcuts.help' },
+    { keys: 'Esc', key: 'shortcuts.esc' },
+  ];
 
   return (
     <div className="modal-backdrop" onClick={() => setOpen(false)}>
@@ -60,12 +71,6 @@ export default function ShortcutsOverlay() {
               <span>{t(key)}</span>
             </div>
           ))}
-        </div>
-        <div className="modal-actions">
-          <span className="spacer" />
-          <button className="btn" onClick={() => setOpen(false)}>
-            {t('common.ok')}
-          </button>
         </div>
       </div>
     </div>

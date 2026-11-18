@@ -133,14 +133,14 @@ export default function KeysView() {
             </div>
             <div className="snippet-actions">
               {!meta[k.name] && (
-                <button className="btn-icon" title="fingerprint" onClick={() => void showMeta(k.name)}>
+                <button className="btn-icon" title={t('keys.fingerprint')} onClick={() => void showMeta(k.name)}>
                   ℹ
                 </button>
               )}
               {k['has-public'] && (
                 <button
                   className="btn-icon"
-                  title="public key"
+                  title={t('keys.pubkey')}
                   onClick={() => void showPublic(k.name)}
                 >
                   🔗
@@ -194,7 +194,7 @@ export default function KeysView() {
       {pubOf && (
         <div className="modal-backdrop" onClick={() => setPubOf(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>{pubOf.name} — public key</h2>
+            <h2>{pubOf.name} — {t('keys.pubkey')}</h2>
             <code className="pub-key">{pubOf.public}</code>
             <div className="modal-actions">
               <button

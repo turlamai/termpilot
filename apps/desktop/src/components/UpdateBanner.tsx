@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '@termpilot/core';
+import { useApp } from '../state/store';
 import { Icon } from './Icon';
 
 // Update banner: the app checks the published manifest (cached server-
@@ -34,18 +35,21 @@ export default function UpdateBanner() {
 
   const { version, url } = info ?? {};
   if (!info || !version || !url || dismissed === version) return null;
+  const t = useApp.getState().t;
 
   return (
     <div className="update-banner">
       <Icon name="rotate-cw" size={13} />
       <span>
-        TermPilot {version} available
-        <span className="update-banner-current"> — current {info.current}</span>
+        {t('update.available').replace('{VERSION}', version)}
+        <span className="update-banner-current">
+          {t('update.current').replace('{VERSION}', info.current)}
+        </span>
       </span>
       <a className="btn btn-primary" href={url} target="_blank" rel="noreferrer">
-        Get it
+        {t('update.get')}
       </a>
-      <button className="btn-icon" aria-label="Dismiss" onClick={() => setDismissed(version)}>
+      <button className="btn-icon" aria-label={t('update.dismiss')} onClick={() => setDismissed(version)}>
         <Icon name="x" size={13} />
       </button>
     </div>
