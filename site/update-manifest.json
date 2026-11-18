@@ -1,5 +1,5 @@
 {
-  "version": "0.8.0",
-  "url": "https://github.com/turlamai/termpilot/releases/tag/v0.8.0",
-  "notes": " ### Fixed  - The Linux distribution matrix actually ships now: the release   pipeline installs the packaging toolchains and uploads deb, rpm and   AppImage as separate assets alongside the tar.gz (v0.7.0 and earlier   shipped Linux as tar.gz only — the 0.4.0 entry below claimed the   matrix prematurely; that claim was wrong until now). Windows adds   the WiX MSI next to the portable zip (WiX pi"
+  "version": "0.9.0",
+  "url": "https://github.com/turlamai/termpilot/releases/tag/v0.9.0",
+  "notes": "## [0.9.0] — 2026-11-18  The embedded-workspace redesign (issue #12): serial joins SSH as a peer — the daily loop is plug in a board, watch the boot log, drive the console, move files, start the debugger. "
 }
