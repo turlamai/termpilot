@@ -19,7 +19,6 @@ TermPilot 处于早期开发阶段（v0.8.0 开发预览）。架构已经验证
 - 产品规格（功能矩阵 + 界面布局）：[docs/PRODUCT-SPEC.md](docs/PRODUCT-SPEC.md)
 - 架构：[ARCHITECTURE.md](ARCHITECTURE.md)
 - 开发约定：[AGENTS.md](AGENTS.md)
-- 定价意向：[PRICING.zh-CN.md](PRICING.zh-CN.md) · [English](PRICING.md)
 
 ## 安装
 
@@ -86,4 +85,4 @@ raco glaze schema check
 
 ## 许可
 
-[AGPL-3.0](LICENSE)——源码保持开放与传染。官方分发、更新与服务是另一重权利；商业模型意向见 [PRICING.zh-CN.md](PRICING.zh-CN.md)。
+[AGPL-3.0](LICENSE)——源码保持开放与传染。产品开发优先验证 SSH 可靠性、凭据安全、可访问性与真实平台发行，不规划收费功能门禁。
