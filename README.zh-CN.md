@@ -1,7 +1,5 @@
 # TermPilot
 
-**产品：**[产品主页](https://termpilot.jrtx.site/) · **支持：**[问题与反馈](https://github.com/turlamai/termpilot/issues) · [当前交付策略](https://github.com/turlamai/turlamai.github.io/blob/master/PORTFOLIO.zh-CN.md)
-
 **中文** · [English](README.md)
 
 AI 原生的 SSH 客户端，覆盖 macOS、Windows 与 Linux。
