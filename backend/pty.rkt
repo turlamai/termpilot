@@ -17,11 +17,13 @@
 
 (define (pty-open* #:command command
                    #:args args
+                   #:cwd [cwd ""]
                    #:cols [cols 80]
                    #:rows [rows 24])
   ((dynamic-require impl-path 'pty-open)
    #:command command
    #:args args
+   #:cwd cwd
    #:cols cols
    #:rows rows))
 

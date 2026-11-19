@@ -132,6 +132,7 @@
       [else
        (pty-open* #:command (hash-ref spec 'command)
                   #:args (hash-ref spec 'args)
+                  #:cwd (hash-ref spec 'cwd "")
                   #:cols cols
                   #:rows rows)]))
   (define s

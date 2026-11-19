@@ -157,7 +157,8 @@
        (local-command '()
                       (hash-ref spec-h 'shell "")
                       (hash-ref spec-h 'cwd "")))
-     (hasheq 'kind "local" 'label label 'command c 'args a)]
+     (hasheq 'kind "local" 'label label 'command c 'args a
+             'cwd (hash-ref spec-h 'cwd ""))]
     [(string=? conn-kind "telnet")
      (cond
        ;; Sidecar telnet with IAC negotiation when installed; raw
@@ -385,7 +386,7 @@
    (hasheq 'ssh (and (find-executable-path "ssh") #t)
            'telnet (and (find-executable-path "telnet") #t)
            'mosh (and (find-executable-path "mosh") #t)
-           'serial (if (eq? (system-type 'os) 'windows) "windows-leg" #t)
+           'serial #t
            'ssh-keygen (and (find-executable-path "ssh-keygen") #t)
            'adb (and (find-executable-path "adb") #t)
            'scp (and (find-executable-path "scp") #t)
