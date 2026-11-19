@@ -30,7 +30,14 @@ jobs:
         run: pnpm build
 
   backend:
-    runs-on: ubuntu-latest
+    # macOS carries its own script(1) dialect, termios offsets and
+    # ioctl constants — the backend suite must run there too, not only
+    # on Linux.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -56,17 +63,23 @@ jobs:
         run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#v0.1
 
       - name: Diagnose script bridge (util-linux dialect)
+        if: runner.os == 'Linux'
         run: |
           script --version | head -1
           echo probe | script -q -f -c "cat" /dev/null | head -3
           true
 
-      - name: Backend tests (unit + updater + pty smoke)
+      # serial-smoke drives the real serial-open over a pty pair (the
+      # closest thing to a wire without hardware); it self-skips on
+      # Windows. updater-test degrades to skip notes where OpenSSL 3 is
+      # absent (e.g. macOS LibreSSL).
+      - name: Backend tests (unit + updater + pty + serial smoke)
         run: |
           set -o pipefail
           racket backend/tests/unit-test.rkt
           racket backend/tests/updater-test.rkt
           racket backend/tests/pty-smoke.rkt
+          racket backend/tests/serial-smoke.rkt
         env:
           TERMPILOT_DATA_DIR: /tmp/termpilot-test-data
 
@@ -97,8 +110,8 @@ jobs:
       - name: Install switchboard
         run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#v0.1
 
-      - name: Compile backend (including ConPTY path)
-        run: raco make backend/main.rkt
+      - name: Compile backend (including ConPTY + Windows smoke path)
+        run: raco make backend/main.rkt backend/tests/windows-smoke.rkt
 
   package-smoke:
     # Build the distributable on Linux to catch packaging breaks before
