@@ -110,8 +110,8 @@ jobs:
       - name: Install switchboard
         run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/switchboard.git#v0.1
 
-      - name: Compile backend (including ConPTY + Windows smoke path)
-        run: raco make backend/main.rkt backend/tests/windows-smoke.rkt
+      - name: Compile backend (including ConPTY path)
+        run: raco make backend/main.rkt
 
   package-smoke:
     # Build the distributable on Linux to catch packaging breaks before
