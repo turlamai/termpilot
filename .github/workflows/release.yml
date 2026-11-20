@@ -85,7 +85,7 @@ jobs:
           distribution: full
 
       - name: Install glaze
-        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#v0.19.0
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#c32af5ff70eed5cb432bb2ae6cc7ef452190afc7
 
       # the updater verifies manifests through the crypto package (libcrypto
       # FFI bundled with the Racket distribution)
@@ -245,7 +245,7 @@ jobs:
           distribution: full
 
       - name: Install glaze
-        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#v0.19.0
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#c32af5ff70eed5cb432bb2ae6cc7ef452190afc7
 
       # the updater verifies manifests through the crypto package (libcrypto
       # FFI bundled with the Racket distribution)
@@ -348,7 +348,7 @@ jobs:
           distribution: full
 
       - name: Install glaze
-        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#v0.19.0
+        run: raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#c32af5ff70eed5cb432bb2ae6cc7ef452190afc7
 
       # the updater verifies manifests through the crypto package (libcrypto
       # FFI bundled with the Racket distribution)
@@ -373,10 +373,15 @@ jobs:
           # --installer runs glaze's native installer chain (WiX MSI,
           # falling back to NSIS/zip by tool availability — the test -f
           # gate below makes a silent degradation a hard failure).
+          # Derive a genuine multi-size Windows icon from the existing
+          # TermPilot visual identity; reuse it for the EXE and MSI app entry.
+          python -m pip install --disable-pip-version-check Pillow==11.3.0
+          python -c "from PIL import Image; Image.open('assets/icon-512.png').convert('RGBA').save('assets/installer.ico', format='ICO', sizes=[(16,16),(24,24),(32,32),(48,48),(64,64),(128,128),(256,256)])"
           raco glaze build \
             --entry backend/main.rkt \
             --name TermPilot \
             --version "$VERSION" \
+            --icon assets/installer.ico \
             --installer \
             --out dist
           # glaze emits TermPilot.msi (no version in the name); rename
@@ -426,7 +431,7 @@ jobs:
 
       - name: Install glaze and crypto
         run: |
-          raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#v0.19.0 crypto
+          raco pkg install --auto --no-docs --skip-installed git+https://github.com/turlamai/glaze.git#c32af5ff70eed5cb432bb2ae6cc7ef452190afc7 crypto
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
