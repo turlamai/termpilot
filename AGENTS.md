@@ -1,5 +1,11 @@
 # TermPilot agent contract
 
+## 家族设计（必读入口）
+
+- 设计/UI 任务先加载 `tlai-product`，必读 `references/policy.md` 与 `references/design-standard.md`（理念、决策规则、UI 验收）。技能缺失时读取 ZCode 真源：macOS/Linux `~/Sync/ZCode/skills/tlai-product/`；Windows `D:/ZCode/skills/tlai-product/`。无法读取须报告规范未核验，不凭记忆跳过。
+- 家族规范管共性；本仓现有设计、行为与 token 真源管具体值和产品差异。例外记回原契约，不复制家族规则或新增数值表；已有界面按下一次相关切片渐进对齐。
+- 改界面先改原型、落账后实现；按家族 UI 清单与本仓当前技术线的既有门禁验收，原型对照和真实交互证据都要保留；对外宣传使用验收后的实物截图。
+
 ## Current owner decision — 2026-11-18 quality-first
 
 This product is in **non-commercial development**. The prior 2026-10/11 product pricing, trial, paid-feature, Free/Pro and family Permit/Commerce rollout decisions are canceled. Do not introduce checkout, subscriptions, activation, commercial entitlement, paid update windows or a paywall. Do not change source-license terms or release signing and identity verification. Prioritize product correctness, reliable native experience, recovery, bilingual README and truthful website claims. The [current family portfolio](https://github.com/turlamai/turlamai.github.io/blob/master/PORTFOLIO.md) governs every slice.
@@ -15,7 +21,7 @@ Run `raco glaze schema check --json` before merging an API change.
 - 实现界面以 `design/prototype/` 为准：对照 HTML/CSS/JS 与实物截图验收，不依赖散文复述。
 - Token/几何值真源 = `design/prototype/shared.css`（亮暗成对；无 shared.css 的仓 = design/prototype/ 各页样式）；`design/DESIGN.md` 只记语义名、用途与决策。
 - 行为边界与跨平台一致性以 `design/DESIGN.md` 的不变式与平台差异节为准。
-- 改界面先改原型再改实现（tlai-prototype-flow）；动共享层（design/、shared/）先 issue 声明，同 commit 落契约。
+- 改界面先改原型再改实现（tlai-product）；动共享层（design/、shared/）先 issue 声明，同 commit 落契约。
 
 ## Family policy (re-read at every slice boundary)
 
@@ -67,10 +73,3 @@ by itself.
 - `pnpm check && pnpm build` — frontend types + bundle.
 - Manual slice: open a local session in the running app and run a
   command end to end before any release tag.
-
-## 设计流程（原型先行）
-
-所有 UI 开发与界面改造一律先原型后代码：brief → `design/DESIGN.md`
-视觉契约 → HTML 原型 → 按 HIG 基准评审通过才开工；改界面先改原型再改
-代码。契约与原型放本仓 `design/`（尚未建立时随首个 UI 切片建立），
-实物截图验收后才能作为对外宣传素材。
