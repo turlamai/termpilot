@@ -381,6 +381,7 @@ jobs:
             --entry backend/main.rkt \
             --name TermPilot \
             --version "$VERSION" \
+            --publisher 'Turing Lambda' \
             --icon assets/installer.ico \
             --installer \
             --out dist
