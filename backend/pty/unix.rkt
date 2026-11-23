@@ -55,6 +55,8 @@
 ;; pty-handle whose ports are Racket-integrated pipes.
 (define (pty-open #:command command
                   #:args args
+                  #:cwd [cwd ""] ; accepted for contract parity; the
+                                 ; /bin/sh wrapper owns the cd on Unix
                   #:cols [cols 80] ; accepted for contract parity; the
                   #:rows [rows 24]) ; real size arrives via terminal/resize
   (define command-str

@@ -278,3 +278,33 @@
 
 ;; default stays ssh
 (check-equal? (hash-ref (host-spec (hasheq 'label "x" 'host "h")) 'kind) "ssh")
+
+;; ---- windows serial helpers (pure; compile/run everywhere) ------------------
+
+(require "../pty/serial-win.rkt")
+
+;; COM names go through the \\.\ device namespace; explicit paths stay.
+(check-equal? (com-device-path "COM3") "\\\\.\\COM3")
+(check-equal? (com-device-path "COM10") "\\\\.\\COM10")
+(check-equal? (com-device-path "\\\\.\\COM3") "\\\\.\\COM3")
+(check-equal? (com-device-path "/dev/ttyUSB0") "/dev/ttyUSB0")
+
+;; GetLastError → the contract's fault keywords (same strings the Unix
+;; classifier emits; the UI maps them to recovery guidance).
+(check-equal? (win-open-fault 2) "not-present")
+(check-equal? (win-open-fault 3) "not-present")
+(check-equal? (win-open-fault 5) "no-access")
+(check-equal? (win-open-fault 32) "device-busy")
+(check-equal? (win-open-fault 31) "open-failed")
+
+;; reg query SERIALCOMM parsing (requires ../serialdev.rkt).
+(require "../serialdev.rkt")
+(check-equal?
+ (parse-serialcomm-output
+  (string-append
+   "\nHKEY_LOCAL_MACHINE\\HARDWARE\\DEVICEMAP\\SERIALCOMM\n\n"
+   "    \\Device\\Serial0    REG_SZ    COM1\n"
+   "    \\Device\\UsbSer000    REG_SZ    COM3\n\n"))
+ (list (hasheq 'path "COM1" 'label "Serial0 · COM1")
+       (hasheq 'path "COM3" 'label "UsbSer000 · COM3")))
+(check-equal? (parse-serialcomm-output "ERROR: The system cannot find the path specified.") '())
