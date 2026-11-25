@@ -138,8 +138,10 @@ jobs:
 
       - name: Tarball (the portable runtime, installers excluded)
         run: |
+          # AppDir is appimagetool's staging tree (a duplicate launcher, icon
+          # and desktop file), not part of the portable runtime.
           (cd dist && tar czf "../termpilot-$VERSION-linux-${{ matrix.arch }}.tar.gz" \
-            $(ls | grep -v -E '\.(sha256|deb|rpm|AppImage)$'))
+            $(ls | grep -v -E '\.(sha256|deb|rpm|AppImage)$' | grep -v '^AppDir$'))
 
       # Flatpak bundle from the tarball built above (the Linux
       # distribution contract's last format). The manifest template
