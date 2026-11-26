@@ -2,29 +2,28 @@
 
 **English** · [中文](README.zh-CN.md)
 
-The AI-native SSH client for macOS, Windows and Linux.
+A local-first terminal and embedded-device workbench for macOS, Windows and Linux.
 
 [![CI](https://github.com/turlamai/termpilot/actions/workflows/ci.yml/badge.svg)](https://github.com/turlamai/termpilot/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/turlamai/termpilot)](https://github.com/turlamai/termpilot/releases) [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
 
 > 📖 **Product homepage**: [termpilot.jrtx.site](https://termpilot.jrtx.site)
 
-TermPilot is a local-first desktop SSH client at Termius feature
-parity or better: six connection types (SSH, local terminal, telnet,
-mosh, serial, SFTP), host management with groups and tags, real
-terminal sessions over the system OpenSSH (agent auth, ProxyJump and
-known_hosts work out of the box), snippets, port forwarding, and an AI
-assistant that drafts commands and explains output — with your own
-model API key, redacted before anything leaves the machine.
+TermPilot combines seven connection kinds (SSH, Mosh, Telnet, raw TCP,
+Serial, Local Shell and ADB) with host management, snippets, port
+forwarding, device file transfers and external debug-tool launch flows.
+SSH uses system OpenSSH, including agent authentication, ProxyJump and
+known_hosts. An optional AI assistant drafts commands and explains output
+using your own model API key and redaction.
 
 **Human-first. Agent-native. Local by design.**
 
 ## Start here
 
-TermPilot is in early development (v0.8.0 development preview). The architecture is proven —
-the Racket backend streams a real PTY session to an xterm.js frontend over
-GLZ1 — and what ships in the repository today is the working product
-core: all six connection types, host/key/forwarding/snippet management,
-the AI panel with redaction, and the agent surface below.
+TermPilot is a development preview. The Racket backend streams terminal
+sessions to an xterm.js frontend over GLZ1. The current product includes
+serial monitoring, device file transfers, external debugger launch,
+host/key/forwarding/snippet management, the optional AI panel and the
+agent surface below. See Releases for the latest published version.
 
 - Product spec (feature matrix + UI layout): [docs/PRODUCT-SPEC.md](docs/PRODUCT-SPEC.md)
 - Architecture: [ARCHITECTURE.md](ARCHITECTURE.md)
