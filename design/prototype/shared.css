@@ -66,8 +66,8 @@
  --text:#e3e5e7;--text-dim:#acb0b6;--accent:#5c8fae;--accent-hover:#6da0bd;--border:#3a3d41;
  --error:#ee9696;--terminal-bg:#141728;--ok:#84c9a2;--warn:#dfbd6c;
  --accent-ink:#0e202c;--selection:#293b48;--hover:#303337;--line:rgba(160,170,180,.12);
- --mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
- --ui:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+ --mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,"Noto Sans Mono CJK SC", "Noto Sans CJK SC", "Microsoft YaHei", monospace;
+ --ui:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei","Noto Sans CJK SC", sans-serif;
  --terminal-size:14px;--s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:20px;--s6:24px;--s8:32px;
  --r-control:6px;--r-panel:8px;--r-dialog:12px;--motion:180ms;--body:16px;--small:13px;--caption:12px;
 }
@@ -93,3 +93,9 @@
 @media(max-width:1200px){.panes.two-panes{grid-template-columns:minmax(0,1fr);grid-template-rows:repeat(2,minmax(320px,1fr));overflow:auto}.term-layout:has(.two-panes){overflow:auto}.panes.two-panes>.pane{min-height:400px}.monitor-controls{gap:4px}.workflow-strip{gap:16px}}
 @media(max-width:768px){.workflow-strip{grid-template-columns:minmax(0,1fr);gap:16px}.workflow-strip .od-field{gap:0}.transfer-config{grid-template-columns:minmax(0,1fr)}.tool-layout{grid-template-columns:minmax(0,1fr);gap:16px}.tools-mobile{display:flex;margin-top:0}.device-toolbar{padding:8px 12px}.device-toolbar .grow{display:none}.device-toolbar label{display:flex;align-items:center;gap:8px}.transfer-line{flex-wrap:wrap}.transfer-line>.grow{min-width:100%;margin-bottom:4px}.embedded-pane .terminal-output{font-size:12px}.terminal-toolbar strong{overflow-wrap:anywhere}.serial-stats{padding:8px 12px}.send-controls{padding:8px 12px;gap:8px}.embedded-pane .terminal-input-row{padding:8px 12px}.signal-controls{padding:8px 12px}.workflow-strip strong{font-size:14px}.workflow-strip span{font-size:12px}}
 @media(prefers-reduced-motion:reduce){.panes{scroll-behavior:auto}}
+
+/* ---- temperament profile pass ---- */
+/* typography baseline (family standard 2026-11-26-temperament-profiles): CJK/Latin spacing and kinsoku come from the rendering layer,
+   never from typed spaces (§4, §10). Values stay in the token block above. */
+body { text-autospace: normal; line-break: strict; }
+::selection { background: var(--selection); color: var(--text); }
