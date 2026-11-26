@@ -15,6 +15,25 @@ distributed under the MIT license and the Apache License 2.0, at your
 option; the Racket CS runtime system additionally embeds Chez Scheme,
 distributed under the Apache License 2.0 (per Racket's `LICENSE.txt`).
 
+## Libraries shipped with the Racket distribution
+
+The macOS and Windows packages carry these libraries under `lib/plt/`,
+exactly as the Racket distribution ships them:
+
+- OpenSSL 3.4.1, Apache License 2.0 — on Windows as `libeay32.dll` and
+  `ssleay32.dll` (the distribution keeps the legacy file names), on macOS as
+  `libcrypto.3.dylib` and `libssl.3.dylib`.
+- SQLite 3.36.0 (`sqlite3.dll`, Windows), public domain.
+- GNU libiconv (`libiconv-2.dll`, Windows), GNU Lesser General Public
+  License, version 2.1.
+
+## crypto (Racket package)
+
+Update-feed signature verification uses the `crypto` Racket package,
+Apache License 2.0. It binds to libcrypto through FFI: the
+OpenSSL libraries listed above on macOS and Windows, the system (or Flatpak
+runtime) library on Linux.
+
 ## OpenSSH (system sidecar)
 
 SSH sessions, tunnels, port forwarding, SFTP and key generation
