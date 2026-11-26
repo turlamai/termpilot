@@ -9,6 +9,9 @@
    Dark is the default tool skin; light mirrors the same structure. */
 
 :root {
+  /* Native form controls (dropdown popups, scrollbars) follow the app
+     theme — the prototype contract (design/prototype/shared.css :root). */
+  color-scheme: dark;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -43,6 +46,7 @@
 }
 
 [data-theme='light'] {
+  color-scheme: light;
   --bg: #f2f3f4;
   --bg-raised: #ffffff;
   --bg-sidebar: #e9eaea;
@@ -61,6 +65,12 @@
 }
 
 * { box-sizing: border-box; }
+
+/* Form controls inherit the UI font instead of the UA default
+   (buttons rendered Arial next to system-ui text). Prototype contract:
+   design/prototype/shared.css `button,input,select,textarea{font:inherit}`. */
+button, input, select, textarea { font: inherit; }
+input::placeholder, textarea::placeholder { color: var(--text-dim); }
 
 body {
   margin: 0;
@@ -559,7 +569,15 @@ body {
 
 /* kind filter row + per-row kind badge */
 .kind-filter-row { gap: var(--space-2); margin-top: var(--space-1); }
-.kind-filter { flex: 1; min-width: 0; }
+/* The inline filter select keeps the prototype's compact recipe
+   (design/prototype/shared.css .filter-select select): sidebar surface,
+   4px radius, 12px UI type — not the taller .form-grid control. */
+.kind-filter {
+  flex: 1; min-width: 0;
+  border: 1px solid var(--border); border-radius: 4px;
+  background: var(--bg-sidebar); color: var(--text);
+  font-size: 12px; padding: 6px 8px;
+}
 .kind-badge {
   margin-left: var(--space-2);
   font-size: 10px; font-family: ui-monospace, Menlo, monospace;
