@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check tag matches VERSION, package.json, backend app-version, and CHANGELOG
         run: |
-          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+          if [[ "$GITHUB_REF" != refs/tags/v* ]]; then
             echo "manual dispatch: skipping tag validation, building from package.json version"
             exit 0
           fi
@@ -36,7 +36,7 @@ jobs:
       # release contract, so a missing secret must stop the release before
       # the expensive builds run, not after.
       - name: Require Ed25519 update signing secret before packaging
-        if: github.event_name == 'push'
+        if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
         env:
           UPDATE_ED25519_PRIVATE_KEY: ${{ secrets.UPDATE_ED25519_PRIVATE_KEY }}
@@ -45,6 +45,20 @@ jobs:
             echo "::error::UPDATE_ED25519_PRIVATE_KEY missing; refusing unsigned release before expensive builds"
             exit 1
           fi
+
+      - name: Require Apple credentials for tagged releases
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          DEVELOPER_ID_P12_B64: ${{ secrets.DEVELOPER_ID_P12_B64 }}
+          DEVELOPER_ID_P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_B64: ${{ secrets.ASC_KEY_P8_B64 }}
+        run: |
+          set -euo pipefail
+          for name in DEVELOPER_ID_P12_B64 DEVELOPER_ID_P12_PASSWORD ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8_B64; do
+            [[ -n "${!name:-}" ]] || { echo "::error::$name is missing"; exit 1; }
+          done
 
   linux:
     name: Linux package (${{ matrix.arch }})
@@ -61,7 +75,7 @@ jobs:
 
       - name: Resolve version
         run: |
-          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+          if [[ "$GITHUB_REF" != refs/tags/v* ]]; then
             VERSION="$(node -p "require('./package.json').version")"
           else
             VERSION="${GITHUB_REF_NAME#v}"
@@ -220,12 +234,25 @@ jobs:
             runner: macos-latest
           - arch: x64
             runner: macos-15-intel
+    env:
+      # Production signing lights up as soon as the account-level secrets
+      # exist (Developer ID p12 + App Store Connect API key). Credential
+      # contract: DEVELOPER_ID_P12_B64 / DEVELOPER_ID_P12_PASSWORD /
+      # ASC_KEY_ID / ASC_ISSUER_ID / ASC_KEY_P8_B64; the same five values
+      # are shared across the product family. Glaze handles signing
+      # (--sign with hardened runtime); this workflow notarizes the
+      # artifacts it actually ships, since glaze's built-in --notarize
+      # would staple its own throwaway DMG, not ours.
+      MACOS_SIGNING_CONFIGURED: ${{ secrets.DEVELOPER_ID_P12_B64 != '' && secrets.ASC_KEY_P8_B64 != '' }}
+      # A tag push is a release: without credentials it must fail closed
+      # instead of silently shipping ad-hoc signed artifacts.
+      IS_TAG_RELEASE: ${{ startsWith(github.ref, 'refs/tags/v') }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Resolve version
         run: |
-          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+          if [[ "$GITHUB_REF" != refs/tags/v* ]]; then
             VERSION="$(node -p "require('./package.json').version")"
           else
             VERSION="${GITHUB_REF_NAME#v}"
@@ -271,7 +298,60 @@ jobs:
           iconutil -c icns "$ICONSET" -o dist/TermPilot.icns
           rm -rf "$ICONSET"
 
-      - name: Package app bundle
+      - name: Provision Developer ID certificate
+        if: env.MACOS_SIGNING_CONFIGURED == 'true'
+        env:
+          DEVELOPER_ID_P12_B64: ${{ secrets.DEVELOPER_ID_P12_B64 }}
+          DEVELOPER_ID_P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
+        run: |
+          set -euo pipefail
+          P12="$RUNNER_TEMP/developer-id.p12"
+          KEYCHAIN="$RUNNER_TEMP/build.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -hex 24)"
+          printf '%s' "$DEVELOPER_ID_P12_B64" | base64 --decode > "$P12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$P12" -k "$KEYCHAIN" -P "$DEVELOPER_ID_P12_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" > /dev/null
+          security list-keychains -s "$KEYCHAIN" $(security list-keychains | tr -d '"')
+          rm -f "$P12"
+          IDENTITY_NAME="$(security find-identity -v -p codesigning "$KEYCHAIN" | grep 'Developer ID Application' | head -1 | sed -E 's/^[^"]*"(.*)"$/\1/')"
+          test -n "$IDENTITY_NAME"
+          {
+            echo "MACOS_SIGN_IDENTITY=$IDENTITY_NAME"
+          } >> "$GITHUB_ENV"
+      - name: Store notarytool keychain profile
+        if: env.MACOS_SIGNING_CONFIGURED == 'true'
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_B64: ${{ secrets.ASC_KEY_P8_B64 }}
+        run: |
+          set -euo pipefail
+          P8="$RUNNER_TEMP/asc-api-key.p8"
+          printf '%s' "$ASC_KEY_P8_B64" | base64 --decode > "$P8"
+          xcrun notarytool store-credentials ASC_NOTARY \
+            --key-id "$ASC_KEY_ID" --issuer "$ASC_ISSUER_ID" --key "$P8"
+          rm -f "$P8"
+
+      # Glaze signs the nested Racket libraries and the bundle with the
+      # Developer ID identity (hardened runtime turns on automatically for
+      # real identities). No glaze --notarize: the artifacts we ship are
+      # the portable zip's .app and the hand-built DMG below, so this
+      # workflow notarizes those two directly.
+      - name: Package app bundle (Developer ID signed)
+        if: env.MACOS_SIGNING_CONFIGURED == 'true'
+        run: |
+          raco glaze build \
+            --entry backend/main.rkt \
+            --name TermPilot \
+            --version "$VERSION" \
+            --icon dist/TermPilot.icns \
+            --sign "$MACOS_SIGN_IDENTITY" \
+            --out dist
+      - name: Package app bundle (ad-hoc dispatch smoke)
+        if: env.MACOS_SIGNING_CONFIGURED != 'true' && env.IS_TAG_RELEASE != 'true'
         run: |
           raco glaze build \
             --entry backend/main.rkt \
@@ -280,10 +360,26 @@ jobs:
             --icon dist/TermPilot.icns \
             --sign - \
             --out dist
+      - name: Release requires signing credentials
+        if: env.MACOS_SIGNING_CONFIGURED != 'true' && env.IS_TAG_RELEASE == 'true'
+        run: |
+          echo "::error::Tag releases must be production-signed: set the macOS signing secrets (DEVELOPER_ID_P12_B64, DEVELOPER_ID_P12_PASSWORD, ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8_B64) on this repository before tagging."
+          exit 1
+
+      - name: Notarize + staple the .app
+        if: env.MACOS_SIGNING_CONFIGURED == 'true'
+        run: |
+          set -euo pipefail
+          SUBMISSION="$RUNNER_TEMP/app-notary.zip"
+          rm -f "$SUBMISSION"
+          ditto -c -k --keepParent dist/TermPilot.app "$SUBMISSION"
+          xcrun notarytool submit "$SUBMISSION" --keychain-profile ASC_NOTARY --wait
+          xcrun stapler staple dist/TermPilot.app
+          rm -f "$SUBMISSION"
 
       - name: Portable zip (.app at the archive root)
         run: |
-          (cd dist && zip -qry "../termpilot-$VERSION-macos-${{ matrix.arch }}.zip" TermPilot.app)
+          ditto -c -k --keepParent dist/TermPilot.app "termpilot-$VERSION-macos-${{ matrix.arch }}.zip"
 
       - name: DMG (drag to Applications)
         run: |
@@ -302,6 +398,17 @@ jobs:
             sleep 5
           done
           [ -n "$created" ] || { echo "::error::hdiutil create failed after 3 attempts"; exit 1; }
+
+      - name: Notarize + staple the DMG, verify production trust
+        if: env.MACOS_SIGNING_CONFIGURED == 'true'
+        run: |
+          set -euo pipefail
+          DMG="termpilot-$VERSION-macos-${{ matrix.arch }}.dmg"
+          xcrun notarytool submit "$DMG" --keychain-profile ASC_NOTARY --wait
+          xcrun stapler staple "$DMG"
+          xcrun stapler validate dist/TermPilot.app
+          xcrun stapler validate "$DMG"
+          spctl --assess --type execute dist/TermPilot.app
 
       - name: Per-asset .sha256 sidecars
         run: |
@@ -329,7 +436,7 @@ jobs:
       - name: Resolve version
         shell: bash
         run: |
-          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+          if [[ "$GITHUB_REF" != refs/tags/v* ]]; then
             VERSION="$(node -p "require('./package.json').version")"
           else
             VERSION="${GITHUB_REF_NAME#v}"
@@ -418,7 +525,7 @@ jobs:
     name: Publish GitHub release
     needs: [linux, macos, windows]
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/checkout@v4
 
